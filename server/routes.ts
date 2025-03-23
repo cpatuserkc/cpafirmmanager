@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { z } from "zod";
 import {
   insertUserSchema,
-  insertClientSchema,
+  insertClientCompanySchema,
   insertProjectSchema,
   insertTimeEntrySchema,
   insertProposalSchema,
@@ -107,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/clients", validateBody(insertClientSchema), async (req, res) => {
+  app.post("/api/clients", validateBody(insertClientCompanySchema), async (req, res) => {
     try {
       const client = await storage.createClient(req.body);
       res.status(201).json(client);
