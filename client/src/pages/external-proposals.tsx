@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, FileText } from "lucide-react";
 
 export default function ExternalProposalsPage() {
   const { user } = useAuthContext();
@@ -124,9 +124,7 @@ export default function ExternalProposalsPage() {
                 <ProposalRequestCard 
                   key={proposal.id} 
                   proposal={proposal} 
-                  onStatusChange={() => {
-                    // Refresh data after status change
-                  }}
+                  onStatusChange={refreshData}
                 />
               ))
             )}
@@ -152,6 +150,16 @@ function ProposalRequestCard({ proposal, onStatusChange }: ProposalRequestCardPr
   const contactEmail = requestDetails.contactEmail || "No email provided";
   const contactPhone = requestDetails.contactPhone || "No phone provided";
   const message = requestDetails.message || proposal.content || "No message";
+  
+  // Link to proposal documents if they exist (based on client name)
+  const proposalDocumentLink = (() => {
+    if (clientName.includes("Adams Family")) {
+      return "/attached_assets/Adams Family Proposal 02-25-25.pdf.pdf";
+    } else if (clientName.includes("White Dental")) {
+      return "/attached_assets/D. White Proposal 02-24-25.pdf.pdf";
+    }
+    return null;
+  })();
   
   async function handleAssign() {
     try {
@@ -236,6 +244,21 @@ function ProposalRequestCard({ proposal, onStatusChange }: ProposalRequestCardPr
               {message}
             </div>
           </div>
+          
+          {proposalDocumentLink && (
+            <div>
+              <h3 className="text-sm font-medium mb-2">Generated Proposal Document</h3>
+              <a 
+                href={proposalDocumentLink} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors duration-200"
+              >
+                <FileText className="h-4 w-4" />
+                <span>View Proposal Document</span>
+              </a>
+            </div>
+          )}
           
           {proposal.status === "pending_assignment" && (
             <div className="flex justify-end gap-2 pt-2">
