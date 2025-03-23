@@ -90,9 +90,10 @@ const TimeTrackingForm = () => {
   };
   
   const statusOptions = [
-    { value: "pending", label: "Pending" },
-    { value: "billed", label: "Billed" },
+    { value: "planned", label: "Planned" },
     { value: "in_progress", label: "In Progress" },
+    { value: "completed", label: "Completed" },
+    { value: "billed", label: "Billed" },
   ];
   
   return (
@@ -203,9 +204,9 @@ const TimeTrackingForm = () => {
         <Button 
           type="submit" 
           className="w-full md:w-auto" 
-          disabled={createTimeEntryMutation.isPending}
+          disabled={createTimeEstimateMutation.isPending}
         >
-          {createTimeEntryMutation.isPending ? "Recording..." : "Record Time"}
+          {createTimeEstimateMutation.isPending ? "Saving..." : "Save Estimate"}
         </Button>
       </form>
     </Form>
