@@ -199,21 +199,26 @@ export const insertServiceSchema = createInsertSchema(services).omit({
 export const proposals = pgTable("proposals", {
   id: serial("id").primaryKey(),
   firmId: integer("firm_id").notNull().references(() => firms.id),
-  contactId: integer("contact_id").notNull().references(() => contacts.id), // Primary client contact
-  clientCompanyId: integer("client_company_id").notNull().references(() => clientCompanies.id),
+  contactId: integer("contact_id").references(() => contacts.id), // Primary client contact - optional for external requests
+  clientCompanyId: integer("client_company_id").references(() => clientCompanies.id), // Optional for external requests
   title: text("title").notNull(),
   content: text("content"),
   estimatedHours: numeric("estimated_hours"),
   estimatedCost: numeric("estimated_cost"),
-  status: text("status").default("draft").notNull(), // "draft", "sent", "accepted", "rejected"
+  status: text("status").default("draft").notNull(), // "draft", "sent", "accepted", "rejected", "pending_assignment"
   createdById: integer("created_by_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiryDate: timestamp("expiry_date"),
+  estimatedStartDate: timestamp("estimated_start_date"),
+  estimatedEndDate: timestamp("estimated_end_date"),
+  source: text("source").default("internal"), // "internal" or "external"
+  requestDetails: jsonb("request_details"), // Stores additional details from external request
 });
 
 export const insertProposalSchema = createInsertSchema(proposals).omit({
   id: true,
   createdAt: true,
+  requestDetails: true
 });
 
 // Proposal Services - Many-to-many between proposals and services
