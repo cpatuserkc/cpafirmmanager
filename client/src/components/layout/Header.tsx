@@ -20,7 +20,8 @@ const Header = () => {
     { href: "/classification", label: "Classifications" },
     { href: "/proposals", label: "Proposals" },
     { href: "/clients", label: "Clients" },
-    { href: "#pricing", label: "Pricing" },
+    { href: "/season-planner", label: "Season Planner" },
+    { href: "/analytics", label: "Analytics" },
   ];
 
   return (

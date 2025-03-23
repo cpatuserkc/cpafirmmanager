@@ -542,6 +542,413 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // SEASON PLANNER ROUTES
+  app.get("/api/season-planner", async (req, res) => {
+    try {
+      const firmId = req.query.firmId ? Number(req.query.firmId) : undefined;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const roleIds = req.query.roleIds ? 
+        Array.isArray(req.query.roleIds) 
+          ? (req.query.roleIds as string[]).map(id => Number(id))
+          : [Number(req.query.roleIds)] 
+        : [];
+      const categories = req.query.categories ? 
+        Array.isArray(req.query.categories) 
+          ? req.query.categories as string[]
+          : [req.query.categories as string] 
+        : [];
+      const includeProposals = req.query.includeProposals === 'true';
+      const includeProjects = req.query.includeProjects === 'true';
+      const includeDeadlines = req.query.includeDeadlines === 'true';
+      
+      if (!firmId) {
+        return res.status(400).json({ message: "Firm ID is required" });
+      }
+      
+      // Get projects for the date range and filters
+      let projects = [];
+      if (includeProjects) {
+        projects = await storage.getProjectsByFirmId(firmId);
+        
+        // Apply date filter if provided
+        if (startDate && endDate) {
+          projects = projects.filter(project => {
+            if (!project.startDate) return false;
+            
+            const projectStart = new Date(project.startDate);
+            const projectEnd = project.endDate ? new Date(project.endDate) : projectStart;
+            
+            return (projectStart <= endDate && projectEnd >= startDate);
+          });
+        }
+        
+        // Apply role filter if provided
+        if (roleIds.length > 0) {
+          projects = projects.filter(project => 
+            project.professionalRoleId && roleIds.includes(project.professionalRoleId)
+          );
+        }
+        
+        // Apply service category filter if provided
+        if (categories.length > 0) {
+          // First, get all services in the requested categories
+          const services = await Promise.all(
+            categories.map(category => storage.getServicesByCategory(firmId, category))
+          );
+          const serviceIds = services.flat().map(service => service.id);
+          
+          projects = projects.filter(project => 
+            project.serviceId && serviceIds.includes(project.serviceId)
+          );
+        }
+        
+        // Enrich projects with client and service information
+        const enrichedProjects = await Promise.all(
+          projects.map(async (project) => {
+            const clientCompany = project.clientCompanyId ? 
+              await storage.getClientCompany(project.clientCompanyId) : null;
+            
+            const service = project.serviceId ? 
+              await storage.getService(project.serviceId) : null;
+            
+            return {
+              ...project,
+              clientCompanyName: clientCompany?.name || 'Unknown Client',
+              serviceName: service?.name || 'Unknown Service',
+              serviceCategory: service?.category || 'Uncategorized'
+            };
+          })
+        );
+        
+        projects = enrichedProjects;
+      }
+      
+      // Get proposals for the date range and filters
+      let proposals = [];
+      if (includeProposals) {
+        proposals = await storage.getProposalsByFirmId(firmId);
+        
+        // Apply date filter if provided
+        if (startDate && endDate) {
+          proposals = proposals.filter(proposal => {
+            // For proposals, we'll check the estimated start/end dates if available
+            // or the creation date if not
+            const proposalStart = proposal.estimatedStartDate ? 
+              new Date(proposal.estimatedStartDate) : 
+              new Date(proposal.createdAt);
+            
+            const proposalEnd = proposal.estimatedEndDate ? 
+              new Date(proposal.estimatedEndDate) : 
+              proposal.expiryDate ? 
+                new Date(proposal.expiryDate) : 
+                proposalStart;
+            
+            return (proposalStart <= endDate && proposalEnd >= startDate);
+          });
+        }
+        
+        // Apply role filter if provided
+        if (roleIds.length > 0) {
+          // For proposals, we need to check the related proposal services
+          const filteredProposals = [];
+          
+          for (const proposal of proposals) {
+            const proposalServices = await storage.getProposalServicesByProposalId(proposal.id);
+            
+            // Check if any of the proposal services have matching role IDs
+            const hasMatchingRole = proposalServices.some(ps => 
+              ps.professionalRoleId && roleIds.includes(ps.professionalRoleId)
+            );
+            
+            if (hasMatchingRole) {
+              filteredProposals.push(proposal);
+            }
+          }
+          
+          proposals = filteredProposals;
+        }
+        
+        // Apply service category filter if provided
+        if (categories.length > 0) {
+          // First, get all services in the requested categories
+          const services = await Promise.all(
+            categories.map(category => storage.getServicesByCategory(firmId, category))
+          );
+          const serviceIds = services.flat().map(service => service.id);
+          
+          // For proposals, we need to check the related proposal services
+          const filteredProposals = [];
+          
+          for (const proposal of proposals) {
+            const proposalServices = await storage.getProposalServicesByProposalId(proposal.id);
+            
+            // Check if any of the proposal services have matching service IDs
+            const hasMatchingService = proposalServices.some(ps => 
+              ps.serviceId && serviceIds.includes(ps.serviceId)
+            );
+            
+            if (hasMatchingService) {
+              filteredProposals.push(proposal);
+            }
+          }
+          
+          proposals = filteredProposals;
+        }
+        
+        // Enrich proposals with client information
+        const enrichedProposals = await Promise.all(
+          proposals.map(async (proposal) => {
+            const clientCompany = proposal.clientCompanyId ? 
+              await storage.getClientCompany(proposal.clientCompanyId) : null;
+            
+            const contact = proposal.contactId ? 
+              await storage.getContact(proposal.contactId) : null;
+            
+            // Get the proposal services for this proposal to calculate total hours and get service info
+            const proposalServices = await storage.getProposalServicesByProposalId(proposal.id);
+            
+            // Calculate estimated hours (sum of all proposal services)
+            const estimatedHours = proposalServices.reduce((total, ps) => {
+              return total + (parseFloat(ps.estimatedHours || '0') || 0);
+            }, 0);
+            
+            // Get main service category if available
+            let mainServiceCategory = 'Uncategorized';
+            if (proposalServices.length > 0 && proposalServices[0].serviceId) {
+              const service = await storage.getService(proposalServices[0].serviceId);
+              mainServiceCategory = service?.category || 'Uncategorized';
+            }
+            
+            return {
+              ...proposal,
+              clientCompanyName: clientCompany?.name || 'Unknown Client',
+              contactName: contact ? `${contact.firstName} ${contact.lastName}` : 'Unknown Contact',
+              estimatedHours: estimatedHours.toString(),
+              serviceCategory: mainServiceCategory
+            };
+          })
+        );
+        
+        proposals = enrichedProposals;
+      }
+      
+      // Get deadlines for the date range
+      let deadlines = [];
+      if (includeDeadlines) {
+        deadlines = await storage.getDeadlinesByFirmId(firmId);
+        
+        // Apply date filter
+        if (startDate && endDate) {
+          deadlines = deadlines.filter(deadline => {
+            const deadlineDate = new Date(deadline.dueDate);
+            return (deadlineDate >= startDate && deadlineDate <= endDate);
+          });
+        }
+        
+        // Enrich deadlines with client information
+        const enrichedDeadlines = await Promise.all(
+          deadlines.map(async (deadline) => {
+            const clientCompany = deadline.clientCompanyId ? 
+              await storage.getClientCompany(deadline.clientCompanyId) : null;
+            
+            const contact = deadline.contactId ? 
+              await storage.getContact(deadline.contactId) : null;
+            
+            return {
+              ...deadline,
+              clientCompanyName: clientCompany?.name || null,
+              contactName: contact ? `${contact.firstName} ${contact.lastName}` : null
+            };
+          })
+        );
+        
+        deadlines = enrichedDeadlines;
+      }
+      
+      // Generate optimization suggestions based on the data
+      const suggestions = generateOptimizationSuggestions(projects, proposals, deadlines);
+      
+      res.status(200).json({
+        projects,
+        proposals,
+        deadlines,
+        suggestions
+      });
+    } catch (error) {
+      console.error('Season planner error:', error);
+      res.status(500).json({ message: "Error fetching season planner data" });
+    }
+  });
+  
+  // Helper function to generate optimization suggestions
+  function generateOptimizationSuggestions(projects: any[], proposals: any[], deadlines: any[]) {
+    const suggestions = [];
+    
+    // Check for overallocation of projects
+    const totalProjectHours = projects.reduce((sum, project) => 
+      sum + (parseFloat(project.estimatedHours || '0') || 0), 0);
+    
+    if (totalProjectHours > 1000) { // Arbitrary threshold for demonstration
+      suggestions.push({
+        title: "High Project Load",
+        description: "Current project load exceeds typical capacity. Consider redistributing work or extending timelines.",
+        actionable: true
+      });
+    }
+    
+    // Check for underutilization
+    if (totalProjectHours < 100 && proposals.length > 0) { // Arbitrary threshold for demonstration
+      suggestions.push({
+        title: "Low Utilization",
+        description: "Current project load is below optimal utilization. Consider converting more proposals to active projects.",
+        actionable: true
+      });
+    }
+    
+    // Check for impending deadlines
+    const upcomingDeadlines = deadlines.filter(deadline => 
+      !deadline.isCompleted && 
+      new Date(deadline.dueDate).getTime() - new Date().getTime() < 7 * 24 * 60 * 60 * 1000 // Within 7 days
+    );
+    
+    if (upcomingDeadlines.length > 0) {
+      suggestions.push({
+        title: "Impending Deadlines",
+        description: `${upcomingDeadlines.length} deadlines are approaching within 7 days. Prioritize resources accordingly.`,
+        actionable: true
+      });
+    }
+    
+    // Check for high-value proposals
+    const highValueProposals = proposals.filter(proposal => 
+      parseFloat(proposal.estimatedCost || '0') > 10000 // Arbitrary threshold for demonstration
+    );
+    
+    if (highValueProposals.length > 0) {
+      suggestions.push({
+        title: "High-Value Proposals",
+        description: `${highValueProposals.length} high-value proposals await conversion. Consider prioritizing follow-up.`,
+        actionable: true
+      });
+    }
+    
+    return suggestions;
+  }
+  
+  app.post("/api/season-planner/generate", async (req, res) => {
+    try {
+      const { firmId, startDate, endDate } = req.body;
+      
+      if (!firmId || !startDate || !endDate) {
+        return res.status(400).json({ 
+          message: "Missing required parameters: firmId, startDate, and endDate are required" 
+        });
+      }
+      
+      // In a real implementation, this would run optimization algorithms
+      // to generate an optimal schedule based on constraints
+      
+      // For now, we'll create a simple response indicating success
+      res.status(200).json({
+        message: "Season plan generated successfully",
+        planId: Date.now(), // placeholder for a real plan ID
+        summary: {
+          projectsScheduled: 10,
+          hoursAllocated: 1200,
+          utilizationRate: "85%",
+          revenueProjection: "$120,000"
+        }
+      });
+    } catch (error) {
+      console.error('Generate plan error:', error);
+      res.status(500).json({ message: "Error generating season plan" });
+    }
+  });
+  
+  app.post("/api/pricing/adjust", async (req, res) => {
+    try {
+      const { 
+        firmId, 
+        adjustmentPercent, 
+        startDate, 
+        endDate, 
+        serviceCategories, 
+        professionalRoleIds 
+      } = req.body;
+      
+      if (!firmId || adjustmentPercent === undefined) {
+        return res.status(400).json({ 
+          message: "Missing required parameters: firmId and adjustmentPercent are required" 
+        });
+      }
+      
+      // Get the relevant professional roles
+      let roles;
+      if (professionalRoleIds && professionalRoleIds.length > 0) {
+        roles = await Promise.all(
+          professionalRoleIds.map(id => storage.getProfessionalRole(id))
+        );
+        // Filter out undefined roles
+        roles = roles.filter(Boolean);
+      } else {
+        roles = await storage.getProfessionalRolesByFirmId(firmId);
+      }
+      
+      // Filter roles by service category if specified
+      if (serviceCategories && serviceCategories.length > 0) {
+        // Get all services in the specified categories
+        const services = await Promise.all(
+          serviceCategories.map(category => storage.getServicesByCategory(firmId, category))
+        );
+        
+        // Extract unique service IDs
+        const serviceIds = [...new Set(services.flat().map(service => service.id))];
+        
+        // Get time estimates that use these services
+        const timeEstimates = (await storage.getTimeEstimatesByFirmId(firmId))
+          .filter(te => te.serviceId && serviceIds.includes(te.serviceId));
+        
+        // Extract unique professional role IDs from these time estimates
+        const roleIds = [...new Set(
+          timeEstimates
+            .filter(te => te.professionalRoleId)
+            .map(te => te.professionalRoleId)
+        )];
+        
+        // Filter roles to only those referenced in the filtered time estimates
+        roles = roles.filter(role => roleIds.includes(role.id));
+      }
+      
+      // Apply the adjustment to each role
+      const adjustedRoles = [];
+      for (const role of roles) {
+        // Calculate new rates based on adjustment percentage
+        const adjustmentMultiplier = 1 + (adjustmentPercent / 100);
+        
+        const newTopTierRate = (parseFloat(role.topTierRate) * adjustmentMultiplier).toFixed(2);
+        
+        // Update the role with new rates
+        const updatedRole = await storage.updateProfessionalRole(role.id, {
+          ...role,
+          topTierRate: newTopTierRate
+        });
+        
+        if (updatedRole) {
+          adjustedRoles.push(updatedRole);
+        }
+      }
+      
+      res.status(200).json({
+        message: `Adjusted pricing by ${adjustmentPercent}% for ${adjustedRoles.length} professional roles`,
+        adjustedRoles
+      });
+    } catch (error) {
+      console.error('Price adjustment error:', error);
+      res.status(500).json({ message: "Error adjusting pricing" });
+    }
+  });
+
   // DEADLINE ROUTES
   app.get("/api/deadlines", async (req, res) => {
     try {

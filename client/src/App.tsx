@@ -12,6 +12,7 @@ import Proposals from "@/pages/proposals";
 import Clients from "@/pages/clients";
 import Classification from "@/pages/classification";
 import Analytics from "@/pages/analytics";
+import SeasonPlanner from "@/pages/season-planner";
 import Login from "@/pages/login";
 import SignUp from "@/pages/signup";
 import { useState, createContext, useContext } from "react";
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/clients" component={Clients} />
       <Route path="/classification" component={Classification} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/season-planner" component={SeasonPlanner} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={SignUp} />
       <Route component={NotFound} />
