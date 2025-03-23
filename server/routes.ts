@@ -447,6 +447,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PROFESSIONAL ROLES ROUTES
+  app.get("/api/professional-roles", async (req, res) => {
+    try {
+      const firmId = req.query.firmId ? Number(req.query.firmId) : undefined;
+      
+      let roles;
+      if (firmId) {
+        roles = await storage.getProfessionalRolesByFirmId(firmId);
+      } else {
+        // Get all roles
+        roles = [];
+        // Get user's firms and then all roles for those firms
+        const userId = req.session.userId;
+        if (userId) {
+          const relationships = await storage.getUserFirmRelationshipsByUserId(userId);
+          const firmIds = relationships.map(rel => rel.firmId);
+          
+          // Get roles for all firms the user is associated with
+          for (const id of firmIds) {
+            const firmRoles = await storage.getProfessionalRolesByFirmId(id);
+            roles.push(...firmRoles);
+          }
+        }
+      }
+      
+      res.status(200).json(roles);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching professional roles" });
+    }
+  });
+  
+  app.get("/api/professional-roles/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const role = await storage.getProfessionalRole(id);
+      
+      if (!role) {
+        return res.status(404).json({ message: "Professional role not found" });
+      }
+      
+      res.status(200).json(role);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching professional role" });
+    }
+  });
+  
+  // SERVICES ROUTES
+  app.get("/api/services", async (req, res) => {
+    try {
+      const firmId = req.query.firmId ? Number(req.query.firmId) : undefined;
+      const category = req.query.category as string | undefined;
+      
+      let services;
+      if (firmId && category) {
+        services = await storage.getServicesByCategory(firmId, category);
+      } else if (firmId) {
+        services = await storage.getServicesByFirmId(firmId);
+      } else {
+        // Get all services
+        services = [];
+        // Get user's firms and then all services for those firms
+        const userId = req.session.userId;
+        if (userId) {
+          const relationships = await storage.getUserFirmRelationshipsByUserId(userId);
+          const firmIds = relationships.map(rel => rel.firmId);
+          
+          // Get services for all firms the user is associated with
+          for (const id of firmIds) {
+            const firmServices = await storage.getServicesByFirmId(id);
+            services.push(...firmServices);
+          }
+        }
+      }
+      
+      res.status(200).json(services);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching services" });
+    }
+  });
+  
+  app.get("/api/services/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const service = await storage.getService(id);
+      
+      if (!service) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+      
+      res.status(200).json(service);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching service" });
+    }
+  });
+  
   // DEADLINE ROUTES
   app.get("/api/deadlines", async (req, res) => {
     try {
