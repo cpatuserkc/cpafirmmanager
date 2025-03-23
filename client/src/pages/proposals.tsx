@@ -9,7 +9,7 @@ import { format } from "date-fns";
 import { FileText, Plus } from "lucide-react";
 import { AuthContext } from "@/App";
 import { Proposal } from "@shared/schema";
-import ProposalForm from "@/components/proposals/ProposalForm";
+import EnhancedProposalForm from "@/components/proposals/EnhancedProposalForm";
 
 const Proposals = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
