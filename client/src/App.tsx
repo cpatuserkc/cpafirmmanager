@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Resources from "@/pages/resources";
 import TimeTracking from "@/pages/time-tracking";
 import Proposals from "@/pages/proposals";
+import ExternalProposals from "@/pages/external-proposals";
 import Clients from "@/pages/clients";
 import Classification from "@/pages/classification";
 import Analytics from "@/pages/analytics";
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/resources" component={Resources} />
       <Route path="/time-tracking" component={TimeTracking} />
       <Route path="/proposals" component={Proposals} />
+      <Route path="/external-proposals" component={ExternalProposals} />
       <Route path="/clients" component={Clients} />
       <Route path="/classification" component={Classification} />
       <Route path="/analytics" component={Analytics} />

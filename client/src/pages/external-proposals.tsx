@@ -13,15 +13,27 @@ export default function ExternalProposalsPage() {
   const { user } = useAuthContext();
   const [activeTab, setActiveTab] = useState("pending");
   
-  const { data: proposals, isLoading, error } = useQuery({
-    queryKey: ["/api/proposals", { source: "external" }],
+  // Normally we'd get the user's firms and use a firm selector
+  // For now we'll use a default firm ID of 1 (admin/marketing firm)
+  const defaultFirmId = 1;
+  
+  // Use a state to track when to refresh the data
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  const { data: proposals, isLoading, error, refetch } = useQuery({
+    queryKey: ["/api/proposals", { source: "external" }, refreshTrigger],
     queryFn: async () => {
-      const res = await fetch(`/api/proposals?firmId=${user?.firmId}&source=external`);
+      const res = await fetch(`/api/proposals?firmId=${defaultFirmId}&source=external`);
       if (!res.ok) throw new Error("Failed to fetch proposals");
       return res.json();
     },
-    enabled: !!user?.firmId,
+    enabled: !!user, // Only run if user is logged in
   });
+  
+  // Function to force a refresh of the data
+  const refreshData = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
   
   if (isLoading) return <LoadingSpinner />;
   if (error) return <div>Error loading external proposals</div>;
@@ -72,9 +84,7 @@ export default function ExternalProposalsPage() {
                 <ProposalRequestCard 
                   key={proposal.id} 
                   proposal={proposal} 
-                  onStatusChange={() => {
-                    // Refresh data after status change
-                  }}
+                  onStatusChange={refreshData}
                 />
               ))
             )}
@@ -94,9 +104,7 @@ export default function ExternalProposalsPage() {
                 <ProposalRequestCard 
                   key={proposal.id} 
                   proposal={proposal} 
-                  onStatusChange={() => {
-                    // Refresh data after status change
-                  }}
+                  onStatusChange={refreshData}
                 />
               ))
             )}

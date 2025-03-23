@@ -19,6 +19,7 @@ const Header = () => {
     { href: "/time-tracking", label: "Time Tracking" },
     { href: "/classification", label: "Classifications" },
     { href: "/proposals", label: "Proposals" },
+    { href: "/external-proposals", label: "External Requests" },
     { href: "/clients", label: "Clients" },
     { href: "/season-planner", label: "Season Planner" },
     { href: "/analytics", label: "Analytics" },

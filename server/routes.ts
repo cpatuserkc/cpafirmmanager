@@ -451,8 +451,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contactId,
         title: `New request from ${requestData.clientName}`,
         content: requestData.message || 'External proposal request',
-        estimatedHours: 0,
-        estimatedCost: 0,
+        estimatedHours: "0", // String to match schema
+        estimatedCost: "0", // String to match schema
         status: 'pending_assignment',
         expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         estimatedStartDate: null,
