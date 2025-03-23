@@ -11,9 +11,10 @@ import TimeTracking from "@/pages/time-tracking";
 import Proposals from "@/pages/proposals";
 import Clients from "@/pages/clients";
 import Classification from "@/pages/classification";
+import Analytics from "@/pages/analytics";
 import Login from "@/pages/login";
 import SignUp from "@/pages/signup";
-import { useState, createContext } from "react";
+import { useState, createContext, useContext } from "react";
 import { User } from "@shared/schema";
 
 type AuthContextType = {
@@ -30,6 +31,9 @@ export const AuthContext = createContext<AuthContextType>({
   logout: () => {},
 });
 
+// Custom hook to use the auth context
+export const useAuthContext = () => useContext(AuthContext);
+
 function Router() {
   return (
     <Switch>
@@ -40,6 +44,7 @@ function Router() {
       <Route path="/proposals" component={Proposals} />
       <Route path="/clients" component={Clients} />
       <Route path="/classification" component={Classification} />
+      <Route path="/analytics" component={Analytics} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={SignUp} />
       <Route component={NotFound} />
