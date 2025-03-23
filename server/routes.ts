@@ -12,6 +12,7 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { generateMachineLearningInsights } from "./ml-insights";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Error handler middleware for zod validation errors
@@ -531,6 +532,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json(classifications);
     } catch (error) {
       res.status(500).json({ message: "Error fetching classifications" });
+    }
+  });
+
+  // ML INSIGHTS API
+  app.get("/api/ml-insights", async (req, res) => {
+    try {
+      const firmId = parseInt(req.query.firmId as string) || 1;
+      const period = req.query.period as string || 'month';
+      
+      // Fetch necessary data for insights generation
+      const projects = await storage.getProjectsByFirmId(firmId);
+      const proposals = await storage.getProposalsByFirmId(firmId);
+      const timeEstimates = await storage.getTimeEstimatesByFirmId(firmId, 100);
+      const services = await storage.getServicesByFirmId(firmId);
+      const professionalRoles = await storage.getProfessionalRolesByFirmId(firmId);
+      const clientCompanies = await storage.getClientCompaniesByFirmId(firmId);
+      
+      // Generate insights
+      const insights = generateMachineLearningInsights(
+        projects,
+        proposals,
+        timeEstimates,
+        services,
+        professionalRoles,
+        clientCompanies,
+        period
+      );
+      
+      res.json(insights);
+    } catch (error) {
+      console.error("Error generating ML insights:", error);
+      res.status(500).json({ error: "Error generating ML insights" });
     }
   });
 
