@@ -375,6 +375,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // EXTERNAL PROPOSAL REQUEST ENDPOINT
+  // This endpoint receives proposal requests from external sites
+  app.post("/api/external/proposal-requests", async (req, res) => {
+    try {
+      const requestData = req.body;
+      
+      // Make sure required data is present
+      if (!requestData.clientName || !requestData.contactEmail) {
+        return res.status(400).json({ error: "Missing required client information" });
+      }
+      
+      // Create a temporary client company if it doesn't exist
+      let clientCompanyId = null;
+      let contactId = null;
+      
+      if (requestData.clientName) {
+        // Default to admin/marketing firm ID of 1
+        const marketingFirmId = 1;
+        
+        // Check for existing client company
+        const clientCompanies = await storage.getClientCompaniesByFirmId(marketingFirmId);
+        const existingCompany = clientCompanies.find((c: any) => 
+          c.name.toLowerCase() === requestData.clientName.toLowerCase()
+        );
+        
+        if (existingCompany) {
+          clientCompanyId = existingCompany.id;
+        } else {
+          // Create new client company
+          const newCompany = await storage.createClientCompany({
+            firmId: marketingFirmId,
+            name: requestData.clientName,
+            website: requestData.website || null,
+            industry: requestData.industry || null,
+            address: requestData.address || null,
+            city: requestData.city || null,
+            state: requestData.state || null,
+            zipCode: requestData.zipCode || null,
+            country: 'USA',
+            notes: 'Auto-created from external proposal request',
+            isActive: true,
+            primaryContactId: null
+          });
+          clientCompanyId = newCompany.id;
+          
+          // Create a contact record
+          if (requestData.contactName && requestData.contactEmail) {
+            const newContact = await storage.createContact({
+              firmId: marketingFirmId,
+              firstName: requestData.contactName.split(' ')[0] || requestData.contactName,
+              lastName: requestData.contactName.split(' ').slice(1).join(' ') || '',
+              email: requestData.contactEmail,
+              phone: requestData.contactPhone || null,
+              title: requestData.contactTitle || null,
+              clientCompanyId: clientCompanyId,
+              notes: 'Auto-created from external proposal request',
+              isActive: true
+            });
+            contactId = newContact.id;
+            
+            // Update company with primary contact
+            await storage.updateClientCompany(clientCompanyId, {
+              primaryContactId: contactId
+            });
+          }
+        }
+      }
+      
+      // Create proposal with external source tag
+      const proposalData = {
+        firmId: 1, // Default admin/marketing firm
+        createdById: 1, // Default admin user
+        clientCompanyId,
+        contactId,
+        title: `New request from ${requestData.clientName}`,
+        content: requestData.message || 'External proposal request',
+        estimatedHours: 0,
+        estimatedCost: 0,
+        status: 'pending_assignment',
+        expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        estimatedStartDate: null,
+        estimatedEndDate: null,
+        source: 'external',
+        requestDetails: requestData // Store all request details for reference
+      };
+      
+      const proposal = await storage.createProposal(proposalData);
+      
+      // In a real system, we'd notify admins here about the new request
+      // via email, SMS, or in-app notification
+      
+      return res.status(201).json({ 
+        success: true, 
+        message: "Your proposal request has been received. A CPA will contact you shortly.",
+        requestId: proposal.id
+      });
+    } catch (error) {
+      console.error("Error processing external proposal request:", error);
+      return res.status(500).json({ error: "Failed to process your request" });
+    }
+  });
+
   // RESOURCES ROUTES
   app.get("/api/resources", async (req, res) => {
     try {
