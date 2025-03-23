@@ -12,7 +12,7 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import { generateMachineLearningInsights } from "./ml-insights";
+import { initializeMLProviders, generateMLInsights } from "./ml-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Error handler middleware for zod validation errors
@@ -536,10 +536,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ML INSIGHTS API
+  // Initialize ML providers when app starts
+  initializeMLProviders();
+
   app.get("/api/ml-insights", async (req, res) => {
     try {
       const firmId = parseInt(req.query.firmId as string) || 1;
       const period = req.query.period as string || 'month';
+      const provider = req.query.provider as string;
+      const userId = parseInt(req.query.userId as string) || undefined;
       
       // Fetch necessary data for insights generation
       const projects = await storage.getProjectsByFirmId(firmId);
@@ -549,21 +554,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const professionalRoles = await storage.getProfessionalRolesByFirmId(firmId);
       const clientCompanies = await storage.getClientCompaniesByFirmId(firmId);
       
-      // Generate insights
-      const insights = generateMachineLearningInsights(
+      // Create request object for ML insights
+      const insightsRequest = {
         projects,
         proposals,
         timeEstimates,
         services,
         professionalRoles,
         clientCompanies,
-        period
-      );
+        period,
+        firmId,
+        userId
+      };
+
+      // Generate insights using the adapter pattern
+      const insights = await generateMLInsights(insightsRequest, provider);
       
       res.json(insights);
     } catch (error) {
       console.error("Error generating ML insights:", error);
       res.status(500).json({ error: "Error generating ML insights" });
+    }
+  });
+  
+  // API endpoint to get available ML providers
+  app.get("/api/ml-providers", async (req, res) => {
+    try {
+      const providers = await import('./ml-adapter').then(module => {
+        return module.getAllMLProviders();
+      });
+      
+      const providerList = Object.entries(providers).map(([name, provider]) => ({
+        name,
+        capabilities: provider.getCapabilities()
+      }));
+      
+      res.json(providerList);
+    } catch (error) {
+      console.error("Error fetching ML providers:", error);
+      res.status(500).json({ error: "Error fetching ML providers" });
     }
   });
 
