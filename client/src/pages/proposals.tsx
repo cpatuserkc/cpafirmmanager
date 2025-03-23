@@ -72,7 +72,7 @@ const Proposals = () => {
               <CardTitle>Create New Proposal</CardTitle>
             </CardHeader>
             <CardContent>
-              <ProposalForm onComplete={() => setShowForm(false)} />
+              <EnhancedProposalForm onComplete={() => setShowForm(false)} />
             </CardContent>
           </Card>
         ) : null}
@@ -120,7 +120,7 @@ const Proposals = () => {
                           .map((proposal: Proposal) => (
                             <tr key={proposal.id} className="border-b border-neutral-200 hover:bg-neutral-100">
                               <td className="py-3 px-2 font-semibold">{proposal.title}</td>
-                              <td className="py-3 px-2">Client {proposal.clientId}</td>
+                              <td className="py-3 px-2">Client {proposal.clientCompanyId}</td>
                               <td className="py-3 px-2">{format(new Date(proposal.createdAt), "MMM dd, yyyy")}</td>
                               <td className="py-3 px-2">{Number(proposal.estimatedHours).toFixed(1)}</td>
                               <td className="py-3 px-2">${Number(proposal.estimatedCost).toLocaleString()}</td>
@@ -181,7 +181,7 @@ const Proposals = () => {
                           .map((proposal: Proposal) => (
                             <tr key={proposal.id} className="border-b border-neutral-200 hover:bg-neutral-100">
                               <td className="py-3 px-2 font-semibold">{proposal.title}</td>
-                              <td className="py-3 px-2">Client {proposal.clientId}</td>
+                              <td className="py-3 px-2">Client {proposal.clientCompanyId}</td>
                               <td className="py-3 px-2">{format(new Date(proposal.createdAt), "MMM dd, yyyy")}</td>
                               <td className="py-3 px-2">{Number(proposal.estimatedHours || 0).toFixed(1)}</td>
                               <td className="py-3 px-2">${Number(proposal.estimatedCost || 0).toLocaleString()}</td>
