@@ -85,6 +85,7 @@ export default function EnhancedProposalForm({ onComplete }: EnhancedProposalFor
     { id: "details", label: "Basic Details" },
     { id: "services", label: "Services" },
     { id: "timeline", label: "Timeline" },
+    { id: "requirements", label: "Requirements" },
     { id: "preview", label: "Preview" },
   ];
   
@@ -288,7 +289,7 @@ export default function EnhancedProposalForm({ onComplete }: EnhancedProposalFor
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid grid-cols-4 mb-4">
+          <TabsList className="grid grid-cols-5 mb-4">
             {steps.map((step, index) => (
               <TabsTrigger 
                 key={step.id} 
@@ -621,7 +622,171 @@ export default function EnhancedProposalForm({ onComplete }: EnhancedProposalFor
             </Card>
           </TabsContent>
           
-          {/* Step 4: Preview */}
+          {/* Step 4: Requirements */}
+          <TabsContent value="requirements">
+            <Card>
+              <CardHeader>
+                <CardTitle>Required Information</CardTitle>
+                <CardDescription>
+                  Document requirements and additional context for the engagement
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-6">
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-md">
+                    <h3 className="text-sm font-medium mb-2 text-amber-800">Required Tax Documents</h3>
+                    <p className="text-sm text-amber-700 mb-4">
+                      Request the following documents from the client to expedite the service process.
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center">
+                        <input type="checkbox" id="prior-year-return" className="h-4 w-4 mr-2" />
+                        <label htmlFor="prior-year-return" className="text-sm">Most recently filed tax return</label>
+                      </div>
+                      <div className="flex items-center">
+                        <input type="checkbox" id="w2-forms" className="h-4 w-4 mr-2" />
+                        <label htmlFor="w2-forms" className="text-sm">W-2 forms for all employment income</label>
+                      </div>
+                      <div className="flex items-center">
+                        <input type="checkbox" id="1099-forms" className="h-4 w-4 mr-2" />
+                        <label htmlFor="1099-forms" className="text-sm">1099 forms for self-employment/contract work</label>
+                      </div>
+                      <div className="flex items-center">
+                        <input type="checkbox" id="investment-statements" className="h-4 w-4 mr-2" />
+                        <label htmlFor="investment-statements" className="text-sm">Investment statements (1099-B, 1099-DIV, etc.)</label>
+                      </div>
+                      <div className="flex items-center">
+                        <input type="checkbox" id="mortgage-statements" className="h-4 w-4 mr-2" />
+                        <label htmlFor="mortgage-statements" className="text-sm">Mortgage interest and property tax statements</label>
+                      </div>
+                      <div className="flex items-center">
+                        <input type="checkbox" id="charitable-contributions" className="h-4 w-4 mr-2" />
+                        <label htmlFor="charitable-contributions" className="text-sm">Charitable contribution receipts</label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium">Context Questions</h3>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="life-changes" className="text-sm font-medium">Life Changes Since Last Filing</label>
+                        <select id="life-changes" className="w-full p-2 border rounded-md">
+                          <option value="">Select any applicable changes</option>
+                          <option value="marriage">Marriage</option>
+                          <option value="divorce">Divorce</option>
+                          <option value="child">New child/dependent</option>
+                          <option value="home-purchase">Home purchase</option>
+                          <option value="retirement">Retirement</option>
+                          <option value="business">Started/ended business</option>
+                          <option value="moved">Moved to new state</option>
+                          <option value="none">No significant changes</option>
+                        </select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="income-changes" className="text-sm font-medium">Income Changes</label>
+                        <select id="income-changes" className="w-full p-2 border rounded-md">
+                          <option value="">Select any significant income changes</option>
+                          <option value="increased">Significant income increase ({">"} 20%)</option>
+                          <option value="decreased">Significant income decrease ({">"} 20%)</option>
+                          <option value="new-sources">New income sources</option>
+                          <option value="foreign">Foreign income</option>
+                          <option value="crypto">Cryptocurrency transactions</option>
+                          <option value="rental">New rental income</option>
+                          <option value="none">No significant changes</option>
+                        </select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="complexity-score" className="text-sm font-medium">Filing Complexity Score (1-10)</label>
+                        <div className="flex items-center">
+                          <input 
+                            type="range" 
+                            id="complexity-score" 
+                            min="1" 
+                            max="10" 
+                            step="1" 
+                            defaultValue="5"
+                            className="w-full" 
+                          />
+                          <span className="ml-2 min-w-[30px]" id="complexity-display">5</span>
+                        </div>
+                        <p className="text-xs text-neutral-600 mt-1">
+                          Rate estimated complexity (1 = Simple return, 10 = Highly complex)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium">File Attachments</h3>
+                    <div className="border-2 border-dashed border-neutral-300 rounded-md p-6 text-center">
+                      <div className="flex flex-col items-center space-y-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="17 8 12 3 7 8"></polyline>
+                          <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p className="text-sm text-neutral-500">Drag and drop files here, or click to browse</p>
+                        <button type="button" className="text-sm text-primary hover:underline">Browse files</button>
+                      </div>
+                      <input type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" multiple />
+                    </div>
+                    <p className="text-xs text-neutral-600">
+                      Accepted file formats: PDF, Word, Excel, JPG, PNG (Max 10MB per file)
+                    </p>
+                    <div id="file-list" className="space-y-2">
+                      {/* Sample attached file preview */}
+                      <div className="flex justify-between items-center p-2 border border-neutral-200 rounded bg-neutral-50">
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500 mr-2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                          </svg>
+                          <span className="text-sm truncate max-w-xs">2023_Tax_Documents.pdf</span>
+                        </div>
+                        <button type="button" className="text-red-500 hover:text-red-700">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium">Additional Notes</h3>
+                    <textarea 
+                      className="w-full p-3 border rounded-md min-h-[150px]" 
+                      placeholder="Enter any additional context, notes, or special requirements for this engagement..."
+                    ></textarea>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={goToPreviousStep}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+                </Button>
+                <Button 
+                  type="button" 
+                  onClick={goToNextStep}
+                >
+                  Next <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          
+          {/* Step 5: Preview */}
           <TabsContent value="preview">
             <Card>
               <CardHeader>
