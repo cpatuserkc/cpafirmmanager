@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, FilterIcon } from "lucide-react";
-import { AnalyticsFilters, TimePeriod } from "@/hooks/use-analytics-data";
+import { CalendarIcon, FilterIcon, Brain } from "lucide-react";
+import { AnalyticsFilters, TimePeriod, MLProviderName } from "@/hooks/use-analytics-data";
 
 interface FilterBarProps {
   filters: AnalyticsFilters;
@@ -32,6 +31,9 @@ export function FilterBar({
   const [selectedRoles, setSelectedRoles] = useState<number[]>(
     filters.professionalRoles || []
   );
+  const [mlProvider, setMLProvider] = useState<MLProviderName>(
+    filters.mlProvider || 'in-house'
+  );
 
   const handleApplyFilters = () => {
     onFilterChange({
@@ -41,6 +43,7 @@ export function FilterBar({
       period,
       serviceCategories: selectedCategories.length ? selectedCategories : undefined,
       professionalRoles: selectedRoles.length ? selectedRoles : undefined,
+      mlProvider
     });
     setIsOpen(false);
   };
@@ -51,7 +54,7 @@ export function FilterBar({
         <h2 className="text-xl font-semibold">Analytics Dashboard</h2>
       </div>
       
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center flex-wrap justify-end">
         <Select 
           value={period} 
           onValueChange={(value) => {
@@ -120,10 +123,39 @@ export function FilterBar({
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label>ML Provider</Label>
+                <Select
+                  value={mlProvider}
+                  onValueChange={(value) => setMLProvider(value as MLProviderName)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="ML Provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="in-house">
+                      <div className="flex items-center">
+                        <Brain className="mr-2 h-4 w-4" />
+                        In-house ML
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="external">
+                      <div className="flex items-center">
+                        <Brain className="mr-2 h-4 w-4" />
+                        External ML
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {serviceCategories.length > 0 && (
                 <div className="space-y-2">
                   <Label>Service Categories</Label>
-                  <Select>
+                  <Select
+                    value={selectedCategories.length ? selectedCategories[0] : undefined}
+                    onValueChange={(value) => setSelectedCategories([value])}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
@@ -141,7 +173,10 @@ export function FilterBar({
               {professionalRoles.length > 0 && (
                 <div className="space-y-2">
                   <Label>Professional Roles</Label>
-                  <Select>
+                  <Select
+                    value={selectedRoles.length ? selectedRoles[0].toString() : undefined}
+                    onValueChange={(value) => setSelectedRoles([parseInt(value)])}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="All Roles" />
                     </SelectTrigger>
