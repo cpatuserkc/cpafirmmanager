@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { insertTimeEntrySchema } from "@shared/schema";
+import { insertTimeEstimateSchema } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,8 @@ import ProjectSelect from "./ProjectSelect";
 import { apiRequest } from "@/lib/queryClient";
 
 // Extend the insert schema with additional validation
-const timeEntryFormSchema = insertTimeEntrySchema.extend({
-  hours: z.coerce.number().min(0.1, "Hours must be greater than 0").max(24, "Hours cannot exceed 24"),
+const timeEntryFormSchema = insertTimeEstimateSchema.extend({
+  estimatedHours: z.coerce.number().min(0.1, "Hours must be greater than 0").max(24, "Hours cannot exceed 24"),
   description: z.string().min(3, "Description is required").max(500, "Description is too long"),
 });
 
@@ -32,35 +32,35 @@ const TimeTrackingForm = () => {
   const form = useForm<TimeEntryFormValues>({
     resolver: zodResolver(timeEntryFormSchema),
     defaultValues: {
-      userId: user?.id,
-      clientId: undefined,
+      createdById: user?.id,
+      clientCompanyId: undefined,
       projectId: undefined,
-      hours: undefined,
+      estimatedHours: undefined,
       description: "",
-      status: "pending",
-      date: new Date().toISOString(),
+      status: "planned",
+      firmId: 1, // Set default firm ID for testing
     },
   });
   
-  const createTimeEntryMutation = useMutation({
+  const createTimeEstimateMutation = useMutation({
     mutationFn: async (values: TimeEntryFormValues) => {
-      return apiRequest("POST", "/api/time-entries", values);
+      return apiRequest("POST", "/api/time-estimates", values);
     },
     onSuccess: () => {
       toast({
-        title: "Time Entry Created",
-        description: "Your time entry has been recorded successfully.",
+        title: "Time Estimate Created",
+        description: "Your time estimate has been recorded successfully.",
       });
       
       // Reset form and invalidate queries
       form.reset();
       setSelectedClientId(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/time-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/time-estimates"] });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to create time entry: ${error.message}`,
+        description: `Failed to create time estimate: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -76,15 +76,15 @@ const TimeTrackingForm = () => {
       return;
     }
     
-    createTimeEntryMutation.mutate({
+    createTimeEstimateMutation.mutate({
       ...values,
-      userId: user.id,
+      createdById: user.id,
     });
   };
   
   const handleClientChange = (clientId: number) => {
     setSelectedClientId(clientId);
-    form.setValue("clientId", clientId);
+    form.setValue("clientCompanyId", clientId);
     // Clear project when client changes
     form.setValue("projectId", undefined);
   };
@@ -101,7 +101,7 @@ const TimeTrackingForm = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
-            name="clientId"
+            name="clientCompanyId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Client</FormLabel>
@@ -137,10 +137,10 @@ const TimeTrackingForm = () => {
           
           <FormField
             control={form.control}
-            name="hours"
+            name="estimatedHours"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Hours</FormLabel>
+                <FormLabel>Estimated Hours</FormLabel>
                 <FormControl>
                   <Input
                     type="number"

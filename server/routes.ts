@@ -6,7 +6,7 @@ import {
   insertUserSchema,
   insertClientCompanySchema,
   insertProjectSchema,
-  insertTimeEntrySchema,
+  insertTimeEstimateSchema,
   insertProposalSchema,
   insertDeadlineSchema
 } from "@shared/schema";
@@ -221,82 +221,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TIME ENTRY ROUTES
-  app.get("/api/time-entries", async (req, res) => {
+  // TIME ESTIMATE ROUTES
+  app.get("/api/time-estimates", async (req, res) => {
     try {
       const userId = Number(req.query.userId);
       const clientId = req.query.clientId ? Number(req.query.clientId) : undefined;
       const projectId = req.query.projectId ? Number(req.query.projectId) : undefined;
       const limit = req.query.limit ? Number(req.query.limit) : undefined;
       
-      let timeEntries;
+      let timeEstimates;
       if (projectId) {
-        timeEntries = await storage.getTimeEntriesByProjectId(projectId);
+        timeEstimates = await storage.getTimeEstimatesByProjectId(projectId);
       } else if (clientId) {
-        timeEntries = await storage.getTimeEntriesByClientId(clientId);
+        timeEstimates = await storage.getTimeEstimatesByClientCompanyId(clientId);
       } else if (userId) {
-        timeEntries = await storage.getTimeEntriesByUserId(userId, limit);
+        timeEstimates = await storage.getTimeEstimatesByAssignedUserId(userId, limit);
       } else {
         return res.status(400).json({ message: "User ID, Client ID, or Project ID is required" });
       }
       
-      res.status(200).json(timeEntries);
+      res.status(200).json(timeEstimates);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching time entries" });
+      res.status(500).json({ message: "Error fetching time estimates" });
     }
   });
 
-  app.get("/api/time-entries/:id", async (req, res) => {
+  app.get("/api/time-estimates/:id", async (req, res) => {
     try {
       const id = Number(req.params.id);
-      const timeEntry = await storage.getTimeEntry(id);
+      const timeEstimate = await storage.getTimeEstimate(id);
       
-      if (!timeEntry) {
-        return res.status(404).json({ message: "Time entry not found" });
+      if (!timeEstimate) {
+        return res.status(404).json({ message: "Time estimate not found" });
       }
       
-      res.status(200).json(timeEntry);
+      res.status(200).json(timeEstimate);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching time entry" });
+      res.status(500).json({ message: "Error fetching time estimate" });
     }
   });
 
-  app.post("/api/time-entries", validateBody(insertTimeEntrySchema), async (req, res) => {
+  app.post("/api/time-estimates", validateBody(insertTimeEstimateSchema), async (req, res) => {
     try {
-      const timeEntry = await storage.createTimeEntry(req.body);
-      res.status(201).json(timeEntry);
+      const timeEstimate = await storage.createTimeEstimate(req.body);
+      res.status(201).json(timeEstimate);
     } catch (error) {
-      res.status(500).json({ message: "Error creating time entry" });
+      res.status(500).json({ message: "Error creating time estimate" });
     }
   });
 
-  app.put("/api/time-entries/:id", async (req, res) => {
+  app.put("/api/time-estimates/:id", async (req, res) => {
     try {
       const id = Number(req.params.id);
-      const updatedTimeEntry = await storage.updateTimeEntry(id, req.body);
+      const updatedTimeEstimate = await storage.updateTimeEstimate(id, req.body);
       
-      if (!updatedTimeEntry) {
-        return res.status(404).json({ message: "Time entry not found" });
+      if (!updatedTimeEstimate) {
+        return res.status(404).json({ message: "Time estimate not found" });
       }
       
-      res.status(200).json(updatedTimeEntry);
+      res.status(200).json(updatedTimeEstimate);
     } catch (error) {
-      res.status(500).json({ message: "Error updating time entry" });
+      res.status(500).json({ message: "Error updating time estimate" });
     }
   });
 
-  app.delete("/api/time-entries/:id", async (req, res) => {
+  app.delete("/api/time-estimates/:id", async (req, res) => {
     try {
       const id = Number(req.params.id);
-      const success = await storage.deleteTimeEntry(id);
+      const success = await storage.deleteTimeEstimate(id);
       
       if (!success) {
-        return res.status(404).json({ message: "Time entry not found" });
+        return res.status(404).json({ message: "Time estimate not found" });
       }
       
       res.status(204).end();
     } catch (error) {
-      res.status(500).json({ message: "Error deleting time entry" });
+      res.status(500).json({ message: "Error deleting time estimate" });
     }
   });
 

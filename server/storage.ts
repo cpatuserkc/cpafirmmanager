@@ -5,7 +5,7 @@ import {
   contacts,
   clientCompanies,
   projects,
-  timeEntries,
+  timeEstimates,
   services,
   proposals,
   proposalServices,
@@ -24,8 +24,8 @@ import {
   type InsertClientCompany,
   type Project,
   type InsertProject,
-  type TimeEntry,
-  type InsertTimeEntry,
+  type TimeEstimate,
+  type InsertTimeEstimate,
   type Service,
   type InsertService,
   type Proposal,
@@ -85,15 +85,15 @@ export interface IStorage {
   updateProject(id: number, data: Partial<Project>): Promise<Project | undefined>;
   deleteProject(id: number): Promise<boolean>;
 
-  // Time entry operations
-  getTimeEntry(id: number): Promise<TimeEntry | undefined>;
-  getTimeEntriesByFirmId(firmId: number, limit?: number): Promise<TimeEntry[]>;
-  getTimeEntriesByUserId(userId: number, limit?: number): Promise<TimeEntry[]>;
-  getTimeEntriesByClientCompanyId(clientCompanyId: number): Promise<TimeEntry[]>;
-  getTimeEntriesByProjectId(projectId: number): Promise<TimeEntry[]>;
-  createTimeEntry(timeEntry: InsertTimeEntry): Promise<TimeEntry>;
-  updateTimeEntry(id: number, data: Partial<TimeEntry>): Promise<TimeEntry | undefined>;
-  deleteTimeEntry(id: number): Promise<boolean>;
+  // Time estimate operations
+  getTimeEstimate(id: number): Promise<TimeEstimate | undefined>;
+  getTimeEstimatesByFirmId(firmId: number, limit?: number): Promise<TimeEstimate[]>;
+  getTimeEstimatesByAssignedUserId(userId: number, limit?: number): Promise<TimeEstimate[]>;
+  getTimeEstimatesByClientCompanyId(clientCompanyId: number): Promise<TimeEstimate[]>;
+  getTimeEstimatesByProjectId(projectId: number): Promise<TimeEstimate[]>;
+  createTimeEstimate(timeEstimate: InsertTimeEstimate): Promise<TimeEstimate>;
+  updateTimeEstimate(id: number, data: Partial<TimeEstimate>): Promise<TimeEstimate | undefined>;
+  deleteTimeEstimate(id: number): Promise<boolean>;
   
   // Service operations
   getService(id: number): Promise<Service | undefined>;
@@ -156,7 +156,7 @@ export class MemStorage implements IStorage {
   private contacts: Map<number, Contact>;
   private clientCompanies: Map<number, ClientCompany>;
   private projects: Map<number, Project>;
-  private timeEntries: Map<number, TimeEntry>;
+  private timeEstimates: Map<number, TimeEstimate>;
   private services: Map<number, Service>;
   private proposals: Map<number, Proposal>;
   private proposalServices: Map<number, ProposalService>;
@@ -171,7 +171,7 @@ export class MemStorage implements IStorage {
   private contactIdCounter: number;
   private clientCompanyIdCounter: number;
   private projectIdCounter: number;
-  private timeEntryIdCounter: number;
+  private timeEstimateIdCounter: number;
   private serviceIdCounter: number;
   private proposalIdCounter: number;
   private proposalServiceIdCounter: number;
@@ -187,7 +187,7 @@ export class MemStorage implements IStorage {
     this.contacts = new Map();
     this.clientCompanies = new Map();
     this.projects = new Map();
-    this.timeEntries = new Map();
+    this.timeEstimates = new Map();
     this.services = new Map();
     this.proposals = new Map();
     this.proposalServices = new Map();
@@ -202,7 +202,7 @@ export class MemStorage implements IStorage {
     this.contactIdCounter = 1;
     this.clientCompanyIdCounter = 1;
     this.projectIdCounter = 1;
-    this.timeEntryIdCounter = 1;
+    this.timeEstimateIdCounter = 1;
     this.serviceIdCounter = 1;
     this.proposalIdCounter = 1;
     this.proposalServiceIdCounter = 1;
@@ -316,6 +316,95 @@ export class MemStorage implements IStorage {
     const updatedUser = { ...user, ...data };
     this.users.set(id, updatedUser);
     return updatedUser;
+  }
+  
+  // Firm operations
+  async getFirm(id: number): Promise<Firm | undefined> {
+    return this.firms.get(id);
+  }
+
+  async getFirmsByUserId(userId: number): Promise<Firm[]> {
+    const userFirmRelationships = Array.from(this.userFirmRelationships.values())
+      .filter(relationship => relationship.userId === userId);
+    
+    return userFirmRelationships.map(relationship => 
+      this.firms.get(relationship.firmId)
+    ).filter((firm): firm is Firm => firm !== undefined);
+  }
+
+  async createFirm(firmData: InsertFirm): Promise<Firm> {
+    const id = this.firmIdCounter++;
+    const firm: Firm = { 
+      ...firmData, 
+      id,
+      createdAt: new Date(),
+      isActive: firmData.isActive ?? true
+    };
+    this.firms.set(id, firm);
+    
+    // If a creating user is provided, establish the relationship
+    if (firmData.createdById) {
+      this.createUserFirmRelationship({
+        userId: firmData.createdById,
+        firmId: id,
+        role: 'owner',
+        permissions: ['manage', 'edit', 'view']
+      });
+    }
+    
+    return firm;
+  }
+
+  async updateFirm(id: number, data: Partial<Firm>): Promise<Firm | undefined> {
+    const firm = this.firms.get(id);
+    if (!firm) return undefined;
+    
+    const updatedFirm = { ...firm, ...data };
+    this.firms.set(id, updatedFirm);
+    return updatedFirm;
+  }
+
+  async deleteFirm(id: number): Promise<boolean> {
+    // First, delete all related user-firm relationships
+    const relationships = Array.from(this.userFirmRelationships.values())
+      .filter(rel => rel.firmId === id);
+    
+    for (const rel of relationships) {
+      this.userFirmRelationships.delete(rel.id);
+    }
+    
+    // Then delete the firm
+    return this.firms.delete(id);
+  }
+  
+  // User-Firm relationship operations
+  async getUserFirmRelationship(id: number): Promise<UserFirmRelationship | undefined> {
+    return this.userFirmRelationships.get(id);
+  }
+
+  async getUserFirmRelationshipsByUserId(userId: number): Promise<UserFirmRelationship[]> {
+    return Array.from(this.userFirmRelationships.values())
+      .filter(rel => rel.userId === userId);
+  }
+
+  async getUserFirmRelationshipsByFirmId(firmId: number): Promise<UserFirmRelationship[]> {
+    return Array.from(this.userFirmRelationships.values())
+      .filter(rel => rel.firmId === firmId);
+  }
+
+  async createUserFirmRelationship(relationshipData: InsertUserFirmRelationship): Promise<UserFirmRelationship> {
+    const id = this.userFirmRelationshipIdCounter++;
+    const relationship: UserFirmRelationship = {
+      ...relationshipData,
+      id,
+      createdAt: new Date()
+    };
+    this.userFirmRelationships.set(id, relationship);
+    return relationship;
+  }
+
+  async deleteUserFirmRelationship(id: number): Promise<boolean> {
+    return this.userFirmRelationships.delete(id);
   }
 
   // Contact operations
@@ -440,69 +529,592 @@ export class MemStorage implements IStorage {
     return this.projects.delete(id);
   }
 
-  // Time entry operations
-  async getTimeEntry(id: number): Promise<TimeEntry | undefined> {
-    return this.timeEntries.get(id);
+  // Service operations
+  async getService(id: number): Promise<Service | undefined> {
+    return this.services.get(id);
   }
 
-  async getTimeEntriesByFirmId(firmId: number, limit?: number): Promise<TimeEntry[]> {
-    const entries = Array.from(this.timeEntries.values())
-      .filter((entry) => entry.firmId === firmId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  async getServicesByFirmId(firmId: number): Promise<Service[]> {
+    return Array.from(this.services.values())
+      .filter(service => service.firmId === firmId);
+  }
+
+  async getServicesByCategory(firmId: number, category: string): Promise<Service[]> {
+    return Array.from(this.services.values())
+      .filter(service => service.firmId === firmId && service.category === category);
+  }
+
+  async createService(serviceData: InsertService): Promise<Service> {
+    const id = this.serviceIdCounter++;
+    const service: Service = {
+      ...serviceData,
+      id,
+      createdAt: new Date()
+    };
+    this.services.set(id, service);
+    return service;
+  }
+
+  async updateService(id: number, data: Partial<Service>): Promise<Service | undefined> {
+    const service = this.services.get(id);
+    if (!service) return undefined;
     
-    return limit ? entries.slice(0, limit) : entries;
+    const updatedService = { ...service, ...data };
+    this.services.set(id, updatedService);
+    return updatedService;
   }
 
-  async getTimeEntriesByUserId(userId: number, limit?: number): Promise<TimeEntry[]> {
-    const entries = Array.from(this.timeEntries.values())
-      .filter((entry) => entry.createdById === userId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  async deleteService(id: number): Promise<boolean> {
+    return this.services.delete(id);
+  }
+
+  // Proposal Service operations
+  async getProposalService(id: number): Promise<ProposalService | undefined> {
+    return this.proposalServices.get(id);
+  }
+
+  async getProposalServicesByProposalId(proposalId: number): Promise<ProposalService[]> {
+    return Array.from(this.proposalServices.values())
+      .filter(proposalService => proposalService.proposalId === proposalId);
+  }
+
+  async createProposalService(proposalServiceData: InsertProposalService): Promise<ProposalService> {
+    const id = this.proposalServiceIdCounter++;
+    const proposalService: ProposalService = {
+      ...proposalServiceData,
+      id,
+      createdAt: new Date()
+    };
+    this.proposalServices.set(id, proposalService);
+    return proposalService;
+  }
+
+  async updateProposalService(id: number, data: Partial<ProposalService>): Promise<ProposalService | undefined> {
+    const proposalService = this.proposalServices.get(id);
+    if (!proposalService) return undefined;
     
-    return limit ? entries.slice(0, limit) : entries;
+    const updatedProposalService = { ...proposalService, ...data };
+    this.proposalServices.set(id, updatedProposalService);
+    return updatedProposalService;
   }
 
-  async getTimeEntriesByClientCompanyId(clientCompanyId: number): Promise<TimeEntry[]> {
-    return Array.from(this.timeEntries.values())
-      .filter((entry) => entry.clientCompanyId === clientCompanyId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  async deleteProposalService(id: number): Promise<boolean> {
+    return this.proposalServices.delete(id);
+  }
+  
+  // Professional Role operations
+  async getProfessionalRole(id: number): Promise<ProfessionalRole | undefined> {
+    return this.professionalRoles.get(id);
   }
 
-  async getTimeEntriesByProjectId(projectId: number): Promise<TimeEntry[]> {
-    return Array.from(this.timeEntries.values())
-      .filter((entry) => entry.projectId === projectId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  async getProfessionalRolesByFirmId(firmId: number): Promise<ProfessionalRole[]> {
+    return Array.from(this.professionalRoles.values())
+      .filter(role => role.firmId === firmId);
   }
 
-  async createTimeEntry(timeEntryData: InsertTimeEntry): Promise<TimeEntry> {
-    const id = this.timeEntryIdCounter++;
-    const timeEntry: TimeEntry = { 
-      ...timeEntryData, 
+  async createProfessionalRole(roleData: InsertProfessionalRole): Promise<ProfessionalRole> {
+    const id = this.professionalRoleIdCounter++;
+    const role: ProfessionalRole = {
+      ...roleData,
       id,
       createdAt: new Date(),
-      status: timeEntryData.status || 'submitted',
-      description: timeEntryData.description || null,
-      serviceId: timeEntryData.serviceId || null,
-      professionalRoleId: timeEntryData.professionalRoleId || null,
-      billable: timeEntryData.billable ?? true,
-      billed: timeEntryData.billed ?? false,
-      hourlyRate: timeEntryData.hourlyRate || null,
-      cost: timeEntryData.cost || null
+      isActive: roleData.isActive ?? true
     };
-    this.timeEntries.set(id, timeEntry);
-    return timeEntry;
+    this.professionalRoles.set(id, role);
+    return role;
   }
 
-  async updateTimeEntry(id: number, data: Partial<TimeEntry>): Promise<TimeEntry | undefined> {
-    const timeEntry = this.timeEntries.get(id);
-    if (!timeEntry) return undefined;
+  async updateProfessionalRole(id: number, data: Partial<ProfessionalRole>): Promise<ProfessionalRole | undefined> {
+    const role = this.professionalRoles.get(id);
+    if (!role) return undefined;
     
-    const updatedTimeEntry = { ...timeEntry, ...data };
-    this.timeEntries.set(id, updatedTimeEntry);
-    return updatedTimeEntry;
+    const updatedRole = { ...role, ...data };
+    this.professionalRoles.set(id, updatedRole);
+    return updatedRole;
   }
 
-  async deleteTimeEntry(id: number): Promise<boolean> {
-    return this.timeEntries.delete(id);
+  async deleteProfessionalRole(id: number): Promise<boolean> {
+    return this.professionalRoles.delete(id);
+  }
+  
+  // Time estimate operations
+  async getTimeEstimate(id: number): Promise<TimeEstimate | undefined> {
+    return this.timeEstimates.get(id);
+  }
+
+  async getTimeEstimatesByFirmId(firmId: number, limit?: number): Promise<TimeEstimate[]> {
+    const estimates = Array.from(this.timeEstimates.values())
+      .filter((estimate) => estimate.firmId === firmId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    return limit ? estimates.slice(0, limit) : estimates;
+  }
+
+  async getTimeEstimatesByAssignedUserId(userId: number, limit?: number): Promise<TimeEstimate[]> {
+    const estimates = Array.from(this.timeEstimates.values())
+      .filter((estimate) => estimate.assignedToId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    return limit ? estimates.slice(0, limit) : estimates;
+  }
+
+  async getTimeEstimatesByClientCompanyId(clientCompanyId: number): Promise<TimeEstimate[]> {
+    return Array.from(this.timeEstimates.values())
+      .filter((estimate) => estimate.clientCompanyId === clientCompanyId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getTimeEstimatesByProjectId(projectId: number): Promise<TimeEstimate[]> {
+    return Array.from(this.timeEstimates.values())
+      .filter((estimate) => estimate.projectId === projectId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createTimeEstimate(timeEstimateData: InsertTimeEstimate): Promise<TimeEstimate> {
+    const id = this.timeEstimateIdCounter++;
+    const timeEstimate: TimeEstimate = { 
+      ...timeEstimateData, 
+      id,
+      createdAt: new Date(),
+      status: timeEstimateData.status || 'planned',
+      description: timeEstimateData.description || null,
+      serviceId: timeEstimateData.serviceId || null,
+      professionalRoleId: timeEstimateData.professionalRoleId || null,
+      billable: timeEstimateData.billable ?? true,
+      estimatedHours: timeEstimateData.estimatedHours || 0,
+      estimatedCost: timeEstimateData.estimatedCost || null,
+      actualHours: timeEstimateData.actualHours || null,
+      actualCost: timeEstimateData.actualCost || null,
+      startDate: timeEstimateData.startDate || null,
+      endDate: timeEstimateData.endDate || null
+    };
+    this.timeEstimates.set(id, timeEstimate);
+    return timeEstimate;
+  }
+
+  async updateTimeEstimate(id: number, data: Partial<TimeEstimate>): Promise<TimeEstimate | undefined> {
+    const timeEstimate = this.timeEstimates.get(id);
+    if (!timeEstimate) return undefined;
+    
+    const updatedTimeEstimate = { ...timeEstimate, ...data };
+    this.timeEstimates.set(id, updatedTimeEstimate);
+    return updatedTimeEstimate;
+  }
+
+  async deleteTimeEstimate(id: number): Promise<boolean> {
+    return this.timeEstimates.delete(id);
+  }
+  
+  // Hierarchical Time Analysis Methods
+  
+  /**
+   * Time aggregation by client company
+   * Groups and summarizes time estimates by client company
+   */
+  async getTimeAnalysisByClientCompany(firmId: number) {
+    const clientCompanies = await this.getClientCompaniesByFirmId(firmId);
+    const results = [];
+    
+    for (const company of clientCompanies) {
+      const timeEstimates = await this.getTimeEstimatesByClientCompanyId(company.id);
+      
+      // Calculate aggregate statistics
+      const totalEstimatedHours = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.estimatedHours?.toString() || '0') || 0), 0);
+      
+      const totalActualHours = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.actualHours?.toString() || '0') || 0), 0);
+        
+      const totalEstimatedCost = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.estimatedCost?.toString() || '0') || 0), 0);
+        
+      const totalActualCost = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.actualCost?.toString() || '0') || 0), 0);
+      
+      const billableHours = timeEstimates
+        .filter(est => est.billable)
+        .reduce((sum, est) => sum + (parseFloat(est.actualHours?.toString() || '0') || 0), 0);
+      
+      results.push({
+        clientCompanyId: company.id,
+        clientCompanyName: company.name,
+        totalEstimatedHours,
+        totalActualHours,
+        totalEstimatedCost,
+        totalActualCost,
+        billableHours,
+        estimateCount: timeEstimates.length,
+        variance: totalActualHours - totalEstimatedHours,
+        costVariance: totalActualCost - totalEstimatedCost,
+        utilizationRate: totalEstimatedHours > 0 ? totalActualHours / totalEstimatedHours : 0,
+        profitability: totalActualCost > 0 ? (totalEstimatedCost - totalActualCost) / totalEstimatedCost : 0
+      });
+    }
+    
+    return results;
+  }
+  
+  /**
+   * Time aggregation by project
+   * Groups and summarizes time estimates by project
+   */
+  async getTimeAnalysisByProject(firmId: number) {
+    const projects = await this.getProjectsByFirmId(firmId);
+    const results = [];
+    
+    for (const project of projects) {
+      const timeEstimates = await this.getTimeEstimatesByProjectId(project.id);
+      
+      // Calculate aggregate statistics
+      const totalEstimatedHours = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.estimatedHours?.toString() || '0') || 0), 0);
+      
+      const totalActualHours = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.actualHours?.toString() || '0') || 0), 0);
+        
+      const totalEstimatedCost = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.estimatedCost?.toString() || '0') || 0), 0);
+        
+      const totalActualCost = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.actualCost?.toString() || '0') || 0), 0);
+      
+      // Get data about the client company for this project
+      const clientCompany = await this.getClientCompany(project.clientCompanyId);
+      
+      results.push({
+        projectId: project.id,
+        projectName: project.name,
+        clientCompanyId: project.clientCompanyId,
+        clientCompanyName: clientCompany?.name || 'Unknown',
+        totalEstimatedHours,
+        totalActualHours,
+        totalEstimatedCost,
+        totalActualCost,
+        estimateCount: timeEstimates.length,
+        variance: totalActualHours - totalEstimatedHours,
+        costVariance: totalActualCost - totalEstimatedCost,
+        utilizationRate: totalEstimatedHours > 0 ? totalActualHours / totalEstimatedHours : 0,
+        profitability: totalActualCost > 0 ? (totalEstimatedCost - totalActualCost) / totalEstimatedCost : 0,
+        status: project.status
+      });
+    }
+    
+    return results;
+  }
+  
+  /**
+   * Time aggregation by staff (user)
+   * Groups and summarizes time estimates by assigned staff member
+   */
+  async getTimeAnalysisByStaff(firmId: number) {
+    // Get all user-firm relationships for this firm to identify staff
+    const userFirmRelationships = await this.getUserFirmRelationshipsByFirmId(firmId);
+    const results = [];
+    
+    for (const relationship of userFirmRelationships) {
+      const user = await this.getUser(relationship.userId);
+      if (!user) continue;
+      
+      const timeEstimates = await this.getTimeEstimatesByAssignedUserId(user.id);
+      
+      // Calculate aggregate statistics
+      const totalEstimatedHours = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.estimatedHours?.toString() || '0') || 0), 0);
+      
+      const totalActualHours = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.actualHours?.toString() || '0') || 0), 0);
+        
+      const totalEstimatedCost = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.estimatedCost?.toString() || '0') || 0), 0);
+        
+      const totalActualCost = timeEstimates.reduce((sum, est) => 
+        sum + (parseFloat(est.actualCost?.toString() || '0') || 0), 0);
+      
+      // Group by professional role
+      const roleBreakdown: Record<string, {
+        roleId: number;
+        roleName: string;
+        hours: number;
+        cost: number;
+      }> = {};
+      
+      for (const estimate of timeEstimates) {
+        if (estimate.professionalRoleId) {
+          const role = await this.getProfessionalRole(estimate.professionalRoleId);
+          if (role) {
+            if (!roleBreakdown[role.id]) {
+              roleBreakdown[role.id] = {
+                roleId: role.id,
+                roleName: role.name,
+                hours: 0,
+                cost: 0
+              };
+            }
+            
+            const actualHours = parseFloat(estimate.actualHours?.toString() || '0') || 0;
+            const actualCost = parseFloat(estimate.actualCost?.toString() || '0') || 0;
+            
+            roleBreakdown[role.id].hours += actualHours;
+            roleBreakdown[role.id].cost += actualCost;
+          }
+        }
+      }
+      
+      results.push({
+        userId: user.id,
+        userName: `${user.firstName} ${user.lastName}`,
+        userRole: relationship.role,
+        totalEstimatedHours,
+        totalActualHours,
+        totalEstimatedCost,
+        totalActualCost,
+        estimateCount: timeEstimates.length,
+        variance: totalActualHours - totalEstimatedHours,
+        utilizationRate: totalEstimatedHours > 0 ? totalActualHours / totalEstimatedHours : 0,
+        roleBreakdown: Object.values(roleBreakdown)
+      });
+    }
+    
+    return results;
+  }
+  
+  /**
+   * Hierarchical rollup analysis by user (for owners with multiple firms)
+   * Aggregates data across all firms where a user has ownership
+   */
+  async getHierarchicalRollupByUser(userId: number) {
+    // Find all firms where the user has an ownership role
+    const userFirmRelationships = await this.getUserFirmRelationshipsByUserId(userId);
+    const ownedFirms = userFirmRelationships
+      .filter(rel => rel.role === 'owner')
+      .map(rel => rel.firmId);
+    
+    // Collect rollup data
+    const firmSummaries = [];
+    let totalBillableHours = 0;
+    let totalEstimatedHours = 0;
+    let totalActualHours = 0;
+    let totalEstimatedCost = 0;
+    let totalActualCost = 0;
+    let totalClients = 0;
+    let totalProjects = 0;
+    
+    for (const firmId of ownedFirms) {
+      const firm = await this.getFirm(firmId);
+      if (!firm) continue;
+      
+      // Get client-level data
+      const clientAnalysis = await this.getTimeAnalysisByClientCompany(firmId);
+      
+      // Get project-level data
+      const projectAnalysis = await this.getTimeAnalysisByProject(firmId);
+      
+      // Calculate firm-level metrics
+      const firmBillableHours = clientAnalysis.reduce((sum, client) => sum + client.billableHours, 0);
+      const firmEstimatedHours = clientAnalysis.reduce((sum, client) => sum + client.totalEstimatedHours, 0);
+      const firmActualHours = clientAnalysis.reduce((sum, client) => sum + client.totalActualHours, 0);
+      const firmEstimatedCost = clientAnalysis.reduce((sum, client) => sum + client.totalEstimatedCost, 0);
+      const firmActualCost = clientAnalysis.reduce((sum, client) => sum + client.totalActualCost, 0);
+      
+      // Add to running totals
+      totalBillableHours += firmBillableHours;
+      totalEstimatedHours += firmEstimatedHours;
+      totalActualHours += firmActualHours;
+      totalEstimatedCost += firmEstimatedCost;
+      totalActualCost += firmActualCost;
+      totalClients += clientAnalysis.length;
+      totalProjects += projectAnalysis.length;
+      
+      // Add firm summary
+      firmSummaries.push({
+        firmId: firm.id,
+        firmName: firm.name,
+        clientCount: clientAnalysis.length,
+        projectCount: projectAnalysis.length,
+        billableHours: firmBillableHours,
+        estimatedHours: firmEstimatedHours,
+        actualHours: firmActualHours,
+        estimatedCost: firmEstimatedCost,
+        actualCost: firmActualCost,
+        profitability: firmActualCost > 0 ? (firmEstimatedCost - firmActualCost) / firmEstimatedCost : 0,
+        clients: clientAnalysis,
+        projects: projectAnalysis
+      });
+    }
+    
+    // Return the complete rollup data
+    return {
+      userId,
+      firmCount: ownedFirms.length,
+      totalClients,
+      totalProjects,
+      totalBillableHours,
+      totalEstimatedHours,
+      totalActualHours,
+      totalEstimatedCost,
+      totalActualCost,
+      overallProfitability: totalActualCost > 0 ? (totalEstimatedCost - totalActualCost) / totalEstimatedCost : 0,
+      firms: firmSummaries
+    };
+  }
+  
+  /**
+   * Budget vs. Actual analysis for projects
+   * Detailed comparison of estimated vs. actual time and costs
+   */
+  async getBudgetVsActualAnalysis(projectId: number) {
+    const project = await this.getProject(projectId);
+    if (!project) return null;
+    
+    const timeEstimates = await this.getTimeEstimatesByProjectId(projectId);
+    const clientCompany = await this.getClientCompany(project.clientCompanyId);
+    
+    // Group by service
+    const serviceBreakdown: Record<string, {
+      serviceId: number | null;
+      serviceName: string;
+      estimatedHours: number;
+      actualHours: number;
+      estimatedCost: number;
+      actualCost: number;
+      hourVariance: number;
+      costVariance: number;
+      percentComplete: number;
+    }> = {};
+    
+    for (const estimate of timeEstimates) {
+      const serviceId = estimate.serviceId;
+      let serviceName = 'Uncategorized';
+      
+      if (serviceId) {
+        const service = await this.getService(serviceId);
+        if (service) {
+          serviceName = service.name;
+        }
+      }
+      
+      const key = serviceId?.toString() || 'null';
+      if (!serviceBreakdown[key]) {
+        serviceBreakdown[key] = {
+          serviceId,
+          serviceName,
+          estimatedHours: 0,
+          actualHours: 0,
+          estimatedCost: 0,
+          actualCost: 0,
+          hourVariance: 0,
+          costVariance: 0,
+          percentComplete: 0
+        };
+      }
+      
+      const estimatedHours = parseFloat(estimate.estimatedHours?.toString() || '0') || 0;
+      const actualHours = parseFloat(estimate.actualHours?.toString() || '0') || 0;
+      const estimatedCost = parseFloat(estimate.estimatedCost?.toString() || '0') || 0;
+      const actualCost = parseFloat(estimate.actualCost?.toString() || '0') || 0;
+      
+      serviceBreakdown[key].estimatedHours += estimatedHours;
+      serviceBreakdown[key].actualHours += actualHours;
+      serviceBreakdown[key].estimatedCost += estimatedCost;
+      serviceBreakdown[key].actualCost += actualCost;
+    }
+    
+    // Calculate variance and percent complete for each service
+    for (const key in serviceBreakdown) {
+      const service = serviceBreakdown[key];
+      service.hourVariance = service.actualHours - service.estimatedHours;
+      service.costVariance = service.actualCost - service.estimatedCost;
+      service.percentComplete = service.estimatedHours > 0 ? 
+        Math.min(100, (service.actualHours / service.estimatedHours) * 100) : 0;
+    }
+    
+    // Group by professional role
+    const roleBreakdown: Record<string, {
+      roleId: number | null;
+      roleName: string;
+      estimatedHours: number;
+      actualHours: number;
+      estimatedCost: number;
+      actualCost: number;
+      hourVariance: number;
+      costVariance: number;
+    }> = {};
+    
+    for (const estimate of timeEstimates) {
+      const roleId = estimate.professionalRoleId;
+      let roleName = 'Unspecified';
+      
+      if (roleId) {
+        const role = await this.getProfessionalRole(roleId);
+        if (role) {
+          roleName = role.name;
+        }
+      }
+      
+      const key = roleId?.toString() || 'null';
+      if (!roleBreakdown[key]) {
+        roleBreakdown[key] = {
+          roleId,
+          roleName,
+          estimatedHours: 0,
+          actualHours: 0,
+          estimatedCost: 0,
+          actualCost: 0,
+          hourVariance: 0,
+          costVariance: 0
+        };
+      }
+      
+      const estimatedHours = parseFloat(estimate.estimatedHours?.toString() || '0') || 0;
+      const actualHours = parseFloat(estimate.actualHours?.toString() || '0') || 0;
+      const estimatedCost = parseFloat(estimate.estimatedCost?.toString() || '0') || 0;
+      const actualCost = parseFloat(estimate.actualCost?.toString() || '0') || 0;
+      
+      roleBreakdown[key].estimatedHours += estimatedHours;
+      roleBreakdown[key].actualHours += actualHours;
+      roleBreakdown[key].estimatedCost += estimatedCost;
+      roleBreakdown[key].actualCost += actualCost;
+    }
+    
+    // Calculate variance for each role
+    for (const key in roleBreakdown) {
+      const role = roleBreakdown[key];
+      role.hourVariance = role.actualHours - role.estimatedHours;
+      role.costVariance = role.actualCost - role.estimatedCost;
+    }
+    
+    // Calculate totals
+    const totalEstimatedHours = timeEstimates.reduce((sum, est) => 
+      sum + (parseFloat(est.estimatedHours?.toString() || '0') || 0), 0);
+    
+    const totalActualHours = timeEstimates.reduce((sum, est) => 
+      sum + (parseFloat(est.actualHours?.toString() || '0') || 0), 0);
+      
+    const totalEstimatedCost = timeEstimates.reduce((sum, est) => 
+      sum + (parseFloat(est.estimatedCost?.toString() || '0') || 0), 0);
+      
+    const totalActualCost = timeEstimates.reduce((sum, est) => 
+      sum + (parseFloat(est.actualCost?.toString() || '0') || 0), 0);
+    
+    return {
+      projectId,
+      projectName: project.name,
+      clientCompanyId: project.clientCompanyId,
+      clientCompanyName: clientCompany?.name || 'Unknown',
+      status: project.status,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      totalEstimatedHours,
+      totalActualHours,
+      totalEstimatedCost,
+      totalActualCost,
+      hourVariance: totalActualHours - totalEstimatedHours, 
+      costVariance: totalActualCost - totalEstimatedCost,
+      percentComplete: totalEstimatedHours > 0 ? Math.min(100, (totalActualHours / totalEstimatedHours) * 100) : 0,
+      profitability: totalActualCost > 0 ? (totalEstimatedCost - totalActualCost) / totalEstimatedCost : 0,
+      serviceBreakdown: Object.values(serviceBreakdown),
+      roleBreakdown: Object.values(roleBreakdown)
+    };
   }
 
   // Proposal operations

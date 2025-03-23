@@ -128,8 +128,8 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   createdAt: true,
 });
 
-// Time entries schema - Time recorded against projects (aggregate totals)
-export const timeEntries = pgTable("time_entries", {
+// Time estimates schema - Projected time for projects and services
+export const timeEstimates = pgTable("time_estimates", {
   id: serial("id").primaryKey(),
   firmId: integer("firm_id").notNull().references(() => firms.id),
   clientCompanyId: integer("client_company_id").notNull().references(() => clientCompanies.id),
@@ -137,20 +137,19 @@ export const timeEntries = pgTable("time_entries", {
   serviceId: integer("service_id").references(() => services.id),
   professionalRoleId: integer("professional_role_id").references(() => professionalRoles.id),
   tier: text("tier").default("mid"), // "top", "mid", "low"
-  performedById: integer("performed_by_id").references(() => users.id), // Person who performed the work
-  periodStart: timestamp("period_start"), // For reporting period
-  periodEnd: timestamp("period_end"), // For reporting period
-  dateEntered: timestamp("date_entered").defaultNow().notNull(),
-  hours: numeric("hours").notNull(),
-  rate: numeric("rate"), // Actual rate used
-  cost: numeric("cost"), // hours × rate
+  assignedToId: integer("assigned_to_id").references(() => users.id), // Person assigned to the work
+  periodStart: timestamp("period_start"), // Projected start date
+  periodEnd: timestamp("period_end"), // Projected end date
+  estimatedHours: numeric("estimated_hours").notNull(),
+  hourlyRate: numeric("hourly_rate"), // Projected rate
+  estimatedCost: numeric("estimated_cost"), // estimatedHours × hourlyRate
   description: text("description"),
-  status: text("status").default("recorded").notNull(), // "recorded", "billed", "reconciled"
-  createdById: integer("created_by_id").notNull().references(() => users.id), // Person who entered the data
+  status: text("status").default("planned").notNull(), // "planned", "in_progress", "completed"
+  createdById: integer("created_by_id").notNull().references(() => users.id), // Person who created the estimate
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
+export const insertTimeEstimateSchema = createInsertSchema(timeEstimates).omit({
   id: true,
   createdAt: true,
 });
@@ -307,8 +306,8 @@ export type InsertClientCompany = z.infer<typeof insertClientCompanySchema>;
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 
-export type TimeEntry = typeof timeEntries.$inferSelect;
-export type InsertTimeEntry = z.infer<typeof insertTimeEntrySchema>;
+export type TimeEstimate = typeof timeEstimates.$inferSelect;
+export type InsertTimeEstimate = z.infer<typeof insertTimeEstimateSchema>;
 
 export type ProfessionalRole = typeof professionalRoles.$inferSelect;
 export type InsertProfessionalRole = z.infer<typeof insertProfessionalRoleSchema>;
