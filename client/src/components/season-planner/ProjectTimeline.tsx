@@ -1,12 +1,17 @@
 import { useMemo } from "react";
-import { differenceInDays, addDays, format, isSameDay, isWithinInterval } from "date-fns";
-import { useLocation } from "wouter";
-import { Calendar, Check, ArrowRight } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { format, addDays, differenceInDays, isAfter, isBefore, isToday } from "date-fns";
+import { ArrowRight, Calendar, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 
 interface TimelineItem {
   id: number;
@@ -28,210 +33,212 @@ interface ProjectTimelineProps {
 }
 
 export function ProjectTimeline({ startDate, endDate, projects, proposals }: ProjectTimelineProps) {
-  const [, navigate] = useLocation();
+  const [navigate] = useLocation();
   
-  // Convert all items to a unified format for the timeline
-  const timelineItems: TimelineItem[] = useMemo(() => {
-    const mappedProjects = projects.map(project => ({
-      id: project.id,
-      title: project.name,
-      startDate: new Date(project.startDate || project.createdAt),
-      endDate: project.endDate ? new Date(project.endDate) : addDays(new Date(project.startDate || project.createdAt), 30),
-      type: 'project' as const,
-      status: project.status,
-      hours: parseFloat(project.estimatedHours || '0'),
-      clientName: project.clientName,
-      color: '#3b82f6' // blue
-    }));
+  // Calculate total days in range
+  const daysInRange = differenceInDays(endDate, startDate) + 1;
+  
+  // Prepare timeline items from projects and proposals
+  const timelineItems = useMemo(() => {
+    const items: TimelineItem[] = [];
     
-    const mappedProposals = proposals.map(proposal => ({
-      id: proposal.id,
-      title: proposal.title,
-      startDate: new Date(proposal.estimatedStartDate || proposal.createdAt),
-      endDate: proposal.estimatedEndDate ? new Date(proposal.estimatedEndDate) : addDays(new Date(proposal.estimatedStartDate || proposal.createdAt), 30),
-      type: 'proposal' as const,
-      status: proposal.status,
-      hours: parseFloat(proposal.estimatedHours || '0'),
-      clientName: proposal.clientName,
-      color: '#10b981' // green
-    }));
-    
-    return [...mappedProjects, ...mappedProposals];
-  }, [projects, proposals]);
-  
-  // Sort items by start date
-  const sortedItems = useMemo(() => {
-    return [...timelineItems].sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-  }, [timelineItems]);
-  
-  // Calculate the total duration in days
-  const totalDays = useMemo(() => {
-    return differenceInDays(endDate, startDate) + 1;
-  }, [startDate, endDate]);
-  
-  // Group items by month
-  const itemsByMonth = useMemo(() => {
-    const groupedItems: { [key: string]: TimelineItem[] } = {};
-    
-    sortedItems.forEach(item => {
-      const monthKey = format(item.startDate, 'yyyy-MM');
-      if (!groupedItems[monthKey]) {
-        groupedItems[monthKey] = [];
-      }
-      groupedItems[monthKey].push(item);
-    });
-    
-    return Object.entries(groupedItems).map(([key, items]) => ({
-      month: format(new Date(items[0].startDate), 'MMMM yyyy'),
-      items
-    }));
-  }, [sortedItems]);
-  
-  // Calculate dates for visual markers in the timeline
-  const dateMarkers = useMemo(() => {
-    const markers = [];
-    let currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
-      if (currentDate.getDate() === 1 || isSameDay(currentDate, startDate)) {
-        markers.push({
-          date: new Date(currentDate),
-          label: format(currentDate, 'MMM d')
+    // Add projects to timeline
+    projects.forEach(project => {
+      if (!project.startDate) return;
+      
+      const projectStartDate = new Date(project.startDate);
+      const projectEndDate = project.endDate ? new Date(project.endDate) : addDays(projectStartDate, 30);
+      
+      // Only include if the project falls within our date range
+      if (
+        (isAfter(projectStartDate, startDate) || isBefore(projectStartDate, endDate)) ||
+        (isAfter(projectEndDate, startDate) || isBefore(projectEndDate, endDate))
+      ) {
+        items.push({
+          id: project.id,
+          title: project.name,
+          startDate: projectStartDate,
+          endDate: projectEndDate,
+          type: 'project',
+          status: project.status || 'planned',
+          hours: parseFloat(project.estimatedHours || '0'),
+          clientName: project.clientName || 'No client',
+          color: '#0ea5e9' // blue
         });
       }
-      currentDate = addDays(currentDate, 1);
-    }
-    markers.push({
-      date: new Date(endDate),
-      label: format(endDate, 'MMM d')
     });
-    return markers;
-  }, [startDate, endDate]);
+    
+    // Add proposals to timeline
+    proposals.forEach(proposal => {
+      if (!proposal.estimatedStartDate) return;
+      
+      const proposalStartDate = new Date(proposal.estimatedStartDate);
+      const proposalEndDate = proposal.estimatedEndDate 
+        ? new Date(proposal.estimatedEndDate) 
+        : addDays(proposalStartDate, 30);
+      
+      // Only include if the proposal falls within our date range
+      if (
+        (isAfter(proposalStartDate, startDate) || isBefore(proposalStartDate, endDate)) ||
+        (isAfter(proposalEndDate, startDate) || isBefore(proposalEndDate, endDate))
+      ) {
+        items.push({
+          id: proposal.id,
+          title: proposal.title,
+          startDate: proposalStartDate,
+          endDate: proposalEndDate,
+          type: 'proposal',
+          status: proposal.status || 'draft',
+          hours: parseFloat(proposal.estimatedHours || '0'),
+          clientName: proposal.clientName || 'No client',
+          color: '#8b5cf6' // purple
+        });
+      }
+    });
+    
+    // Sort by start date
+    return items.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+  }, [projects, proposals, startDate, endDate]);
+  
+  // Group timeline items by month
+  const itemsByMonth = useMemo(() => {
+    const result: { month: string; items: TimelineItem[] }[] = [];
+    const monthMap = new Map<string, TimelineItem[]>();
+    
+    timelineItems.forEach(item => {
+      const monthKey = format(item.startDate, 'MMMM yyyy');
+      
+      if (!monthMap.has(monthKey)) {
+        monthMap.set(monthKey, []);
+      }
+      
+      monthMap.get(monthKey)?.push(item);
+    });
+    
+    // Convert map to array
+    monthMap.forEach((items, month) => {
+      result.push({ month, items });
+    });
+    
+    return result;
+  }, [timelineItems]);
   
   // Calculate position and width for timeline items
   const calculateItemStyle = (item: TimelineItem) => {
-    const itemStartDate = new Date(Math.max(item.startDate.getTime(), startDate.getTime()));
-    const itemEndDate = item.endDate 
-      ? new Date(Math.min(item.endDate.getTime(), endDate.getTime()))
-      : new Date(Math.min(addDays(item.startDate, 30).getTime(), endDate.getTime()));
+    // Calculate start position relative to the timeline
+    const startDiff = Math.max(0, differenceInDays(item.startDate, startDate));
+    const startPercent = (startDiff / daysInRange) * 100;
     
-    const startOffset = differenceInDays(itemStartDate, startDate);
-    const duration = differenceInDays(itemEndDate, itemStartDate) + 1;
-    
-    const leftPercent = (startOffset / totalDays) * 100;
-    const widthPercent = (duration / totalDays) * 100;
+    // Calculate width based on duration
+    const endDate = item.endDate || addDays(item.startDate, 14); // Default to 2 weeks if no end date
+    const itemDuration = Math.min(
+      differenceInDays(endDate, item.startDate) + 1,
+      daysInRange - startDiff // Cap at the end of our timeline
+    );
+    const widthPercent = (itemDuration / daysInRange) * 100;
     
     return {
-      left: `${leftPercent}%`,
+      left: `${startPercent}%`,
       width: `${widthPercent}%`,
-      backgroundColor: `${item.color}20`,
-      borderLeft: `3px solid ${item.color}`
+      backgroundColor: `${item.color}20`, // Light version of the color
+      borderColor: item.color
     };
   };
   
-  // Function to determine if a date is today
+  // Check if a date is today
   const isToday = (date: Date) => {
-    return isSameDay(date, new Date());
+    const today = new Date();
+    return date.getDate() === today.getDate() && 
+           date.getMonth() === today.getMonth() && 
+           date.getFullYear() === today.getFullYear();
   };
   
-  // Calculate where "today" marker should be positioned
-  const todayMarkerPosition = useMemo(() => {
-    const today = new Date();
-    if (isWithinInterval(today, { start: startDate, end: endDate })) {
-      const daysSinceStart = differenceInDays(today, startDate);
-      return {
-        left: `${(daysSinceStart / totalDays) * 100}%`,
-        display: 'block'
-      };
-    }
-    return { display: 'none' };
-  }, [startDate, endDate, totalDays]);
-  
   return (
-    <div className="space-y-8">
-      <div className="relative border rounded-lg p-4 bg-background">
-        {/* Date markers */}
-        <div className="flex justify-between mb-2 relative">
-          {dateMarkers.map((marker, index) => (
-            <span 
-              key={index}
-              className="text-xs text-muted-foreground absolute"
-              style={{ 
-                left: `${(differenceInDays(marker.date, startDate) / totalDays) * 100}%`,
-                transform: index === 0 ? 'translateX(0)' : index === dateMarkers.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)'
-              }}
-            >
-              {marker.label}
-            </span>
-          ))}
-        </div>
-        
-        {/* Timeline ruler */}
-        <div className="h-1 bg-muted mb-6 mt-6 relative">
-          {/* Today marker */}
-          <div 
-            className="absolute top-0 w-0.5 h-[20px] bg-primary -translate-y-1/2"
-            style={todayMarkerPosition}
-          >
-            <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 text-xs font-medium text-primary">
-              Today
-            </span>
-          </div>
-        </div>
-        
-        {/* Timeline items */}
-        <div className="space-y-6 mt-8">
-          {sortedItems.map(item => (
-            <div key={`${item.id}-${item.type}`} className="relative h-16 group">
-              <div
-                className="absolute h-14 rounded-md border overflow-hidden cursor-pointer"
-                style={calculateItemStyle(item)}
-                onClick={() => navigate(`/${item.type}s/${item.id}`)}
-              >
-                <div className="p-2 h-full flex flex-col justify-between">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-medium text-sm truncate max-w-[150px] group-hover:max-w-full transition-all">
-                        {item.title}
-                      </span>
-                      <Badge 
-                        variant="outline" 
-                        className="text-[10px] h-4 px-1 capitalize"
-                      >
-                        {item.type}
-                      </Badge>
-                    </div>
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge 
-                            variant={
-                              item.status === 'completed' ? 'success' :
-                              item.status === 'in_progress' ? 'default' :
-                              item.status === 'draft' ? 'secondary' :
-                              'outline'
-                            }
-                            className="text-[10px] h-4 px-1 capitalize"
-                          >
-                            {item.status}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Status: {item.status}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{item.clientName}</span>
-                    <span>{item.hours} hrs</span>
+    <div className="space-y-6">
+      {/* Timeline visualization */}
+      <div className="space-y-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Project & Proposal Timeline</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Date markers */}
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+              <span>{format(startDate, 'MMM d, yyyy')}</span>
+              <span>{format(endDate, 'MMM d, yyyy')}</span>
+            </div>
+            
+            {/* Timeline container */}
+            <div className="relative border rounded-lg p-4 mb-4">
+              {/* Timeline ruler */}
+              <div className="absolute left-0 right-0 h-1 bg-muted top-1/2 transform -translate-y-1/2"></div>
+              
+              {/* Today marker */}
+              {isAfter(new Date(), startDate) && isBefore(new Date(), endDate) && (
+                <div 
+                  className="absolute top-0 bottom-0 w-px bg-primary z-10"
+                  style={{ 
+                    left: `${(differenceInDays(new Date(), startDate) / daysInRange) * 100}%`,
+                  }}
+                >
+                  <div className="absolute top-0 -translate-x-1/2 -translate-y-full text-xs text-primary font-medium">
+                    Today
                   </div>
                 </div>
-              </div>
+              )}
+              
+              {/* Timeline items */}
+              {timelineItems.map((item, index) => (
+                <div
+                  key={`${item.type}-${item.id}`}
+                  className="absolute transform -translate-y-1/2 h-10 rounded-md border border-solid flex items-center pl-2 pr-1 py-1 cursor-pointer transition-all hover:shadow-md"
+                  style={calculateItemStyle(item)}
+                  onClick={() => navigate(`/${item.type}s/${item.id}`)}
+                >
+                  <div className="w-full overflow-hidden">
+                    <div className="flex items-center gap-1 truncate">
+                      {item.type === 'project' ? (
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
+                      ) : (
+                        <Check className="h-3 w-3 flex-shrink-0" />
+                      )}
+                      
+                      <span className="text-xs font-medium truncate">{item.title}</span>
+                      
+                      <div className="flex-shrink-0">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge 
+                                variant={
+                                  item.status === 'completed' ? 'default' :
+                                  item.status === 'in_progress' ? 'default' :
+                                  item.status === 'draft' ? 'secondary' :
+                                  'outline'
+                                }
+                                className="text-[10px] h-4 px-1 capitalize"
+                              >
+                                {item.status}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Status: {item.status}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{item.clientName}</span>
+                      <span>{item.hours} hrs</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </CardContent>
+        </Card>
       </div>
       
       {/* Timeline overview by month */}

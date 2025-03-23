@@ -1,12 +1,29 @@
-import { useMemo } from "react";
-import { isWithinInterval, differenceInDays, addDays, format, isSameDay } from "date-fns";
+import { useMemo, useState } from "react";
+import { format, differenceInDays, addDays, isSameMonth, startOfMonth, endOfMonth } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ArrowUpRight, ArrowDownRight, CheckCircle2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  AreaChart,
+  Area,
+} from "recharts";
 
 interface ResourceAllocationProps {
   startDate: Date;
@@ -17,474 +34,605 @@ interface ResourceAllocationProps {
 }
 
 export function ResourceAllocation({ startDate, endDate, projects, proposals, firmId }: ResourceAllocationProps) {
-  // Fetch professional roles for the firm
-  const { data: roles } = useQuery({
+  const [view, setView] = useState<"roles" | "timeline">("roles");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  
+  // Fetch professional roles
+  const { data: professionalRoles = [] } = useQuery({
     queryKey: ['/api/professional-roles', firmId],
     enabled: !!firmId
   });
-  
-  // Normalize data for easier processing
-  const normalizedProjects = useMemo(() => {
-    return projects.map(project => ({
-      id: project.id,
-      title: project.name,
-      startDate: new Date(project.startDate || project.createdAt),
-      endDate: project.endDate ? new Date(project.endDate) : addDays(new Date(project.startDate || project.createdAt), 30),
-      status: project.status,
-      hours: parseFloat(project.estimatedHours || '0'),
-      professionalRoleId: project.professionalRoleId,
-      clientName: project.clientName,
-      type: 'project',
-      coefficient: 1.0, // Confirmed projects count 100%
-    }));
-  }, [projects]);
-  
-  const normalizedProposals = useMemo(() => {
-    return proposals.map(proposal => ({
-      id: proposal.id,
-      title: proposal.title,
-      startDate: new Date(proposal.estimatedStartDate || proposal.createdAt),
-      endDate: proposal.estimatedEndDate ? new Date(proposal.estimatedEndDate) : addDays(new Date(proposal.estimatedStartDate || proposal.createdAt), 30),
-      status: proposal.status,
-      hours: parseFloat(proposal.estimatedHours || '0'),
-      professionalRoleId: proposal.professionalRoleId,
-      clientName: proposal.clientName,
-      type: 'proposal',
-      // Proposals are weighted by their status
-      coefficient: proposal.status === 'accepted' ? 0.9 :
-                   proposal.status === 'sent' ? 0.6 :
-                   proposal.status === 'draft' ? 0.3 : 0.5,
-    }));
-  }, [proposals]);
-  
-  // Combine projects and proposals
-  const allItems = useMemo(() => {
-    return [...normalizedProjects, ...normalizedProposals];
-  }, [normalizedProjects, normalizedProposals]);
-  
-  // Calculate total duration in days
-  const totalDays = useMemo(() => {
-    return differenceInDays(endDate, startDate) + 1;
-  }, [startDate, endDate]);
-  
-  // Calculate allocation by role
-  const roleAllocations = useMemo(() => {
-    if (!roles) return [];
-    
-    const allocations = roles.map(role => {
-      // Get all items for this role
-      const roleItems = allItems.filter(item => item.professionalRoleId === role.id);
-      
-      // Calculate total hours for this role
-      const totalHours = roleItems.reduce((sum, item) => sum + (item.hours * item.coefficient), 0);
-      
-      // Calculate weighted hours by month
-      const monthlyHours: Record<string, number> = {};
-      
-      // Initialize months
-      let currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
-        const monthKey = format(currentDate, 'yyyy-MM');
-        monthlyHours[monthKey] = 0;
-        currentDate = new Date(currentDate);
-        currentDate.setMonth(currentDate.getMonth() + 1);
-      }
-      
-      // Calculate hours per month
-      roleItems.forEach(item => {
-        const itemStartDate = new Date(Math.max(item.startDate.getTime(), startDate.getTime()));
-        const itemEndDate = item.endDate 
-          ? new Date(Math.min(item.endDate.getTime(), endDate.getTime()))
-          : new Date(Math.min(addDays(item.startDate, 30).getTime(), endDate.getTime()));
-        
-        const itemDurationDays = differenceInDays(itemEndDate, itemStartDate) + 1;
-        const dailyHours = (item.hours * item.coefficient) / itemDurationDays;
-        
-        // Distribute hours across days
-        let day = new Date(itemStartDate);
-        while (day <= itemEndDate) {
-          const monthKey = format(day, 'yyyy-MM');
-          monthlyHours[monthKey] = (monthlyHours[monthKey] || 0) + dailyHours;
-          day = addDays(day, 1);
-        }
-      });
-      
-      // Calculate capacity
-      // Top tier capacity is the ideal amount of hours this role should work
-      const workDaysPerMonth = 20; // Average number of work days per month
-      const hoursPerDay = 8; // Standard workday hours
-      
-      // Calculate capacity for each tier assuming the role model splits work:
-      // - Top tier: Partner/Senior staff (30% allocation)
-      // - Mid tier: Manager/Experienced staff (50% allocation)
-      // - Low tier: Junior staff (100% allocation)
-      const capacity = {
-        topTier: Math.round(role.count * workDaysPerMonth * hoursPerDay * 0.3), // 30% of time for top tier staff
-        midTier: Math.round(role.count * workDaysPerMonth * hoursPerDay * 0.5), // 50% of time for mid tier staff
-        lowTier: Math.round(role.count * workDaysPerMonth * hoursPerDay * 1.0), // 100% of time for low tier staff
-      };
-      
-      return {
-        id: role.id,
-        name: role.name,
-        count: role.count || 1,
-        totalHours,
-        monthlyHours,
-        capacity,
-        utilization: totalHours / (capacity.topTier + capacity.midTier + capacity.lowTier),
-        items: roleItems,
-      };
-    });
-    
-    return allocations.sort((a, b) => b.utilization - a.utilization);
-  }, [roles, allItems, startDate, endDate]);
-  
-  // Get months in the range
-  const months = useMemo(() => {
-    const result: string[] = [];
+
+  // Create month range between start and end dates
+  const monthRange = useMemo(() => {
+    const result = [];
     let currentDate = new Date(startDate);
     
     while (currentDate <= endDate) {
-      const monthKey = format(currentDate, 'yyyy-MM');
-      if (!result.includes(monthKey)) {
-        result.push(monthKey);
-      }
-      currentDate = new Date(currentDate);
-      currentDate.setMonth(currentDate.getMonth() + 1);
+      result.push({
+        month: format(currentDate, 'MMM yyyy'),
+        monthNum: currentDate.getMonth(),
+        year: currentDate.getFullYear(),
+        startDate: startOfMonth(currentDate),
+        endDate: endOfMonth(currentDate)
+      });
+      
+      // Move to next month
+      currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
     }
     
     return result;
   }, [startDate, endDate]);
   
-  // Calculate total allocation across all roles
-  const overallAllocation = useMemo(() => {
-    const totalAllocated = roleAllocations.reduce((sum, role) => sum + role.totalHours, 0);
-    const totalCapacity = roleAllocations.reduce((sum, role) => {
-      return sum + role.capacity.topTier + role.capacity.midTier + role.capacity.lowTier;
-    }, 0);
+  // Calculate resource allocations by role
+  const roleAllocations = useMemo(() => {
+    // Filter only active projects and proposals with valid dates
+    const activeProjects = projects.filter(project => 
+      project.status !== 'cancelled' && project.status !== 'rejected' && 
+      (new Date(project.startDate || project.createdAt) <= endDate) &&
+      (!project.endDate || new Date(project.endDate) >= startDate)
+    );
     
-    return {
-      totalAllocated,
-      totalCapacity,
-      utilization: totalCapacity > 0 ? totalAllocated / totalCapacity : 0,
-      byMonth: months.reduce((acc, month) => {
-        const monthlyAllocated = roleAllocations.reduce((sum, role) => {
-          return sum + (role.monthlyHours[month] || 0);
-        }, 0);
-        
-        // Approximate monthly capacity (total capacity / number of months)
-        const monthlyCapacity = totalCapacity / months.length;
-        
-        acc[month] = {
-          allocated: monthlyAllocated,
-          capacity: monthlyCapacity,
-          utilization: monthlyCapacity > 0 ? monthlyAllocated / monthlyCapacity : 0
-        };
-        return acc;
-      }, {} as Record<string, { allocated: number; capacity: number; utilization: number }>)
-    };
-  }, [roleAllocations, months]);
-
+    const activeProposals = proposals.filter(proposal => 
+      proposal.status !== 'rejected' && proposal.status !== 'cancelled' &&
+      (new Date(proposal.estimatedStartDate || proposal.createdAt) <= endDate) &&
+      (!proposal.estimatedEndDate || new Date(proposal.estimatedEndDate) >= startDate)
+    );
+    
+    // Create a map to track allocations by role
+    const allocationsByRole = new Map();
+    
+    // Initialize roles with zero hours
+    professionalRoles.forEach(role => {
+      allocationsByRole.set(role.id, {
+        roleId: role.id,
+        roleName: role.name,
+        confirmedHours: 0,
+        projectedHours: 0,
+        capacity: parseFloat(role.capacityHours || '160') * monthRange.length, // assuming 160 hours per month capacity
+        topTierRate: role.topTierRate,
+        topTierCapacity: Math.floor(parseFloat(role.capacityHours || '160') * monthRange.length * 0.2), // 20% of time for top-tier work
+        midTierCapacity: Math.floor(parseFloat(role.capacityHours || '160') * monthRange.length * 0.5), // 50% of time for mid-tier work
+        lowTierCapacity: Math.floor(parseFloat(role.capacityHours || '160') * monthRange.length * 0.3), // 30% of time for low-tier work
+        confirmedTopTierHours: 0,
+        confirmedMidTierHours: 0,
+        confirmedLowTierHours: 0,
+        projectedTopTierHours: 0,
+        projectedMidTierHours: 0,
+        projectedLowTierHours: 0,
+        monthlyData: monthRange.map(month => ({
+          month: month.month,
+          confirmedHours: 0,
+          projectedHours: 0,
+          capacity: parseFloat(role.capacityHours || '160')
+        }))
+      });
+    });
+    
+    // Process projects
+    activeProjects.forEach(project => {
+      // Skip projects without role assignments
+      if (!project.professionalRoleId) return;
+      
+      const roleData = allocationsByRole.get(project.professionalRoleId);
+      if (!roleData) return;
+      
+      const projectStart = new Date(project.startDate || project.createdAt);
+      const projectEnd = project.endDate ? new Date(project.endDate) : addDays(projectStart, 30);
+      
+      // Calculate how many days the project overlaps with our date range
+      const rangeStart = new Date(Math.max(projectStart.getTime(), startDate.getTime()));
+      const rangeEnd = new Date(Math.min(projectEnd.getTime(), endDate.getTime()));
+      
+      const daysInRange = differenceInDays(rangeEnd, rangeStart) + 1;
+      const totalProjectDays = differenceInDays(projectEnd, projectStart) + 1;
+      
+      // Calculate proportional hours for the days in our range
+      const hoursInRange = (parseFloat(project.estimatedHours || '0') * daysInRange) / totalProjectDays;
+      
+      // Assign these hours to confirmed totals
+      roleData.confirmedHours += hoursInRange;
+      
+      // Distribute hours by tier based on the service tier or default to mid-tier
+      const tier = project.tier || 'mid';
+      
+      if (tier === 'top') {
+        roleData.confirmedTopTierHours += hoursInRange;
+      } else if (tier === 'mid') {
+        roleData.confirmedMidTierHours += hoursInRange;
+      } else {
+        roleData.confirmedLowTierHours += hoursInRange;
+      }
+      
+      // Distribute hours across months
+      monthRange.forEach((month, idx) => {
+        // Check if project overlaps with this month
+        if (
+          (projectStart <= month.endDate && projectEnd >= month.startDate)
+        ) {
+          // Calculate overlap days in this month
+          const monthOverlapStart = new Date(Math.max(projectStart.getTime(), month.startDate.getTime()));
+          const monthOverlapEnd = new Date(Math.min(projectEnd.getTime(), month.endDate.getTime()));
+          const daysInMonth = differenceInDays(monthOverlapEnd, monthOverlapStart) + 1;
+          
+          // Calculate proportional hours for this month
+          const monthHours = (parseFloat(project.estimatedHours || '0') * daysInMonth) / totalProjectDays;
+          
+          roleData.monthlyData[idx].confirmedHours += monthHours;
+        }
+      });
+    });
+    
+    // Process proposals
+    activeProposals.forEach(proposal => {
+      // Proposals might not have role assignments yet, so we'll distribute evenly
+      // or use a default role if specified
+      let roleId = proposal.preferredRoleId || (professionalRoles.length > 0 ? professionalRoles[0].id : null);
+      
+      if (!roleId) return;
+      
+      const roleData = allocationsByRole.get(roleId);
+      if (!roleData) return;
+      
+      const proposalStart = new Date(proposal.estimatedStartDate || proposal.createdAt);
+      const proposalEnd = proposal.estimatedEndDate 
+        ? new Date(proposal.estimatedEndDate) 
+        : addDays(proposalStart, 30);
+      
+      // Calculate how many days the proposal overlaps with our date range
+      const rangeStart = new Date(Math.max(proposalStart.getTime(), startDate.getTime()));
+      const rangeEnd = new Date(Math.min(proposalEnd.getTime(), endDate.getTime()));
+      
+      const daysInRange = differenceInDays(rangeEnd, rangeStart) + 1;
+      const totalProposalDays = differenceInDays(proposalEnd, proposalStart) + 1;
+      
+      // Calculate proportional hours for the days in our range
+      const hoursInRange = (parseFloat(proposal.estimatedHours || '0') * daysInRange) / totalProposalDays;
+      
+      // Apply a "probability factor" based on proposal status
+      let probabilityFactor = 0.5; // Default 50% for proposals
+      
+      if (proposal.status === 'sent') {
+        probabilityFactor = 0.7; // 70% for sent proposals
+      } else if (proposal.status === 'draft') {
+        probabilityFactor = 0.3; // 30% for drafts
+      }
+      
+      // Assign hours to projected totals (adjusted by probability)
+      const projectedHours = hoursInRange * probabilityFactor;
+      roleData.projectedHours += projectedHours;
+      
+      // Distribute hours by tier based on the service tier or default to mid-tier
+      const tier = proposal.tier || 'mid';
+      
+      if (tier === 'top') {
+        roleData.projectedTopTierHours += projectedHours;
+      } else if (tier === 'mid') {
+        roleData.projectedMidTierHours += projectedHours;
+      } else {
+        roleData.projectedLowTierHours += projectedHours;
+      }
+      
+      // Distribute hours across months
+      monthRange.forEach((month, idx) => {
+        // Check if proposal overlaps with this month
+        if (
+          (proposalStart <= month.endDate && proposalEnd >= month.startDate)
+        ) {
+          // Calculate overlap days in this month
+          const monthOverlapStart = new Date(Math.max(proposalStart.getTime(), month.startDate.getTime()));
+          const monthOverlapEnd = new Date(Math.min(proposalEnd.getTime(), month.endDate.getTime()));
+          const daysInMonth = differenceInDays(monthOverlapEnd, monthOverlapStart) + 1;
+          
+          // Calculate proportional hours for this month
+          const monthHours = (parseFloat(proposal.estimatedHours || '0') * daysInMonth) / totalProposalDays;
+          
+          // Apply probability factor
+          roleData.monthlyData[idx].projectedHours += monthHours * probabilityFactor;
+        }
+      });
+    });
+    
+    // Convert map to array for rendering
+    const allocations = Array.from(allocationsByRole.values());
+    
+    // Sort by utilization (highest to lowest)
+    allocations.sort((a, b) => {
+      const utilizationA = ((a.confirmedHours + a.projectedHours) / a.capacity) || 0;
+      const utilizationB = ((b.confirmedHours + b.projectedHours) / b.capacity) || 0;
+      return utilizationB - utilizationA;
+    });
+    
+    return allocations;
+  }, [projects, proposals, professionalRoles, startDate, endDate, monthRange]);
+  
+  // Prepare role overview data
+  const roleOverviewData = useMemo(() => {
+    if (roleFilter === 'all') {
+      return roleAllocations;
+    }
+    
+    return roleAllocations.filter(role => role.roleId.toString() === roleFilter);
+  }, [roleAllocations, roleFilter]);
+  
+  // Prepare monthly timeline data
+  const timelineData = useMemo(() => {
+    // If filtering by role, only include that role's monthly data
+    const selectedRoles = roleFilter === 'all'
+      ? roleAllocations
+      : roleAllocations.filter(role => role.roleId.toString() === roleFilter);
+    
+    return monthRange.map((month, idx) => {
+      // Sum up all hours for this month across selected roles
+      const confirmedHours = selectedRoles.reduce((sum, role) => 
+        sum + role.monthlyData[idx].confirmedHours, 0);
+      
+      const projectedHours = selectedRoles.reduce((sum, role) => 
+        sum + role.monthlyData[idx].projectedHours, 0);
+      
+      const capacity = selectedRoles.reduce((sum, role) => 
+        sum + role.monthlyData[idx].capacity, 0);
+      
+      return {
+        name: month.month,
+        confirmed: Math.round(confirmedHours),
+        projected: Math.round(projectedHours),
+        available: Math.max(0, capacity - confirmedHours - projectedHours),
+        capacity
+      };
+    });
+  }, [monthRange, roleAllocations, roleFilter]);
+  
+  // Calculate tier allocation data
+  const tierAllocationData = useMemo(() => {
+    // Get the selected roles
+    const selectedRoles = roleFilter === 'all'
+      ? roleAllocations
+      : roleAllocations.filter(role => role.roleId.toString() === roleFilter);
+    
+    // Calculate totals
+    const topTierConfirmed = selectedRoles.reduce((sum, r) => sum + r.confirmedTopTierHours, 0);
+    const midTierConfirmed = selectedRoles.reduce((sum, r) => sum + r.confirmedMidTierHours, 0);
+    const lowTierConfirmed = selectedRoles.reduce((sum, r) => sum + r.confirmedLowTierHours, 0);
+    
+    const topTierProjected = selectedRoles.reduce((sum, r) => sum + r.projectedTopTierHours, 0);
+    const midTierProjected = selectedRoles.reduce((sum, r) => sum + r.projectedMidTierHours, 0);
+    const lowTierProjected = selectedRoles.reduce((sum, r) => sum + r.projectedLowTierHours, 0);
+    
+    const topTierCapacity = selectedRoles.reduce((sum, r) => sum + r.topTierCapacity, 0);
+    const midTierCapacity = selectedRoles.reduce((sum, r) => sum + r.midTierCapacity, 0);
+    const lowTierCapacity = selectedRoles.reduce((sum, r) => sum + r.lowTierCapacity, 0);
+    
+    return [
+      {
+        name: "Top Tier",
+        confirmed: Math.round(topTierConfirmed),
+        projected: Math.round(topTierProjected),
+        available: Math.max(0, topTierCapacity - topTierConfirmed - topTierProjected),
+        capacity: topTierCapacity,
+        fill: "#ef4444"  // red
+      },
+      {
+        name: "Mid Tier",
+        confirmed: Math.round(midTierConfirmed),
+        projected: Math.round(midTierProjected),
+        available: Math.max(0, midTierCapacity - midTierConfirmed - midTierProjected),
+        capacity: midTierCapacity,
+        fill: "#3b82f6"  // blue
+      },
+      {
+        name: "Low Tier",
+        confirmed: Math.round(lowTierConfirmed),
+        projected: Math.round(lowTierProjected),
+        available: Math.max(0, lowTierCapacity - lowTierConfirmed - lowTierProjected),
+        capacity: lowTierCapacity,
+        fill: "#10b981"  // green
+      }
+    ];
+  }, [roleAllocations, roleFilter]);
+  
+  // Calculate total projected revenue
+  const totalProjectedRevenue = useMemo(() => {
+    return roleAllocations.reduce((total, role) => {
+      const topTierRevenue = role.confirmedTopTierHours * parseFloat(role.topTierRate || '0') +
+                            role.projectedTopTierHours * parseFloat(role.topTierRate || '0') * 0.7; // 70% probability factor
+      
+      const midTierRevenue = role.confirmedMidTierHours * parseFloat(role.topTierRate || '0') * 0.85 +
+                            role.projectedMidTierHours * parseFloat(role.topTierRate || '0') * 0.85 * 0.7;
+      
+      const lowTierRevenue = role.confirmedLowTierHours * parseFloat(role.topTierRate || '0') * 0.7 +
+                            role.projectedLowTierHours * parseFloat(role.topTierRate || '0') * 0.7 * 0.7;
+      
+      return total + topTierRevenue + midTierRevenue + lowTierRevenue;
+    }, 0);
+  }, [roleAllocations]);
+  
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-background border rounded-md shadow-md p-3">
+          <p className="font-medium mb-1">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center gap-2 my-1">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: entry.color }}
+              ></div>
+              <span>
+                {entry.name}: {entry.value} hrs
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+  
   return (
     <div className="space-y-6">
-      {/* Overview card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Resource Allocation Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-muted/30 rounded-lg">
-              <div className="text-sm text-muted-foreground mb-1">Total Allocation</div>
-              <div className="text-2xl font-semibold mb-2">
-                {Math.round(overallAllocation.totalAllocated)} hrs
-              </div>
-              <div className="flex items-center text-sm">
-                <div className="flex-1">of {Math.round(overallAllocation.totalCapacity)} hrs capacity</div>
-                <Badge variant={
-                  overallAllocation.utilization > 0.9 ? "destructive" : 
-                  overallAllocation.utilization > 0.7 ? "default" : 
-                  "secondary"
-                }>
-                  {Math.round(overallAllocation.utilization * 100)}%
-                </Badge>
-              </div>
-            </div>
-            
-            <div className="p-4 bg-muted/30 rounded-lg">
-              <div className="text-sm text-muted-foreground mb-1">Busiest Month</div>
-              {months.length > 0 ? (
-                <>
-                  {(() => {
-                    // Find the month with highest utilization
-                    const busiestMonth = Object.entries(overallAllocation.byMonth).reduce(
-                      (busiest, [month, data]) => 
-                        !busiest || data.utilization > overallAllocation.byMonth[busiest].utilization 
-                          ? month 
-                          : busiest, 
-                      ""
-                    );
-                    
-                    const utilization = overallAllocation.byMonth[busiestMonth]?.utilization || 0;
-                    
-                    return (
-                      <>
-                        <div className="text-2xl font-semibold mb-1">
-                          {format(new Date(busiestMonth + "-01"), "MMMM yyyy")}
-                        </div>
-                        <div className="flex items-center text-sm gap-2">
-                          <Badge variant={
-                            utilization > 0.9 ? "destructive" : 
-                            utilization > 0.7 ? "default" : 
-                            "secondary"
-                          }>
-                            {Math.round(utilization * 100)}%
-                          </Badge>
-                          <div>utilization rate</div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </>
-              ) : (
-                <div className="text-sm text-muted-foreground">No data available</div>
-              )}
-            </div>
-            
-            <div className="p-4 bg-muted/30 rounded-lg">
-              <div className="text-sm text-muted-foreground mb-1">Role Allocation</div>
-              <div className="text-2xl font-semibold mb-2">
-                {roleAllocations.length} roles
-              </div>
-              <div className="text-sm">
-                {roleAllocations.filter(r => r.utilization > 0.9).length > 0 ? (
-                  <div className="flex items-center gap-1 text-destructive">
-                    <AlertCircle className="h-3.5 w-3.5" /> 
-                    {roleAllocations.filter(r => r.utilization > 0.9).length} roles overallocated
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 text-green-600">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> All roles within capacity
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {overallAllocation.utilization > 0.9 && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Over-allocation Warning</AlertTitle>
-              <AlertDescription>
-                Resources are overallocated at {Math.round(overallAllocation.utilization * 100)}% of capacity. 
-                Consider reducing workload, increasing capacity, or extending project timelines.
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          {overallAllocation.utilization < 0.5 && roleAllocations.length > 0 && (
-            <Alert className="mt-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Capacity Available</AlertTitle>
-              <AlertDescription>
-                Resources are utilized at only {Math.round(overallAllocation.utilization * 100)}% of capacity. 
-                You have room to take on additional projects or proposals.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+      {/* Controls */}
+      <div className="flex flex-wrap justify-between gap-4">
+        <Tabs value={view} onValueChange={(v) => setView(v as "roles" | "timeline")}>
+          <TabsList>
+            <TabsTrigger value="roles">Role Allocation</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline View</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filter by role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            {roleAllocations.map(role => (
+              <SelectItem key={role.roleId} value={role.roleId.toString()}>
+                {role.roleName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       
-      {/* Month by month allocation */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Monthly Utilization</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {months.map(month => {
-              const data = overallAllocation.byMonth[month];
-              const utilization = data?.utilization || 0;
-              const formattedMonth = format(new Date(month + "-01"), "MMMM yyyy");
-              
-              return (
-                <div key={month} className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">{formattedMonth}</div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        {Math.round(data?.allocated || 0)} / {Math.round(data?.capacity || 0)} hrs
-                      </span>
-                      <Badge variant={
-                        utilization > 0.9 ? "destructive" : 
-                        utilization > 0.7 ? "default" : 
-                        "secondary"
-                      }>
-                        {Math.round(utilization * 100)}%
-                      </Badge>
-                    </div>
-                  </div>
-                  <Progress 
-                    value={utilization * 100} 
-                    className={`h-2 ${utilization > 0.9 ? 'bg-red-200' : ''}`} 
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Role allocation */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Role Allocation</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="utilization">
-            <TabsList className="mb-4">
-              <TabsTrigger value="utilization">Utilization</TabsTrigger>
-              <TabsTrigger value="projects">Project Breakdown</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="utilization" className="space-y-6">
-              {roleAllocations.length > 0 ? (
-                roleAllocations.map(role => {
-                  const utilization = role.utilization;
-                  const utilizationPercent = Math.round(utilization * 100);
-                  const isPotentialIssue = utilization > 0.9 || utilization < 0.4;
+      {/* Role allocation visualization */}
+      {view === "roles" && (
+        <div className="space-y-6">
+          {/* Role allocations summary */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Resource Allocation by Role</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {roleOverviewData.map(role => {
+                  const totalHours = role.confirmedHours + role.projectedHours;
+                  const utilization = (totalHours / role.capacity) * 100;
+                  const confirmedPercentage = (role.confirmedHours / role.capacity) * 100;
+                  const projectedPercentage = (role.projectedHours / role.capacity) * 100;
                   
                   return (
-                    <div key={role.id} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <span className="font-medium">{role.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {role.count} staff members
-                          </span>
-                        </div>
+                    <div key={role.roleId} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium">{role.roleName}</h3>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
-                            {Math.round(role.totalHours)} / {Math.round(role.capacity.topTier + role.capacity.midTier + role.capacity.lowTier)} hrs
-                          </span>
                           <Badge variant={
-                            utilization > 0.9 ? "destructive" : 
-                            utilization > 0.7 ? "default" : 
-                            "secondary"
+                            utilization > 110 ? "destructive" :
+                            utilization > 90 ? "default" :
+                            utilization < 50 ? "secondary" :
+                            "outline"
                           }>
-                            {utilizationPercent}%
+                            {Math.round(utilization)}% Utilization
                           </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {Math.round(totalHours)} / {role.capacity} hrs
+                          </span>
                         </div>
                       </div>
                       
-                      <Progress 
-                        value={utilizationPercent} 
-                        className={`h-2 ${utilization > 0.9 ? 'bg-red-200' : 'bg-primary/20'}`} 
-                      />
+                      <div className="relative h-3">
+                        {/* Confirmed hours */}
+                        <Progress 
+                          value={confirmedPercentage} 
+                          max={100}
+                          className="h-full z-10 relative"
+                        />
+                        {/* Projected hours (shown as a lighter overlay) */}
+                        <div 
+                          className="absolute top-0 left-0 h-full bg-primary/30 z-20"
+                          style={{ 
+                            width: `${Math.min(100, confirmedPercentage + projectedPercentage)}%`,
+                            clipPath: confirmedPercentage > 0 
+                              ? `inset(0 0 0 ${confirmedPercentage}%)` 
+                              : undefined
+                          }}
+                        />
+                        {/* Capacity threshold marker at 100% */}
+                        <div className="absolute top-0 h-full w-px bg-yellow-500 z-30" style={{ left: '100%' }}></div>
+                      </div>
                       
-                      {isPotentialIssue && (
-                        <div className={`text-xs ${utilization > 0.9 ? 'text-destructive' : 'text-amber-600'} flex items-center gap-1`}>
-                          {utilization > 0.9 ? (
-                            <>
-                              <ArrowUpRight className="h-3 w-3" />
-                              <span>Overallocated by {utilizationPercent - 100}% - consider reducing workload or adding staff</span>
-                            </>
-                          ) : (
-                            <>
-                              <ArrowDownRight className="h-3 w-3" />
-                              <span>Underutilized at {utilizationPercent}% - capacity available for additional projects</span>
-                            </>
-                          )}
+                      <div className="grid grid-cols-3 gap-4 text-sm mt-1">
+                        <div>
+                          <div className="font-medium">Confirmed</div>
+                          <div>{Math.round(role.confirmedHours)} hrs ({Math.round(confirmedPercentage)}%)</div>
                         </div>
-                      )}
-                      
-                      {/* Monthly breakdown */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-2">
-                        {months.map(month => {
-                          const monthlyHours = role.monthlyHours[month] || 0;
-                          // Monthly capacity is the total capacity divided by the number of months
-                          const monthlyCapacity = (role.capacity.topTier + role.capacity.midTier + role.capacity.lowTier) / months.length;
-                          const monthUtilization = monthlyCapacity > 0 ? monthlyHours / monthlyCapacity : 0;
-                          
-                          return (
-                            <div key={month} className="bg-muted/30 p-2 rounded text-xs">
-                              <div className="text-muted-foreground">{format(new Date(month + "-01"), "MMM yyyy")}</div>
-                              <div className="flex justify-between mt-1">
-                                <span>{Math.round(monthlyHours)} hrs</span>
-                                <Badge variant="outline" className="text-[10px] h-4 px-1">
-                                  {Math.round(monthUtilization * 100)}%
-                                </Badge>
-                              </div>
-                            </div>
-                          );
-                        })}
+                        <div>
+                          <div className="font-medium">Projected</div>
+                          <div>{Math.round(role.projectedHours)} hrs ({Math.round(projectedPercentage)}%)</div>
+                        </div>
+                        <div>
+                          <div className="font-medium">Available</div>
+                          <div>{Math.round(Math.max(0, role.capacity - totalHours))} hrs ({Math.round(Math.max(0, 100 - utilization))}%)</div>
+                        </div>
                       </div>
                     </div>
                   );
-                })
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  No roles defined for the selected firm
-                </div>
-              )}
-            </TabsContent>
+                })}
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Tier allocation chart */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Service Tiers Allocation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={tierAllocationData}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Bar dataKey="confirmed" name="Confirmed Hours" stackId="a" fill="#3b82f6" />
+                    <Bar dataKey="projected" name="Projected Hours" stackId="a" fill="#93c5fd" />
+                    <Bar dataKey="available" name="Available Hours" stackId="a" fill="#e5e7eb" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Projected Revenue</h3>
+                    <p className="text-2xl font-bold">${Math.round(totalProjectedRevenue).toLocaleString()}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Total Hours</h3>
+                    <p className="text-2xl font-bold">
+                      {Math.round(
+                        roleOverviewData.reduce((sum, role) => sum + role.confirmedHours + role.projectedHours, 0)
+                      ).toLocaleString()} hrs
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Overall Utilization</h3>
+                    <p className="text-2xl font-bold">
+                      {Math.round(
+                        (roleOverviewData.reduce((sum, role) => sum + role.confirmedHours + role.projectedHours, 0) /
+                        roleOverviewData.reduce((sum, role) => sum + role.capacity, 0)) * 100
+                      )}%
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
+      {/* Timeline visualization */}
+      {view === "timeline" && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Resource Allocation Timeline</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={timelineData}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Area type="monotone" dataKey="confirmed" name="Confirmed Hours" stackId="1" fill="#3b82f6" stroke="#2563eb" />
+                  <Area type="monotone" dataKey="projected" name="Projected Hours" stackId="1" fill="#93c5fd" stroke="#60a5fa" />
+                  <Area type="monotone" dataKey="available" name="Available Hours" stackId="1" fill="#e5e7eb" stroke="#d1d5db" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
             
-            <TabsContent value="projects">
-              {roleAllocations.length > 0 ? (
-                <div className="space-y-8">
-                  {roleAllocations.map(role => (
-                    <div key={role.id} className="space-y-3">
-                      <h3 className="font-medium text-lg">{role.name}</h3>
-                      
-                      {role.items.length > 0 ? (
-                        <div className="space-y-3">
-                          {role.items.map(item => (
-                            <div key={`${item.type}-${item.id}`} className="flex items-center p-3 rounded-lg border">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">{item.title}</span>
-                                  <Badge variant="outline" className="capitalize">{item.type}</Badge>
-                                  {item.coefficient < 1 && (
-                                    <Badge variant="secondary">
-                                      {Math.round(item.coefficient * 100)}% probability
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                                  <span>{item.clientName}</span>
-                                  <span>•</span>
-                                  <span>{Math.round(item.hours * item.coefficient)} weighted hours</span>
-                                  <span>•</span>
-                                  <span className="capitalize">{item.status}</span>
-                                </div>
-                              </div>
-                              
-                              <div className="text-right">
-                                <div className="text-sm font-medium">{Math.round(item.hours)} actual hours</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {format(item.startDate, "MMM d")} - {item.endDate ? format(item.endDate, "MMM d") : "ongoing"}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+            <div className="mt-6 space-y-4">
+              <h3 className="font-medium">Monthly Breakdown</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {timelineData.map((monthData, index) => {
+                  const utilization = ((monthData.confirmed + monthData.projected) / monthData.capacity) * 100;
+                  const confirmedPercentage = (monthData.confirmed / monthData.capacity) * 100;
+                  const projectedPercentage = (monthData.projected / monthData.capacity) * 100;
+                  
+                  return (
+                    <Card key={index} className={`overflow-hidden ${
+                      utilization > 100 ? 'border-red-200 bg-red-50' : 
+                      utilization < 50 ? 'border-blue-200 bg-blue-50' : ''
+                    }`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">{monthData.name}</h4>
+                          <Badge variant={
+                            utilization > 110 ? "destructive" :
+                            utilization > 90 ? "default" :
+                            utilization < 50 ? "secondary" :
+                            "outline"
+                          }>
+                            {Math.round(utilization)}%
+                          </Badge>
                         </div>
-                      ) : (
-                        <div className="text-muted-foreground text-sm p-4 bg-muted/20 rounded-lg">
-                          No projects or proposals assigned to this role
+                        
+                        <div className="relative h-2 mb-3">
+                          {/* Confirmed hours */}
+                          <Progress 
+                            value={confirmedPercentage} 
+                            max={100}
+                            className="h-full z-10 relative"
+                          />
+                          {/* Projected hours (shown as a lighter overlay) */}
+                          <div 
+                            className="absolute top-0 left-0 h-full bg-primary/30 z-20"
+                            style={{ 
+                              width: `${Math.min(100, confirmedPercentage + projectedPercentage)}%`,
+                              clipPath: confirmedPercentage > 0 
+                                ? `inset(0 0 0 ${confirmedPercentage}%)` 
+                                : undefined
+                            }}
+                          />
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  No roles defined for the selected firm
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                        
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="text-center">
+                            <div className="font-medium">Confirmed</div>
+                            <div>{monthData.confirmed} hrs</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium">Projected</div>
+                            <div>{monthData.projected} hrs</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium">Available</div>
+                            <div>{monthData.available} hrs</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
