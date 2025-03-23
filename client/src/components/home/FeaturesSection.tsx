@@ -1,7 +1,7 @@
 import {
   FolderKanban,
   Clock,
-  FileChart,
+  FileChartLine,
   Link2,
   CloudDownload,
   LineChart
@@ -23,7 +23,7 @@ const FeaturesSection = () => {
       href: "/time-tracking"
     },
     {
-      icon: <FileChart className="h-8 w-8" />,
+      icon: <FileChartLine className="h-8 w-8" />,
       title: "Proposals & Estimates",
       description: "Create accurate proposals and estimates based on historical data and optimized time budgets.",
       href: "/proposals"
