@@ -688,8 +688,8 @@ export default function EnhancedProposalForm({ onComplete }: EnhancedProposalFor
                         <label htmlFor="income-changes" className="text-sm font-medium">Income Changes</label>
                         <select id="income-changes" className="w-full p-2 border rounded-md">
                           <option value="">Select any significant income changes</option>
-                          <option value="increased">Significant income increase ({">"} 20%)</option>
-                          <option value="decreased">Significant income decrease ({">"} 20%)</option>
+                          <option value="increased">Significant income increase (more than 20%)</option>
+                          <option value="decreased">Significant income decrease (more than 20%)</option>
                           <option value="new-sources">New income sources</option>
                           <option value="foreign">Foreign income</option>
                           <option value="crypto">Cryptocurrency transactions</option>
@@ -756,6 +756,136 @@ export default function EnhancedProposalForm({ onComplete }: EnhancedProposalFor
                           </svg>
                         </button>
                       </div>
+                      
+                      {/* Sample PDFs from attached assets */}
+                      <div className="flex justify-between items-center p-2 border border-neutral-200 rounded bg-neutral-50">
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 mr-2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                          </svg>
+                          <span className="text-sm truncate max-w-xs">Adams Family Proposal 02-25-25.pdf</span>
+                        </div>
+                        <button type="button" className="text-red-500 hover:text-red-700">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-2 border border-neutral-200 rounded bg-neutral-50">
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 mr-2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                          </svg>
+                          <span className="text-sm truncate max-w-xs">D. White Proposal 02-24-25.pdf</span>
+                        </div>
+                        <button type="button" className="text-red-500 hover:text-red-700">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium">Required Documents Checklist</h3>
+                    <div>
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-neutral-700 mb-2">Individual Tax Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="tax-returns" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="tax-returns" className="text-sm">Prior year tax returns (last 3 years)</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="w2-forms" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="w2-forms" className="text-sm">W-2 forms (all employers)</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="1099-forms" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="1099-forms" className="text-sm">1099 forms (all sources)</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="k1-forms" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="k1-forms" className="text-sm">K-1 forms (partnerships/S-corps)</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="business-financials" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="business-financials" className="text-sm">Business financials (if applicable)</label>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="charitable-contributions" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="charitable-contributions" className="text-sm">Charitable contribution receipts</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="mortgage-interest" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="mortgage-interest" className="text-sm">Mortgage interest statements</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="property-tax" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="property-tax" className="text-sm">Property tax statements</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="investment-statements" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="investment-statements" className="text-sm">Investment statements (1099-DIV, 1099-INT)</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="education-expenses" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="education-expenses" className="text-sm">Education expenses (1098-T, 1098-E)</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium text-neutral-700 mb-2">Business Tax Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="business-tax-returns" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="business-tax-returns" className="text-sm">Prior year business tax returns</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="financial-statements" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="financial-statements" className="text-sm">Financial statements (P&L, Balance Sheet)</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="general-ledger" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="general-ledger" className="text-sm">General ledger</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="fixed-assets" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="fixed-assets" className="text-sm">Fixed asset schedule</label>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="payroll-reports" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="payroll-reports" className="text-sm">Payroll reports (941s, W-2s, W-3)</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="1099-misc" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="1099-misc" className="text-sm">1099-MISC/NEC reports</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="corporate-docs" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="corporate-docs" className="text-sm">Corporate/Partnership documents</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input type="checkbox" id="inventory" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <label htmlFor="inventory" className="text-sm">Inventory records (if applicable)</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
@@ -805,7 +935,7 @@ export default function EnhancedProposalForm({ onComplete }: EnhancedProposalFor
                   <div>
                     <h3 className="text-sm font-medium mb-1">Client</h3>
                     <p>
-                      {clientCompanies.find((c: any) => c.id === form.getValues("clientCompanyId"))?.name || "Unknown client"}
+                      {form.getValues("clientCompanyId") ? `Client #${form.getValues("clientCompanyId")}` : "Unknown client"}
                     </p>
                   </div>
                   
@@ -835,7 +965,7 @@ export default function EnhancedProposalForm({ onComplete }: EnhancedProposalFor
                       <div key={index} className="p-3 flex justify-between">
                         <div>
                           <p className="font-medium">
-                            {services.find((s: any) => s.id === service.serviceId)?.name || "Unnamed Service"}
+                            {service.serviceId ? `Service #${service.serviceId}` : "Unnamed Service"}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {service.description || "No description"} • {service.estimatedHours} hrs × {service.quantity}
