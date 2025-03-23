@@ -318,35 +318,80 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
 
-  // Client operations
-  async getClient(id: number): Promise<Client | undefined> {
-    return this.clients.get(id);
+  // Contact operations
+  async getContact(id: number): Promise<Contact | undefined> {
+    return this.contacts.get(id);
   }
 
-  async getClientsByUserId(userId: number): Promise<Client[]> {
-    return Array.from(this.clients.values()).filter(
-      (client) => client.userId === userId
+  async getContactsByFirmId(firmId: number): Promise<Contact[]> {
+    return Array.from(this.contacts.values()).filter(
+      (contact) => contact.firmId === firmId
     );
   }
 
-  async createClient(clientData: InsertClient): Promise<Client> {
-    const id = this.clientIdCounter++;
-    const client: Client = { ...clientData, id };
-    this.clients.set(id, client);
-    return client;
+  async createContact(contactData: InsertContact): Promise<Contact> {
+    const id = this.contactIdCounter++;
+    const contact: Contact = { 
+      ...contactData, 
+      id,
+      createdAt: new Date() 
+    };
+    this.contacts.set(id, contact);
+    return contact;
   }
 
-  async updateClient(id: number, data: Partial<Client>): Promise<Client | undefined> {
-    const client = this.clients.get(id);
-    if (!client) return undefined;
+  async updateContact(id: number, data: Partial<Contact>): Promise<Contact | undefined> {
+    const contact = this.contacts.get(id);
+    if (!contact) return undefined;
     
-    const updatedClient = { ...client, ...data };
-    this.clients.set(id, updatedClient);
-    return updatedClient;
+    const updatedContact = { ...contact, ...data };
+    this.contacts.set(id, updatedContact);
+    return updatedContact;
   }
 
-  async deleteClient(id: number): Promise<boolean> {
-    return this.clients.delete(id);
+  async deleteContact(id: number): Promise<boolean> {
+    return this.contacts.delete(id);
+  }
+  
+  // Client Company operations
+  async getClientCompany(id: number): Promise<ClientCompany | undefined> {
+    return this.clientCompanies.get(id);
+  }
+
+  async getClientCompaniesByFirmId(firmId: number): Promise<ClientCompany[]> {
+    return Array.from(this.clientCompanies.values()).filter(
+      (company) => company.firmId === firmId
+    );
+  }
+  
+  async getClientCompaniesByContactId(contactId: number): Promise<ClientCompany[]> {
+    return Array.from(this.clientCompanies.values()).filter(
+      (company) => company.primaryContactId === contactId
+    );
+  }
+
+  async createClientCompany(companyData: InsertClientCompany): Promise<ClientCompany> {
+    const id = this.clientCompanyIdCounter++;
+    const company: ClientCompany = { 
+      ...companyData, 
+      id,
+      createdAt: new Date() 
+    };
+    this.clientCompanies.set(id, company);
+    return company;
+  }
+
+  async updateClientCompany(id: number, data: Partial<ClientCompany>): Promise<ClientCompany | undefined> {
+    const company = this.clientCompanies.get(id);
+    if (!company) return undefined;
+    
+    const updatedCompany = { ...company, ...data };
+    this.clientCompanies.set(id, updatedCompany);
+    return updatedCompany;
+  }
+
+  async deleteClientCompany(id: number): Promise<boolean> {
+    return this.clientCompanies.delete(id);
   }
 
   // Project operations
@@ -354,15 +399,15 @@ export class MemStorage implements IStorage {
     return this.projects.get(id);
   }
 
-  async getProjectsByUserId(userId: number): Promise<Project[]> {
+  async getProjectsByFirmId(firmId: number): Promise<Project[]> {
     return Array.from(this.projects.values()).filter(
-      (project) => project.userId === userId
+      (project) => project.firmId === firmId
     );
   }
 
-  async getProjectsByClientId(clientId: number): Promise<Project[]> {
+  async getProjectsByClientCompanyId(clientCompanyId: number): Promise<Project[]> {
     return Array.from(this.projects.values()).filter(
-      (project) => project.clientId === clientId
+      (project) => project.clientCompanyId === clientCompanyId
     );
   }
 
@@ -391,24 +436,32 @@ export class MemStorage implements IStorage {
     return this.timeEntries.get(id);
   }
 
-  async getTimeEntriesByUserId(userId: number, limit?: number): Promise<TimeEntry[]> {
+  async getTimeEntriesByFirmId(firmId: number, limit?: number): Promise<TimeEntry[]> {
     const entries = Array.from(this.timeEntries.values())
-      .filter((entry) => entry.userId === userId)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      .filter((entry) => entry.firmId === firmId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
     return limit ? entries.slice(0, limit) : entries;
   }
 
-  async getTimeEntriesByClientId(clientId: number): Promise<TimeEntry[]> {
+  async getTimeEntriesByUserId(userId: number, limit?: number): Promise<TimeEntry[]> {
+    const entries = Array.from(this.timeEntries.values())
+      .filter((entry) => entry.createdById === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    return limit ? entries.slice(0, limit) : entries;
+  }
+
+  async getTimeEntriesByClientCompanyId(clientCompanyId: number): Promise<TimeEntry[]> {
     return Array.from(this.timeEntries.values())
-      .filter((entry) => entry.clientId === clientId)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      .filter((entry) => entry.clientCompanyId === clientCompanyId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   async getTimeEntriesByProjectId(projectId: number): Promise<TimeEntry[]> {
     return Array.from(this.timeEntries.values())
       .filter((entry) => entry.projectId === projectId)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   async createTimeEntry(timeEntryData: InsertTimeEntry): Promise<TimeEntry> {
@@ -436,15 +489,21 @@ export class MemStorage implements IStorage {
     return this.proposals.get(id);
   }
 
-  async getProposalsByUserId(userId: number): Promise<Proposal[]> {
+  async getProposalsByFirmId(firmId: number): Promise<Proposal[]> {
     return Array.from(this.proposals.values())
-      .filter((proposal) => proposal.userId === userId)
+      .filter((proposal) => proposal.firmId === firmId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
-  async getProposalsByClientId(clientId: number): Promise<Proposal[]> {
+  async getProposalsByContactId(contactId: number): Promise<Proposal[]> {
     return Array.from(this.proposals.values())
-      .filter((proposal) => proposal.clientId === clientId)
+      .filter((proposal) => proposal.contactId === contactId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getProposalsByClientCompanyId(clientCompanyId: number): Promise<Proposal[]> {
+    return Array.from(this.proposals.values())
+      .filter((proposal) => proposal.clientCompanyId === clientCompanyId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
@@ -554,16 +613,28 @@ export class MemStorage implements IStorage {
     return this.deadlines.get(id);
   }
 
-  async getDeadlinesByUserId(userId: number): Promise<Deadline[]> {
+  async getDeadlinesByFirmId(firmId: number): Promise<Deadline[]> {
     return Array.from(this.deadlines.values())
-      .filter((deadline) => deadline.userId === userId)
+      .filter((deadline) => deadline.firmId === firmId)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }
+  
+  async getDeadlinesByContactId(contactId: number): Promise<Deadline[]> {
+    return Array.from(this.deadlines.values())
+      .filter((deadline) => deadline.contactId === contactId)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }
+  
+  async getDeadlinesByClientCompanyId(clientCompanyId: number): Promise<Deadline[]> {
+    return Array.from(this.deadlines.values())
+      .filter((deadline) => deadline.clientCompanyId === clientCompanyId)
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }
 
-  async getUpcomingDeadlinesByUserId(userId: number, limit?: number): Promise<Deadline[]> {
+  async getUpcomingDeadlinesByFirmId(firmId: number, limit?: number): Promise<Deadline[]> {
     const now = new Date();
     const deadlines = Array.from(this.deadlines.values())
-      .filter((deadline) => deadline.userId === userId && new Date(deadline.dueDate) >= now && !deadline.isCompleted)
+      .filter((deadline) => deadline.firmId === firmId && new Date(deadline.dueDate) >= now && !deadline.isCompleted)
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     
     return limit ? deadlines.slice(0, limit) : deadlines;
