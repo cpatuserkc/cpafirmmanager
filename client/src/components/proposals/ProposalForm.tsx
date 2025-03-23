@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { AuthContext } from "@/App";
 import ClientSelect from "@/components/time-tracking/ClientSelect";
@@ -219,7 +219,7 @@ const ProposalForm = ({ onComplete }: ProposalFormProps) => {
               <FormItem>
                 <FormLabel>Expiry Date</FormLabel>
                 <FormControl>
-                  <DatePicker
+                  <Calendar
                     selected={field.value}
                     onSelect={field.onChange}
                     disabled={(date) => date < new Date()}
