@@ -1,9 +1,15 @@
-import { useMemo } from "react";
-import { addDays, startOfMonth, endOfMonth, format, isSameDay, isWithinInterval, getDay, parseISO } from "date-fns";
-import { Badge } from "@/components/ui/badge";
+import { useMemo, useState } from "react";
+import { format, isSameMonth, isToday, parseISO, isSameDay, addDays } from "date-fns";
+import { Calendar as CalendarIcon, AlertCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertCircle, Calendar as CalendarIcon, Check, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CalendarEvent {
   id: number;
@@ -26,230 +32,246 @@ interface SeasonCalendarProps {
 }
 
 export function SeasonCalendar({ startDate, endDate, projects, proposals, deadlines }: SeasonCalendarProps) {
-  // Convert all items to a unified calendar event format
-  const calendarEvents: CalendarEvent[] = useMemo(() => {
-    const mappedProjects = projects.map(project => ({
-      id: project.id,
-      title: project.name,
-      startDate: new Date(project.startDate || project.createdAt),
-      endDate: project.endDate ? new Date(project.endDate) : addDays(new Date(project.startDate || project.createdAt), 30),
-      type: 'project' as const,
-      status: project.status,
-      hours: parseFloat(project.estimatedHours || '0'),
-      clientName: project.clientName,
-      color: '#3b82f6' // blue
-    }));
-    
-    const mappedProposals = proposals.map(proposal => ({
-      id: proposal.id,
-      title: proposal.title,
-      startDate: new Date(proposal.estimatedStartDate || proposal.createdAt),
-      endDate: proposal.estimatedEndDate ? new Date(proposal.estimatedEndDate) : addDays(new Date(proposal.estimatedStartDate || proposal.createdAt), 30),
-      type: 'proposal' as const,
-      status: proposal.status,
-      hours: parseFloat(proposal.estimatedHours || '0'),
-      clientName: proposal.clientName,
-      color: '#10b981' // green
-    }));
-    
-    const mappedDeadlines = deadlines.map(deadline => ({
-      id: deadline.id,
-      title: deadline.title,
-      startDate: new Date(deadline.dueDate),
-      type: 'deadline' as const,
-      status: deadline.isCompleted ? 'completed' : 'pending',
-      clientName: deadline.clientName,
-      color: '#f43f5e' // red
-    }));
-    
-    return [...mappedProjects, ...mappedProposals, ...mappedDeadlines];
-  }, [projects, proposals, deadlines]);
+  const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
   
-  // Generate months between start and end date
+  // Get the months to display
   const months = useMemo(() => {
     const result = [];
     let currentDate = new Date(startDate);
-    currentDate.setDate(1); // Start at the beginning of the month
     
     while (currentDate <= endDate) {
-      const monthStart = startOfMonth(currentDate);
-      const monthEnd = endOfMonth(currentDate);
-      
-      result.push({
-        title: format(currentDate, 'MMMM yyyy'),
-        days: generateDaysForMonth(monthStart, monthEnd),
-        startDate: monthStart,
-        endDate: monthEnd
-      });
-      
-      // Move to next month
-      currentDate.setMonth(currentDate.getMonth() + 1);
+      result.push(new Date(currentDate));
+      currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
     }
     
     return result;
   }, [startDate, endDate]);
   
-  // Helper function to generate days for a month
+  // Generate calendar data
+  const calendarData = useMemo(() => {
+    return months.map(month => {
+      const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
+      const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+      const startDay = monthStart.getDay(); // 0-6, 0 is Sunday
+      
+      const days = [];
+      
+      // Add empty cells for days before the first of the month
+      for (let i = 0; i < startDay; i++) {
+        days.push({ date: null, events: [] });
+      }
+      
+      // Add days in the month
+      for (let day = 1; day <= monthEnd.getDate(); day++) {
+        const date = new Date(month.getFullYear(), month.getMonth(), day);
+        days.push({
+          date,
+          events: getEventsForDay(date)
+        });
+      }
+      
+      return {
+        month,
+        days
+      };
+    });
+  }, [months, projects, proposals, deadlines]);
+  
+  // Generate days for a specific month
   function generateDaysForMonth(monthStart: Date, monthEnd: Date) {
+    const startDay = monthStart.getDay(); // 0-6, 0 is Sunday
     const days = [];
-    let day = monthStart;
     
-    // Calculate offset for the first day of the month (0 = Sunday, 1 = Monday, etc.)
-    const firstDayOffset = getDay(monthStart);
-    
-    // Add empty cells for days before the start of the month
-    for (let i = 0; i < firstDayOffset; i++) {
-      days.push({ date: null, isCurrentMonth: false });
+    // Add empty cells for days before the first of the month
+    for (let i = 0; i < startDay; i++) {
+      days.push(null);
     }
     
-    // Add actual days of the month
-    while (day <= monthEnd) {
-      days.push({ 
-        date: new Date(day), 
-        isCurrentMonth: true,
-        isToday: isSameDay(day, new Date()),
-        isTaxSeason: isTaxSeason(day)
-      });
-      day = addDays(day, 1);
+    // Add days in the month
+    for (let day = 1; day <= monthEnd.getDate(); day++) {
+      days.push(new Date(monthStart.getFullYear(), monthStart.getMonth(), day));
     }
     
     return days;
   }
   
-  // Function to determine if a date is in tax season
+  // Check if a date is within tax season
   function isTaxSeason(date: Date) {
-    const month = date.getMonth();
+    // Tax season: January 1 - April 15, August 15 - October 15
+    const month = date.getMonth(); // 0-11
     const day = date.getDate();
     
-    // Spring tax season: January 15 - April 15
-    const isSpringTaxSeason = 
-      (month === 0 && day >= 15) || // Jan 15+
-      month === 1 ||                // All of Feb
-      month === 2 ||                // All of Mar
-      (month === 3 && day <= 15);   // Apr 1-15
+    if ((month === 0 || month === 1 || month === 2) || (month === 3 && day <= 15)) {
+      return true; // January - April 15
+    }
     
-    // Fall tax season: Aug 15 - Oct 15
-    const isFallTaxSeason = 
-      (month === 7 && day >= 15) || // Aug 15+
-      month === 8 ||                // All of Sep
-      (month === 9 && day <= 15);   // Oct 1-15
+    if ((month === 7 && day >= 15) || month === 8 || (month === 9 && day <= 15)) {
+      return true; // August 15 - October 15
+    }
     
-    return isSpringTaxSeason || isFallTaxSeason;
+    return false;
   }
   
   // Get events for a specific day
   function getEventsForDay(date: Date) {
-    if (!date) return [];
+    const events: CalendarEvent[] = [];
     
-    return calendarEvents.filter(event => {
-      // For deadlines (which are single-day events)
-      if (event.type === 'deadline') {
-        return isSameDay(event.startDate, date);
-      }
+    // Add projects
+    projects.forEach((project) => {
+      if (!project.startDate) return;
       
-      // For projects and proposals (which span multiple days)
-      if (event.endDate) {
-        return isWithinInterval(date, { start: event.startDate, end: event.endDate });
-      }
+      const projectStartDate = new Date(project.startDate);
+      const projectEndDate = project.endDate ? new Date(project.endDate) : addDays(projectStartDate, 30);
       
-      return isSameDay(event.startDate, date);
+      if (
+        isSameDay(date, projectStartDate) || 
+        isSameDay(date, projectEndDate) || 
+        (date > projectStartDate && date < projectEndDate)
+      ) {
+        const isStartOrEnd = isSameDay(date, projectStartDate) || isSameDay(date, projectEndDate);
+        
+        events.push({
+          id: project.id,
+          title: project.name,
+          startDate: projectStartDate,
+          endDate: projectEndDate,
+          type: 'project',
+          status: project.status,
+          hours: project.estimatedHours,
+          clientName: project.clientName,
+          color: '#0ea5e9' // blue
+        });
+      }
     });
+    
+    // Add proposals
+    proposals.forEach((proposal) => {
+      if (!proposal.estimatedStartDate) return;
+      
+      const proposalStartDate = new Date(proposal.estimatedStartDate);
+      const proposalEndDate = proposal.estimatedEndDate 
+        ? new Date(proposal.estimatedEndDate) 
+        : addDays(proposalStartDate, 30);
+      
+      if (
+        isSameDay(date, proposalStartDate) || 
+        isSameDay(date, proposalEndDate) || 
+        (date > proposalStartDate && date < proposalEndDate)
+      ) {
+        const isStartOrEnd = isSameDay(date, proposalStartDate) || isSameDay(date, proposalEndDate);
+        
+        events.push({
+          id: proposal.id,
+          title: proposal.title,
+          startDate: proposalStartDate,
+          endDate: proposalEndDate,
+          type: 'proposal',
+          status: proposal.status,
+          hours: proposal.estimatedHours,
+          clientName: proposal.clientCompanyName,
+          color: '#8b5cf6' // purple
+        });
+      }
+    });
+    
+    // Add deadlines
+    deadlines.forEach((deadline) => {
+      if (!deadline.dueDate) return;
+      
+      const deadlineDate = new Date(deadline.dueDate);
+      
+      if (isSameDay(date, deadlineDate)) {
+        events.push({
+          id: deadline.id,
+          title: deadline.title,
+          startDate: deadlineDate,
+          type: 'deadline',
+          clientName: deadline.clientCompanyName,
+          color: '#ef4444' // red
+        });
+      }
+    });
+    
+    return events;
   }
   
   return (
-    <div className="space-y-10">
-      {months.map((month, monthIndex) => (
-        <Card key={monthIndex} className="overflow-hidden">
-          <CardHeader className="bg-muted/30">
-            <CardTitle className="text-lg flex items-center justify-between">
-              <span>{month.title}</span>
-              <div className="flex items-center gap-3 text-sm font-normal">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#3b82f6]"></div>
-                  <span>Projects</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
-                  <span>Proposals</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#f43f5e]"></div>
-                  <span>Deadlines</span>
-                </div>
-              </div>
+    <div className="space-y-6">
+      {/* Calendar view */}
+      {calendarData.map(({ month, days }) => (
+        <Card key={month.toString()} className="overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">
+              {format(month, 'MMMM yyyy')}
+              {isTaxSeason(month) && (
+                <Badge variant="default" className="ml-2 text-xs">Tax Season</Badge>
+              )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
-            {/* Calendar grid */}
-            <div className="grid grid-cols-7">
-              {/* Day headers */}
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
-                <div 
-                  key={i} 
-                  className="text-center py-2 font-medium text-sm border-b"
+          <CardContent>
+            {/* Day headers */}
+            <div className="grid grid-cols-7 mb-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                <div
+                  key={day}
+                  className="text-center text-xs font-medium text-muted-foreground p-1"
                 >
                   {day}
                 </div>
               ))}
-              
-              {/* Calendar days */}
-              {month.days.map((day, dayIndex) => {
-                // Skip rendering for null dates (empty cells)
+            </div>
+            
+            {/* Calendar days */}
+            <div className="grid grid-cols-7 gap-1">
+              {days.map((day, i) => {
                 if (!day.date) {
-                  return <div key={dayIndex} className="h-24 border-b border-r"></div>;
+                  return <div key={`empty-${i}`} className="aspect-square" />;
                 }
                 
-                const events = getEventsForDay(day.date);
-                const isWeekend = getDay(day.date) === 0 || getDay(day.date) === 6;
+                const date = day.date;
+                const isHighlighted = highlightedDate ? isSameDay(date, highlightedDate) : false;
+                const isTaxSeasonDay = isTaxSeason(date);
                 
                 return (
                   <div 
-                    key={dayIndex} 
-                    className={`h-28 border-b border-r relative p-1 ${isWeekend ? 'bg-muted/10' : ''} ${day.isTaxSeason ? 'bg-amber-50/50' : ''} ${day.isToday ? 'bg-blue-50/50' : ''}`}
+                    key={date.toString()}
+                    className={`
+                      relative aspect-square p-1 border rounded-md overflow-hidden flex flex-col
+                      ${isToday(date) ? 'border-primary' : 'border-border'}
+                      ${isHighlighted ? 'bg-accent' : ''}
+                      ${isTaxSeasonDay ? 'bg-yellow-50 dark:bg-yellow-950/10' : ''}
+                    `}
+                    onMouseEnter={() => setHighlightedDate(date)}
+                    onMouseLeave={() => setHighlightedDate(null)}
                   >
-                    <div className="text-right text-sm mb-1">
-                      <span className={day.isToday ? 'h-5 w-5 rounded-full bg-primary text-white inline-flex items-center justify-center' : ''}>
-                        {format(day.date, 'd')}
-                      </span>
+                    <div className="text-xs font-medium">
+                      {format(date, 'd')}
                     </div>
                     
-                    {day.isTaxSeason && (
-                      <div className="absolute top-1 left-1">
-                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                          Tax Season
-                        </Badge>
-                      </div>
-                    )}
-                    
-                    <div className="overflow-y-auto max-h-[75px] space-y-1">
-                      {events.map((event, eventIndex) => (
-                        <TooltipProvider key={`${event.type}-${event.id}-${eventIndex}`}>
-                          <Tooltip delayDuration={300}>
+                    <div className="flex flex-col gap-0.5 mt-0.5 overflow-hidden flex-1">
+                      {day.events.map((event, index) => (
+                        <TooltipProvider key={`${event.type}-${event.id}`}>
+                          <Tooltip>
                             <TooltipTrigger asChild>
                               <div 
-                                className={`text-xs p-1 rounded flex items-center gap-1 truncate ${
-                                  isSameDay(event.startDate, day.date) ? 'border-l-2' : ''
-                                }`}
-                                style={{ 
-                                  backgroundColor: `${event.color}10`,
-                                  borderLeftColor: isSameDay(event.startDate, day.date) ? event.color : 'transparent' 
-                                }}
+                                className={`
+                                  text-xs truncate rounded px-1 flex items-center
+                                  ${event.type === 'deadline' ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300' : 
+                                    event.type === 'project' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 
+                                    'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'}
+                                `}
+                                style={{ fontSize: '0.65rem' }}
                               >
-                                {event.type === 'project' ? (
-                                  <CalendarIcon className="h-3 w-3 flex-shrink-0" style={{ color: event.color }} />
-                                ) : event.type === 'proposal' ? (
-                                  <Check className="h-3 w-3 flex-shrink-0" style={{ color: event.color }} />
-                                ) : (
-                                  <Clock className="h-3 w-3 flex-shrink-0 text-red-500" />
-                                )}
-                                <span className="truncate">{event.title}</span>
+                                <span className="truncate flex-1">
+                                  {event.title}
+                                </span>
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent side="right">
+                            <TooltipContent side="right" align="start" className="max-w-[250px]">
                               <div className="space-y-1.5">
                                 <div className="font-medium">{event.title}</div>
-                                {event.type !== 'deadline' && (
-                                  <div className="text-xs flex justify-between">
+                                {event.status && (
+                                  <div className="flex items-center gap-1">
                                     <span>
                                       {format(event.startDate, 'MMM d')} - 
                                       {event.endDate && format(event.endDate, ' MMM d')}
@@ -257,7 +279,7 @@ export function SeasonCalendar({ startDate, endDate, projects, proposals, deadli
                                     <Badge variant={
                                       event.status === 'completed' ? 'default' :
                                       event.status === 'pending' ? 'secondary' : 
-                                      'warning'
+                                      'outline'
                                     } className="ml-2 text-[10px]">
                                       {event.status}
                                     </Badge>
