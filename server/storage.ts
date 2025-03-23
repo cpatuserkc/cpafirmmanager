@@ -1,0 +1,513 @@
+import {
+  users,
+  clients,
+  projects,
+  timeEntries,
+  proposals,
+  resources,
+  classifications,
+  deadlines,
+  type User,
+  type InsertUser,
+  type Client,
+  type InsertClient,
+  type Project,
+  type InsertProject,
+  type TimeEntry,
+  type InsertTimeEntry,
+  type Proposal,
+  type InsertProposal,
+  type Resource,
+  type InsertResource,
+  type Classification,
+  type InsertClassification,
+  type Deadline,
+  type InsertDeadline
+} from "@shared/schema";
+
+export interface IStorage {
+  // User operations
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, data: Partial<User>): Promise<User | undefined>;
+
+  // Client operations
+  getClient(id: number): Promise<Client | undefined>;
+  getClientsByUserId(userId: number): Promise<Client[]>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: number, data: Partial<Client>): Promise<Client | undefined>;
+  deleteClient(id: number): Promise<boolean>;
+
+  // Project operations
+  getProject(id: number): Promise<Project | undefined>;
+  getProjectsByUserId(userId: number): Promise<Project[]>;
+  getProjectsByClientId(clientId: number): Promise<Project[]>;
+  createProject(project: InsertProject): Promise<Project>;
+  updateProject(id: number, data: Partial<Project>): Promise<Project | undefined>;
+  deleteProject(id: number): Promise<boolean>;
+
+  // Time entry operations
+  getTimeEntry(id: number): Promise<TimeEntry | undefined>;
+  getTimeEntriesByUserId(userId: number, limit?: number): Promise<TimeEntry[]>;
+  getTimeEntriesByClientId(clientId: number): Promise<TimeEntry[]>;
+  getTimeEntriesByProjectId(projectId: number): Promise<TimeEntry[]>;
+  createTimeEntry(timeEntry: InsertTimeEntry): Promise<TimeEntry>;
+  updateTimeEntry(id: number, data: Partial<TimeEntry>): Promise<TimeEntry | undefined>;
+  deleteTimeEntry(id: number): Promise<boolean>;
+
+  // Proposal operations
+  getProposal(id: number): Promise<Proposal | undefined>;
+  getProposalsByUserId(userId: number): Promise<Proposal[]>;
+  getProposalsByClientId(clientId: number): Promise<Proposal[]>;
+  createProposal(proposal: InsertProposal): Promise<Proposal>;
+  updateProposal(id: number, data: Partial<Proposal>): Promise<Proposal | undefined>;
+  deleteProposal(id: number): Promise<boolean>;
+
+  // Resource operations
+  getResource(id: number): Promise<Resource | undefined>;
+  getAllResources(): Promise<Resource[]>;
+  getResourcesByType(type: string): Promise<Resource[]>;
+  getResourcesByAccessLevel(accessLevel: string): Promise<Resource[]>;
+  createResource(resource: InsertResource): Promise<Resource>;
+  updateResource(id: number, data: Partial<Resource>): Promise<Resource | undefined>;
+  deleteResource(id: number): Promise<boolean>;
+
+  // Classification operations
+  getClassification(id: number): Promise<Classification | undefined>;
+  getAllClassifications(): Promise<Classification[]>;
+  getClassificationsByCategory(category: string): Promise<Classification[]>;
+  getClassificationsByAccessLevel(accessLevel: string): Promise<Classification[]>;
+  createClassification(classification: InsertClassification): Promise<Classification>;
+  updateClassification(id: number, data: Partial<Classification>): Promise<Classification | undefined>;
+  deleteClassification(id: number): Promise<boolean>;
+
+  // Deadline operations
+  getDeadline(id: number): Promise<Deadline | undefined>;
+  getDeadlinesByUserId(userId: number): Promise<Deadline[]>;
+  getUpcomingDeadlinesByUserId(userId: number, limit?: number): Promise<Deadline[]>;
+  createDeadline(deadline: InsertDeadline): Promise<Deadline>;
+  updateDeadline(id: number, data: Partial<Deadline>): Promise<Deadline | undefined>;
+  deleteDeadline(id: number): Promise<boolean>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private clients: Map<number, Client>;
+  private projects: Map<number, Project>;
+  private timeEntries: Map<number, TimeEntry>;
+  private proposals: Map<number, Proposal>;
+  private resources: Map<number, Resource>;
+  private classifications: Map<number, Classification>;
+  private deadlines: Map<number, Deadline>;
+  
+  private userIdCounter: number;
+  private clientIdCounter: number;
+  private projectIdCounter: number;
+  private timeEntryIdCounter: number;
+  private proposalIdCounter: number;
+  private resourceIdCounter: number;
+  private classificationIdCounter: number;
+  private deadlineIdCounter: number;
+
+  constructor() {
+    this.users = new Map();
+    this.clients = new Map();
+    this.projects = new Map();
+    this.timeEntries = new Map();
+    this.proposals = new Map();
+    this.resources = new Map();
+    this.classifications = new Map();
+    this.deadlines = new Map();
+    
+    this.userIdCounter = 1;
+    this.clientIdCounter = 1;
+    this.projectIdCounter = 1;
+    this.timeEntryIdCounter = 1;
+    this.proposalIdCounter = 1;
+    this.resourceIdCounter = 1;
+    this.classificationIdCounter = 1;
+    this.deadlineIdCounter = 1;
+    
+    this.initSampleData();
+  }
+
+  private initSampleData() {
+    // Add some initial resources
+    const resources = [
+      {
+        id: this.resourceIdCounter++,
+        title: "Client Onboarding Template",
+        description: "Streamline your client intake process with our comprehensive onboarding template.",
+        type: "template",
+        accessLevel: "free",
+        downloadUrl: "/downloads/client-onboarding-template.pdf",
+        imageUrl: "https://images.unsplash.com/photo-1554224155-6726b3ff858f",
+        createdAt: new Date()
+      },
+      {
+        id: this.resourceIdCounter++,
+        title: "Advanced Time Tracking Guide",
+        description: "Master effective time tracking strategies to maximize billable hours and profitability.",
+        type: "guide",
+        accessLevel: "premium",
+        downloadUrl: "/downloads/time-tracking-guide.pdf",
+        imageUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40",
+        createdAt: new Date()
+      },
+      {
+        id: this.resourceIdCounter++,
+        title: "Tax Classification Cheat Sheet",
+        description: "Quick reference guide to common tax classifications for small business clients.",
+        type: "tool",
+        accessLevel: "free",
+        downloadUrl: "/downloads/tax-classification-cheatsheet.pdf",
+        imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71",
+        createdAt: new Date()
+      }
+    ];
+
+    resources.forEach(resource => {
+      this.resources.set(resource.id, resource);
+    });
+    
+    // Add sample classifications
+    const classifications = [
+      {
+        id: this.classificationIdCounter++,
+        category: "Tax",
+        name: "Business Entity Types",
+        description: "Classifications of different business entity types for tax purposes",
+        details: { items: ["Sole Proprietorship", "Partnership", "LLC", "S-Corporation", "C-Corporation"] },
+        accessLevel: "free"
+      },
+      {
+        id: this.classificationIdCounter++,
+        category: "Accounting",
+        name: "Chart of Accounts",
+        description: "Standard chart of accounts for small businesses",
+        details: { items: ["Assets", "Liabilities", "Equity", "Revenue", "Expenses"] },
+        accessLevel: "free"
+      },
+      {
+        id: this.classificationIdCounter++,
+        category: "Tax",
+        name: "Income Categories",
+        description: "Classifications of different income types",
+        details: { items: ["Earned Income", "Passive Income", "Portfolio Income", "Capital Gains"] },
+        accessLevel: "premium"
+      }
+    ];
+
+    classifications.forEach(classification => {
+      this.classifications.set(classification.id, classification);
+    });
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username.toLowerCase() === username.toLowerCase()
+    );
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email.toLowerCase() === email.toLowerCase()
+    );
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const id = this.userIdCounter++;
+    const user: User = { ...userData, id, createdAt: new Date() };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async updateUser(id: number, data: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, ...data };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  // Client operations
+  async getClient(id: number): Promise<Client | undefined> {
+    return this.clients.get(id);
+  }
+
+  async getClientsByUserId(userId: number): Promise<Client[]> {
+    return Array.from(this.clients.values()).filter(
+      (client) => client.userId === userId
+    );
+  }
+
+  async createClient(clientData: InsertClient): Promise<Client> {
+    const id = this.clientIdCounter++;
+    const client: Client = { ...clientData, id };
+    this.clients.set(id, client);
+    return client;
+  }
+
+  async updateClient(id: number, data: Partial<Client>): Promise<Client | undefined> {
+    const client = this.clients.get(id);
+    if (!client) return undefined;
+    
+    const updatedClient = { ...client, ...data };
+    this.clients.set(id, updatedClient);
+    return updatedClient;
+  }
+
+  async deleteClient(id: number): Promise<boolean> {
+    return this.clients.delete(id);
+  }
+
+  // Project operations
+  async getProject(id: number): Promise<Project | undefined> {
+    return this.projects.get(id);
+  }
+
+  async getProjectsByUserId(userId: number): Promise<Project[]> {
+    return Array.from(this.projects.values()).filter(
+      (project) => project.userId === userId
+    );
+  }
+
+  async getProjectsByClientId(clientId: number): Promise<Project[]> {
+    return Array.from(this.projects.values()).filter(
+      (project) => project.clientId === clientId
+    );
+  }
+
+  async createProject(projectData: InsertProject): Promise<Project> {
+    const id = this.projectIdCounter++;
+    const project: Project = { ...projectData, id };
+    this.projects.set(id, project);
+    return project;
+  }
+
+  async updateProject(id: number, data: Partial<Project>): Promise<Project | undefined> {
+    const project = this.projects.get(id);
+    if (!project) return undefined;
+    
+    const updatedProject = { ...project, ...data };
+    this.projects.set(id, updatedProject);
+    return updatedProject;
+  }
+
+  async deleteProject(id: number): Promise<boolean> {
+    return this.projects.delete(id);
+  }
+
+  // Time entry operations
+  async getTimeEntry(id: number): Promise<TimeEntry | undefined> {
+    return this.timeEntries.get(id);
+  }
+
+  async getTimeEntriesByUserId(userId: number, limit?: number): Promise<TimeEntry[]> {
+    const entries = Array.from(this.timeEntries.values())
+      .filter((entry) => entry.userId === userId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    return limit ? entries.slice(0, limit) : entries;
+  }
+
+  async getTimeEntriesByClientId(clientId: number): Promise<TimeEntry[]> {
+    return Array.from(this.timeEntries.values())
+      .filter((entry) => entry.clientId === clientId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async getTimeEntriesByProjectId(projectId: number): Promise<TimeEntry[]> {
+    return Array.from(this.timeEntries.values())
+      .filter((entry) => entry.projectId === projectId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async createTimeEntry(timeEntryData: InsertTimeEntry): Promise<TimeEntry> {
+    const id = this.timeEntryIdCounter++;
+    const timeEntry: TimeEntry = { ...timeEntryData, id };
+    this.timeEntries.set(id, timeEntry);
+    return timeEntry;
+  }
+
+  async updateTimeEntry(id: number, data: Partial<TimeEntry>): Promise<TimeEntry | undefined> {
+    const timeEntry = this.timeEntries.get(id);
+    if (!timeEntry) return undefined;
+    
+    const updatedTimeEntry = { ...timeEntry, ...data };
+    this.timeEntries.set(id, updatedTimeEntry);
+    return updatedTimeEntry;
+  }
+
+  async deleteTimeEntry(id: number): Promise<boolean> {
+    return this.timeEntries.delete(id);
+  }
+
+  // Proposal operations
+  async getProposal(id: number): Promise<Proposal | undefined> {
+    return this.proposals.get(id);
+  }
+
+  async getProposalsByUserId(userId: number): Promise<Proposal[]> {
+    return Array.from(this.proposals.values())
+      .filter((proposal) => proposal.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getProposalsByClientId(clientId: number): Promise<Proposal[]> {
+    return Array.from(this.proposals.values())
+      .filter((proposal) => proposal.clientId === clientId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createProposal(proposalData: InsertProposal): Promise<Proposal> {
+    const id = this.proposalIdCounter++;
+    const proposal: Proposal = { ...proposalData, id, createdAt: new Date() };
+    this.proposals.set(id, proposal);
+    return proposal;
+  }
+
+  async updateProposal(id: number, data: Partial<Proposal>): Promise<Proposal | undefined> {
+    const proposal = this.proposals.get(id);
+    if (!proposal) return undefined;
+    
+    const updatedProposal = { ...proposal, ...data };
+    this.proposals.set(id, updatedProposal);
+    return updatedProposal;
+  }
+
+  async deleteProposal(id: number): Promise<boolean> {
+    return this.proposals.delete(id);
+  }
+
+  // Resource operations
+  async getResource(id: number): Promise<Resource | undefined> {
+    return this.resources.get(id);
+  }
+
+  async getAllResources(): Promise<Resource[]> {
+    return Array.from(this.resources.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getResourcesByType(type: string): Promise<Resource[]> {
+    return Array.from(this.resources.values())
+      .filter((resource) => resource.type === type)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getResourcesByAccessLevel(accessLevel: string): Promise<Resource[]> {
+    return Array.from(this.resources.values())
+      .filter((resource) => resource.accessLevel === accessLevel)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createResource(resourceData: InsertResource): Promise<Resource> {
+    const id = this.resourceIdCounter++;
+    const resource: Resource = { ...resourceData, id, createdAt: new Date() };
+    this.resources.set(id, resource);
+    return resource;
+  }
+
+  async updateResource(id: number, data: Partial<Resource>): Promise<Resource | undefined> {
+    const resource = this.resources.get(id);
+    if (!resource) return undefined;
+    
+    const updatedResource = { ...resource, ...data };
+    this.resources.set(id, updatedResource);
+    return updatedResource;
+  }
+
+  async deleteResource(id: number): Promise<boolean> {
+    return this.resources.delete(id);
+  }
+
+  // Classification operations
+  async getClassification(id: number): Promise<Classification | undefined> {
+    return this.classifications.get(id);
+  }
+
+  async getAllClassifications(): Promise<Classification[]> {
+    return Array.from(this.classifications.values());
+  }
+
+  async getClassificationsByCategory(category: string): Promise<Classification[]> {
+    return Array.from(this.classifications.values())
+      .filter((classification) => classification.category === category);
+  }
+
+  async getClassificationsByAccessLevel(accessLevel: string): Promise<Classification[]> {
+    return Array.from(this.classifications.values())
+      .filter((classification) => classification.accessLevel === accessLevel);
+  }
+
+  async createClassification(classificationData: InsertClassification): Promise<Classification> {
+    const id = this.classificationIdCounter++;
+    const classification: Classification = { ...classificationData, id };
+    this.classifications.set(id, classification);
+    return classification;
+  }
+
+  async updateClassification(id: number, data: Partial<Classification>): Promise<Classification | undefined> {
+    const classification = this.classifications.get(id);
+    if (!classification) return undefined;
+    
+    const updatedClassification = { ...classification, ...data };
+    this.classifications.set(id, updatedClassification);
+    return updatedClassification;
+  }
+
+  async deleteClassification(id: number): Promise<boolean> {
+    return this.classifications.delete(id);
+  }
+
+  // Deadline operations
+  async getDeadline(id: number): Promise<Deadline | undefined> {
+    return this.deadlines.get(id);
+  }
+
+  async getDeadlinesByUserId(userId: number): Promise<Deadline[]> {
+    return Array.from(this.deadlines.values())
+      .filter((deadline) => deadline.userId === userId)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }
+
+  async getUpcomingDeadlinesByUserId(userId: number, limit?: number): Promise<Deadline[]> {
+    const now = new Date();
+    const deadlines = Array.from(this.deadlines.values())
+      .filter((deadline) => deadline.userId === userId && new Date(deadline.dueDate) >= now && !deadline.isCompleted)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    
+    return limit ? deadlines.slice(0, limit) : deadlines;
+  }
+
+  async createDeadline(deadlineData: InsertDeadline): Promise<Deadline> {
+    const id = this.deadlineIdCounter++;
+    const deadline: Deadline = { ...deadlineData, id };
+    this.deadlines.set(id, deadline);
+    return deadline;
+  }
+
+  async updateDeadline(id: number, data: Partial<Deadline>): Promise<Deadline | undefined> {
+    const deadline = this.deadlines.get(id);
+    if (!deadline) return undefined;
+    
+    const updatedDeadline = { ...deadline, ...data };
+    this.deadlines.set(id, updatedDeadline);
+    return updatedDeadline;
+  }
+
+  async deleteDeadline(id: number): Promise<boolean> {
+    return this.deadlines.delete(id);
+  }
+}
+
+export const storage = new MemStorage();

@@ -1,0 +1,80 @@
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import NotFound from "@/pages/not-found";
+import MainLayout from "@/components/layout/MainLayout";
+import Home from "@/pages/home";
+import Dashboard from "@/pages/dashboard";
+import Resources from "@/pages/resources";
+import TimeTracking from "@/pages/time-tracking";
+import Proposals from "@/pages/proposals";
+import Clients from "@/pages/clients";
+import Classification from "@/pages/classification";
+import Login from "@/pages/login";
+import SignUp from "@/pages/signup";
+import { useState, createContext } from "react";
+import { User } from "@shared/schema";
+
+type AuthContextType = {
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (user: User) => void;
+  logout: () => void;
+};
+
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isAuthenticated: false,
+  login: () => {},
+  logout: () => {},
+});
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/resources" component={Resources} />
+      <Route path="/time-tracking" component={TimeTracking} />
+      <Route path="/proposals" component={Proposals} />
+      <Route path="/clients" component={Clients} />
+      <Route path="/classification" component={Classification} />
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={SignUp} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  const [user, setUser] = useState<User | null>(null);
+
+  const login = (user: User) => {
+    setUser(user);
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthContext.Provider 
+        value={{ 
+          user, 
+          isAuthenticated: !!user, 
+          login, 
+          logout
+        }}
+      >
+        <MainLayout>
+          <Router />
+        </MainLayout>
+        <Toaster />
+      </AuthContext.Provider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
