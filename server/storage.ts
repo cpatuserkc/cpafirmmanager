@@ -1,22 +1,37 @@
 import {
   users,
-  clients,
+  firms,
+  userFirmRelationships,
+  contacts,
+  clientCompanies,
   projects,
   timeEntries,
+  services,
   proposals,
+  proposalServices,
   resources,
   classifications,
   deadlines,
   type User,
   type InsertUser,
-  type Client,
-  type InsertClient,
+  type Firm,
+  type InsertFirm,
+  type UserFirmRelationship,
+  type InsertUserFirmRelationship,
+  type Contact,
+  type InsertContact,
+  type ClientCompany,
+  type InsertClientCompany,
   type Project,
   type InsertProject,
   type TimeEntry,
   type InsertTimeEntry,
+  type Service,
+  type InsertService,
   type Proposal,
   type InsertProposal,
+  type ProposalService,
+  type InsertProposalService,
   type Resource,
   type InsertResource,
   type Classification,
@@ -32,38 +47,77 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, data: Partial<User>): Promise<User | undefined>;
-
-  // Client operations
-  getClient(id: number): Promise<Client | undefined>;
-  getClientsByUserId(userId: number): Promise<Client[]>;
-  createClient(client: InsertClient): Promise<Client>;
-  updateClient(id: number, data: Partial<Client>): Promise<Client | undefined>;
-  deleteClient(id: number): Promise<boolean>;
+  
+  // Firm operations
+  getFirm(id: number): Promise<Firm | undefined>;
+  getFirmsByUserId(userId: number): Promise<Firm[]>;
+  createFirm(firm: InsertFirm): Promise<Firm>;
+  updateFirm(id: number, data: Partial<Firm>): Promise<Firm | undefined>;
+  deleteFirm(id: number): Promise<boolean>;
+  
+  // User-Firm relationship operations
+  getUserFirmRelationship(id: number): Promise<UserFirmRelationship | undefined>;
+  getUserFirmRelationshipsByUserId(userId: number): Promise<UserFirmRelationship[]>;
+  getUserFirmRelationshipsByFirmId(firmId: number): Promise<UserFirmRelationship[]>;
+  createUserFirmRelationship(relationship: InsertUserFirmRelationship): Promise<UserFirmRelationship>;
+  deleteUserFirmRelationship(id: number): Promise<boolean>;
+  
+  // Contact operations
+  getContact(id: number): Promise<Contact | undefined>;
+  getContactsByFirmId(firmId: number): Promise<Contact[]>;
+  createContact(contact: InsertContact): Promise<Contact>;
+  updateContact(id: number, data: Partial<Contact>): Promise<Contact | undefined>;
+  deleteContact(id: number): Promise<boolean>;
+  
+  // Client Company operations
+  getClientCompany(id: number): Promise<ClientCompany | undefined>;
+  getClientCompaniesByFirmId(firmId: number): Promise<ClientCompany[]>;
+  getClientCompaniesByContactId(contactId: number): Promise<ClientCompany[]>;
+  createClientCompany(company: InsertClientCompany): Promise<ClientCompany>;
+  updateClientCompany(id: number, data: Partial<ClientCompany>): Promise<ClientCompany | undefined>;
+  deleteClientCompany(id: number): Promise<boolean>;
 
   // Project operations
   getProject(id: number): Promise<Project | undefined>;
-  getProjectsByUserId(userId: number): Promise<Project[]>;
-  getProjectsByClientId(clientId: number): Promise<Project[]>;
+  getProjectsByFirmId(firmId: number): Promise<Project[]>;
+  getProjectsByClientCompanyId(clientCompanyId: number): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, data: Partial<Project>): Promise<Project | undefined>;
   deleteProject(id: number): Promise<boolean>;
 
   // Time entry operations
   getTimeEntry(id: number): Promise<TimeEntry | undefined>;
+  getTimeEntriesByFirmId(firmId: number, limit?: number): Promise<TimeEntry[]>;
   getTimeEntriesByUserId(userId: number, limit?: number): Promise<TimeEntry[]>;
-  getTimeEntriesByClientId(clientId: number): Promise<TimeEntry[]>;
+  getTimeEntriesByClientCompanyId(clientCompanyId: number): Promise<TimeEntry[]>;
   getTimeEntriesByProjectId(projectId: number): Promise<TimeEntry[]>;
   createTimeEntry(timeEntry: InsertTimeEntry): Promise<TimeEntry>;
   updateTimeEntry(id: number, data: Partial<TimeEntry>): Promise<TimeEntry | undefined>;
   deleteTimeEntry(id: number): Promise<boolean>;
+  
+  // Service operations
+  getService(id: number): Promise<Service | undefined>;
+  getServicesByFirmId(firmId: number): Promise<Service[]>;
+  getServicesByCategory(firmId: number, category: string): Promise<Service[]>;
+  createService(service: InsertService): Promise<Service>;
+  updateService(id: number, data: Partial<Service>): Promise<Service | undefined>;
+  deleteService(id: number): Promise<boolean>;
 
   // Proposal operations
   getProposal(id: number): Promise<Proposal | undefined>;
-  getProposalsByUserId(userId: number): Promise<Proposal[]>;
-  getProposalsByClientId(clientId: number): Promise<Proposal[]>;
+  getProposalsByFirmId(firmId: number): Promise<Proposal[]>;
+  getProposalsByContactId(contactId: number): Promise<Proposal[]>;
+  getProposalsByClientCompanyId(clientCompanyId: number): Promise<Proposal[]>;
   createProposal(proposal: InsertProposal): Promise<Proposal>;
   updateProposal(id: number, data: Partial<Proposal>): Promise<Proposal | undefined>;
   deleteProposal(id: number): Promise<boolean>;
+  
+  // Proposal Services operations
+  getProposalService(id: number): Promise<ProposalService | undefined>;
+  getProposalServicesByProposalId(proposalId: number): Promise<ProposalService[]>;
+  createProposalService(proposalService: InsertProposalService): Promise<ProposalService>;
+  updateProposalService(id: number, data: Partial<ProposalService>): Promise<ProposalService | undefined>;
+  deleteProposalService(id: number): Promise<boolean>;
 
   // Resource operations
   getResource(id: number): Promise<Resource | undefined>;
@@ -85,47 +139,73 @@ export interface IStorage {
 
   // Deadline operations
   getDeadline(id: number): Promise<Deadline | undefined>;
-  getDeadlinesByUserId(userId: number): Promise<Deadline[]>;
-  getUpcomingDeadlinesByUserId(userId: number, limit?: number): Promise<Deadline[]>;
+  getDeadlinesByFirmId(firmId: number): Promise<Deadline[]>;
+  getDeadlinesByContactId(contactId: number): Promise<Deadline[]>;
+  getDeadlinesByClientCompanyId(clientCompanyId: number): Promise<Deadline[]>;
+  getUpcomingDeadlinesByFirmId(firmId: number, limit?: number): Promise<Deadline[]>;
   createDeadline(deadline: InsertDeadline): Promise<Deadline>;
   updateDeadline(id: number, data: Partial<Deadline>): Promise<Deadline | undefined>;
   deleteDeadline(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
+  // Storage maps for each entity type
   private users: Map<number, User>;
-  private clients: Map<number, Client>;
+  private firms: Map<number, Firm>;
+  private userFirmRelationships: Map<number, UserFirmRelationship>;
+  private contacts: Map<number, Contact>;
+  private clientCompanies: Map<number, ClientCompany>;
   private projects: Map<number, Project>;
   private timeEntries: Map<number, TimeEntry>;
+  private services: Map<number, Service>;
   private proposals: Map<number, Proposal>;
+  private proposalServices: Map<number, ProposalService>;
   private resources: Map<number, Resource>;
   private classifications: Map<number, Classification>;
   private deadlines: Map<number, Deadline>;
   
+  // ID counters for each entity type
   private userIdCounter: number;
-  private clientIdCounter: number;
+  private firmIdCounter: number;
+  private userFirmRelationshipIdCounter: number;
+  private contactIdCounter: number;
+  private clientCompanyIdCounter: number;
   private projectIdCounter: number;
   private timeEntryIdCounter: number;
+  private serviceIdCounter: number;
   private proposalIdCounter: number;
+  private proposalServiceIdCounter: number;
   private resourceIdCounter: number;
   private classificationIdCounter: number;
   private deadlineIdCounter: number;
 
   constructor() {
+    // Initialize all storage maps
     this.users = new Map();
-    this.clients = new Map();
+    this.firms = new Map();
+    this.userFirmRelationships = new Map();
+    this.contacts = new Map();
+    this.clientCompanies = new Map();
     this.projects = new Map();
     this.timeEntries = new Map();
+    this.services = new Map();
     this.proposals = new Map();
+    this.proposalServices = new Map();
     this.resources = new Map();
     this.classifications = new Map();
     this.deadlines = new Map();
     
+    // Initialize all ID counters
     this.userIdCounter = 1;
-    this.clientIdCounter = 1;
+    this.firmIdCounter = 1;
+    this.userFirmRelationshipIdCounter = 1;
+    this.contactIdCounter = 1;
+    this.clientCompanyIdCounter = 1;
     this.projectIdCounter = 1;
     this.timeEntryIdCounter = 1;
+    this.serviceIdCounter = 1;
     this.proposalIdCounter = 1;
+    this.proposalServiceIdCounter = 1;
     this.resourceIdCounter = 1;
     this.classificationIdCounter = 1;
     this.deadlineIdCounter = 1;

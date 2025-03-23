@@ -128,21 +128,48 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   createdAt: true,
 });
 
-// Time entries schema - Time recorded against projects
+// Time entries schema - Time recorded against projects (aggregate totals)
 export const timeEntries = pgTable("time_entries", {
   id: serial("id").primaryKey(),
   firmId: integer("firm_id").notNull().references(() => firms.id),
-  userId: integer("user_id").notNull().references(() => users.id), // Person who performed the work
   clientCompanyId: integer("client_company_id").notNull().references(() => clientCompanies.id),
   projectId: integer("project_id").notNull().references(() => projects.id),
-  date: timestamp("date").defaultNow().notNull(),
+  serviceId: integer("service_id").references(() => services.id),
+  professionalRoleId: integer("professional_role_id").references(() => professionalRoles.id),
+  tier: text("tier").default("mid"), // "top", "mid", "low"
+  performedById: integer("performed_by_id").references(() => users.id), // Person who performed the work
+  periodStart: timestamp("period_start"), // For reporting period
+  periodEnd: timestamp("period_end"), // For reporting period
+  dateEntered: timestamp("date_entered").defaultNow().notNull(),
   hours: numeric("hours").notNull(),
+  rate: numeric("rate"), // Actual rate used
+  cost: numeric("cost"), // hours × rate
   description: text("description"),
-  status: text("status").default("pending").notNull(), // "pending", "billed", "in_progress"
+  status: text("status").default("recorded").notNull(), // "recorded", "billed", "reconciled"
+  createdById: integer("created_by_id").notNull().references(() => users.id), // Person who entered the data
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Professional Roles schema - Staff roles in the firm
+export const professionalRoles = pgTable("professional_roles", {
+  id: serial("id").primaryKey(),
+  firmId: integer("firm_id").notNull().references(() => firms.id),
+  name: text("name").notNull(), // "Accountant", "Tax Specialist", "Auditor", etc.
+  description: text("description"),
+  topTierRate: numeric("top_tier_rate").notNull(), // Base hourly rate for top tier
+  midTierRatePercent: numeric("mid_tier_rate_percent").default("75").notNull(), // % of top tier (e.g., 75%)
+  lowTierRatePercent: numeric("low_tier_rate_percent").default("50").notNull(), // % of top tier (e.g., 50%)
+  createdById: integer("created_by_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+});
+
+export const insertProfessionalRoleSchema = createInsertSchema(professionalRoles).omit({
   id: true,
   createdAt: true,
 });
@@ -154,7 +181,10 @@ export const services = pgTable("services", {
   name: text("name").notNull(),
   description: text("description"),
   category: text("category"), // "tax", "audit", "advisory", etc.
-  defaultRate: numeric("default_rate"),
+  defaultRoleId: integer("default_role_id").references(() => professionalRoles.id), // Default professional role
+  defaultTier: text("default_tier").default("mid"), // "top", "mid", "low"
+  jurisdictionFederal: boolean("jurisdiction_federal").default(false),
+  jurisdictionState: text("jurisdiction_state"), // State code if applicable
   estimatedHours: numeric("estimated_hours"),
   createdById: integer("created_by_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -192,10 +222,15 @@ export const proposalServices = pgTable("proposal_services", {
   id: serial("id").primaryKey(),
   proposalId: integer("proposal_id").notNull().references(() => proposals.id),
   serviceId: integer("service_id").notNull().references(() => services.id),
+  professionalRoleId: integer("professional_role_id").references(() => professionalRoles.id),
+  tier: text("tier").default("mid"), // "top", "mid", "low"
   quantity: numeric("quantity").default("1").notNull(),
-  rate: numeric("rate"),
+  rate: numeric("rate"), // Calculated rate based on role and tier
   description: text("description"),
   estimatedHours: numeric("estimated_hours"),
+  estimatedCost: numeric("estimated_cost"), // Pre-calculated hours × rate
+  jurisdictionFederal: boolean("jurisdiction_federal").default(false),
+  jurisdictionState: text("jurisdiction_state"), // State code if applicable
 });
 
 export const insertProposalServiceSchema = createInsertSchema(proposalServices).omit({
@@ -274,6 +309,9 @@ export type InsertProject = z.infer<typeof insertProjectSchema>;
 
 export type TimeEntry = typeof timeEntries.$inferSelect;
 export type InsertTimeEntry = z.infer<typeof insertTimeEntrySchema>;
+
+export type ProfessionalRole = typeof professionalRoles.$inferSelect;
+export type InsertProfessionalRole = z.infer<typeof insertProfessionalRoleSchema>;
 
 export type Service = typeof services.$inferSelect;
 export type InsertService = z.infer<typeof insertServiceSchema>;
