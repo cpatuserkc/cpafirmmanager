@@ -1,11 +1,15 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon, neonConfig } from '@neondatabase/serverless';
 import * as schema from '@shared/schema';
-import { sql as sqlObj } from 'drizzle-orm';
+import { sql as sqlObj, type SQL } from 'drizzle-orm';
 
-// Connect to the database using the provided DATABASE_URL
-// Note: The proper way to connect with neon and drizzle
+// Configure Neon for serverless environment
+neonConfig.fetchConnectionCache = true;
+
+// Create a Neon client
 const sql = neon(process.env.DATABASE_URL!);
+
+// Initialize Drizzle with the Neon client
 export const db = drizzle(sql, { schema });
 
 // Export a function to push the schema to the database

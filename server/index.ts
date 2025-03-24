@@ -50,9 +50,10 @@ app.use((req, res, next) => {
     await initSampleData();
     console.log("Basic sample data initialized successfully");
     
-    console.log("Initializing comprehensive sample data...");
-    await initComprehensiveData();
-    console.log("Comprehensive sample data initialized successfully");
+    // Temporarily disable comprehensive data initialization while we work on fixing field name issues
+    // console.log("Initializing comprehensive sample data...");
+    // await initComprehensiveData();
+    // console.log("Comprehensive sample data initialized successfully");
   } catch (error) {
     console.error("Error initializing database:", error);
   }
