@@ -1,7 +1,7 @@
 import { db } from './db';
 import {
   users, firms, professionalRoles, services, contacts,
-  clientCompanies, projects, proposals, deadlines
+  clientCompanies, projects, proposals, deadlines, userFirmRelationships
 } from '@shared/schema';
 import { count, eq } from 'drizzle-orm';
 import {
@@ -170,44 +170,49 @@ async function createUserFirmRelationships(adminUserId: number, allFirms: any[])
     // Add admin user to all firms as owner
     for (const firm of allFirms) {
       relationships.push({
-        user_id: adminUserId,
-        firm_id: firm.id,
-        role: 'owner'
+        userId: adminUserId,
+        firmId: firm.id,
+        role: 'owner',
+        isActive: true
       });
     }
     
     // Add first two professional users to first firm
     if (allUsers.length >= 2 && allFirms.length >= 1) {
       relationships.push({
-        user_id: allUsers[0].id,
-        firm_id: allFirms[0].id,
-        role: 'manager'
+        userId: allUsers[0].id,
+        firmId: allFirms[0].id,
+        role: 'manager',
+        isActive: true
       });
       
       relationships.push({
-        user_id: allUsers[1].id,
-        firm_id: allFirms[0].id,
-        role: 'employee'
+        userId: allUsers[1].id,
+        firmId: allFirms[0].id,
+        role: 'employee',
+        isActive: true
       });
     }
     
     // Add other professional users to second firm
     if (allUsers.length >= 4 && allFirms.length >= 2) {
       relationships.push({
-        user_id: allUsers[2].id,
-        firm_id: allFirms[1].id,
-        role: 'manager'
+        userId: allUsers[2].id,
+        firmId: allFirms[1].id,
+        role: 'manager',
+        isActive: true
       });
       
       relationships.push({
-        user_id: allUsers[3].id,
-        firm_id: allFirms[1].id,
-        role: 'employee'
+        userId: allUsers[3].id,
+        firmId: allFirms[1].id,
+        role: 'employee',
+        isActive: true
       });
     }
     
     if (relationships.length > 0) {
-      await db.insert(users).values(relationships).onConflictDoNothing();
+      await db.insert(userFirmRelationships).values(relationships).onConflictDoNothing();
     }
     
     return true;
