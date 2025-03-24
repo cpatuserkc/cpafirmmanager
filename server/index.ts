@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { pushSchema } from "./db";
 import { initializeMLProviders } from "./ml-service";
 import { initSampleData } from "./init-sample-data";
+import { initComprehensiveData } from "./init-comprehensive-data";
 
 const app = express();
 app.use(express.json());
@@ -45,9 +46,13 @@ app.use((req, res, next) => {
     await pushSchema();
     console.log("Database schema initialized successfully");
     
-    console.log("Initializing sample data...");
+    console.log("Initializing basic sample data...");
     await initSampleData();
-    console.log("Sample data initialized successfully");
+    console.log("Basic sample data initialized successfully");
+    
+    console.log("Initializing comprehensive sample data...");
+    await initComprehensiveData();
+    console.log("Comprehensive sample data initialized successfully");
   } catch (error) {
     console.error("Error initializing database:", error);
   }

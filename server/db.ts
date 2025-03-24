@@ -1,11 +1,11 @@
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { neon, Pool } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
 import * as schema from '@shared/schema';
 import { sql as sqlObj } from 'drizzle-orm';
 
 // Connect to the database using the provided DATABASE_URL
+// Note: The proper way to connect with neon and drizzle
 const sql = neon(process.env.DATABASE_URL!);
-// Create a pooled client for better connection management
 export const db = drizzle(sql, { schema });
 
 // Export a function to push the schema to the database
@@ -280,7 +280,8 @@ async function createResources() {
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
       description TEXT,
-      url TEXT NOT NULL,
+      download_url TEXT,
+      image_url TEXT,
       type TEXT NOT NULL,
       access_level TEXT NOT NULL,
       category TEXT NOT NULL,
@@ -300,6 +301,7 @@ async function createClassifications() {
       category TEXT NOT NULL,
       access_level TEXT NOT NULL,
       created_by_id INTEGER NOT NULL,
+      details JSONB,
       FOREIGN KEY (created_by_id) REFERENCES users(id)
     )
   `;
