@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { pushSchema } from "./db";
 import { initializeMLProviders } from "./ml-service";
+import { initSampleData } from "./init-sample-data";
 
 const app = express();
 app.use(express.json());
@@ -43,8 +44,12 @@ app.use((req, res, next) => {
   try {
     await pushSchema();
     console.log("Database schema initialized successfully");
+    
+    console.log("Initializing sample data...");
+    await initSampleData();
+    console.log("Sample data initialized successfully");
   } catch (error) {
-    console.error("Error initializing database schema:", error);
+    console.error("Error initializing database:", error);
   }
   
   console.log("Initializing ML providers...");

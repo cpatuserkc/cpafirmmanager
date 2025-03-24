@@ -53,7 +53,7 @@ async function createAdminUser() {
  * Adds sample resources to the database
  */
 async function addSampleResources(createdById: number) {
-  const [resourceCount] = await db.select({ count: db.fn.count() }).from(resources);
+  const [resourceCount] = await db.select({ count: count() }).from(resources);
   
   if (resourceCount && parseInt(resourceCount.count.toString()) > 0) {
     console.log("Resources already exist, skipping");
@@ -68,27 +68,27 @@ async function addSampleResources(createdById: number) {
       description: "Streamline your client intake process with our comprehensive onboarding template.",
       url: "/resources/client-onboarding-template.pdf",
       type: "template",
-      accessLevel: "free",
+      access_level: "free",
       category: "Practice Management",
-      createdById
+      created_by_id: createdById
     },
     {
       title: "Advanced Time Tracking Guide",
       description: "Master effective time tracking strategies to maximize billable hours and profitability.",
       url: "/resources/time-tracking-guide.pdf",
       type: "guide",
-      accessLevel: "premium",
+      access_level: "premium",
       category: "Time Management",
-      createdById
+      created_by_id: createdById
     },
     {
       title: "Tax Classification Cheat Sheet",
       description: "Quick reference guide to common tax classifications for small business clients.",
       url: "/resources/tax-classification-cheatsheet.pdf",
       type: "tool",
-      accessLevel: "free",
+      access_level: "free",
       category: "Tax",
-      createdById
+      created_by_id: createdById
     }
   ];
   
@@ -99,7 +99,7 @@ async function addSampleResources(createdById: number) {
  * Adds sample classifications to the database
  */
 async function addSampleClassifications(createdById: number) {
-  const [classificationCount] = await db.select({ count: db.fn.count() }).from(classifications);
+  const [classificationCount] = await db.select({ count: count() }).from(classifications);
   
   if (classificationCount && parseInt(classificationCount.count.toString()) > 0) {
     console.log("Classifications already exist, skipping");
@@ -113,25 +113,22 @@ async function addSampleClassifications(createdById: number) {
       name: "Business Entity Types",
       description: "Classifications of different business entity types for tax purposes",
       category: "Tax",
-      accessLevel: "free",
-      details: JSON.stringify({ items: ["Sole Proprietorship", "Partnership", "LLC", "S-Corporation", "C-Corporation"] }),
-      createdById
+      access_level: "free",
+      created_by_id: createdById
     },
     {
       name: "Chart of Accounts",
       description: "Standard chart of accounts for small businesses",
       category: "Accounting",
-      accessLevel: "free",
-      details: JSON.stringify({ items: ["Assets", "Liabilities", "Equity", "Revenue", "Expenses"] }),
-      createdById
+      access_level: "free",
+      created_by_id: createdById
     },
     {
       name: "Income Categories",
       description: "Classifications of different income types",
       category: "Tax",
-      accessLevel: "premium",
-      details: JSON.stringify({ items: ["Earned Income", "Passive Income", "Portfolio Income", "Capital Gains"] }),
-      createdById
+      access_level: "premium",
+      created_by_id: createdById
     }
   ];
   
