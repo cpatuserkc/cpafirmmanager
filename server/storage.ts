@@ -1,17 +1,4 @@
 import {
-  users,
-  firms,
-  userFirmRelationships,
-  contacts,
-  clientCompanies,
-  projects,
-  timeEstimates,
-  services,
-  proposals,
-  proposalServices,
-  resources,
-  classifications,
-  deadlines,
   type User,
   type InsertUser,
   type Firm,
@@ -26,6 +13,8 @@ import {
   type InsertProject,
   type TimeEstimate,
   type InsertTimeEstimate,
+  type ProfessionalRole,
+  type InsertProfessionalRole,
   type Service,
   type InsertService,
   type Proposal,
@@ -39,6 +28,7 @@ import {
   type Deadline,
   type InsertDeadline
 } from "@shared/schema";
+import { DatabaseStorage } from './database-storage';
 
 export interface IStorage {
   // User operations
@@ -1294,4 +1284,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Use DatabaseStorage instead of MemStorage to connect to PostgreSQL database
+export const storage = new DatabaseStorage();
