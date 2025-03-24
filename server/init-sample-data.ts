@@ -66,29 +66,29 @@ async function addSampleResources(createdById: number) {
     {
       title: "Client Onboarding Template",
       description: "Streamline your client intake process with our comprehensive onboarding template.",
-      download_url: "/resources/client-onboarding-template.pdf",
+      downloadUrl: "/resources/client-onboarding-template.pdf",
       type: "template",
-      access_level: "free",
+      accessLevel: "free",
       category: "Practice Management",
-      created_by_id: createdById
+      createdById: createdById
     },
     {
       title: "Advanced Time Tracking Guide",
       description: "Master effective time tracking strategies to maximize billable hours and profitability.",
-      download_url: "/resources/time-tracking-guide.pdf",
+      downloadUrl: "/resources/time-tracking-guide.pdf",
       type: "guide",
-      access_level: "premium",
+      accessLevel: "premium",
       category: "Time Management",
-      created_by_id: createdById
+      createdById: createdById
     },
     {
       title: "Tax Classification Cheat Sheet",
       description: "Quick reference guide to common tax classifications for small business clients.",
-      download_url: "/resources/tax-classification-cheatsheet.pdf",
+      downloadUrl: "/resources/tax-classification-cheatsheet.pdf",
       type: "tool",
-      access_level: "free",
+      accessLevel: "free",
       category: "Tax",
-      created_by_id: createdById
+      createdById: createdById
     }
   ];
   
@@ -113,22 +113,22 @@ async function addSampleClassifications(createdById: number) {
       name: "Business Entity Types",
       description: "Classifications of different business entity types for tax purposes",
       category: "Tax",
-      access_level: "free",
-      created_by_id: createdById
+      accessLevel: "free",
+      createdById: createdById
     },
     {
       name: "Chart of Accounts",
       description: "Standard chart of accounts for small businesses",
       category: "Accounting",
-      access_level: "free",
-      created_by_id: createdById
+      accessLevel: "free",
+      createdById: createdById
     },
     {
       name: "Income Categories",
       description: "Classifications of different income types",
       category: "Tax",
-      access_level: "premium",
-      created_by_id: createdById
+      accessLevel: "premium",
+      createdById: createdById
     }
   ];
   
