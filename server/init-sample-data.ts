@@ -66,7 +66,7 @@ async function addSampleResources(createdById: number) {
     {
       title: "Client Onboarding Template",
       description: "Streamline your client intake process with our comprehensive onboarding template.",
-      downloadUrl: "/resources/client-onboarding-template.pdf",
+      url: "/resources/client-onboarding-template.pdf",
       type: "template",
       accessLevel: "free",
       category: "Practice Management",
@@ -75,7 +75,7 @@ async function addSampleResources(createdById: number) {
     {
       title: "Advanced Time Tracking Guide",
       description: "Master effective time tracking strategies to maximize billable hours and profitability.",
-      downloadUrl: "/resources/time-tracking-guide.pdf",
+      url: "/resources/time-tracking-guide.pdf",
       type: "guide",
       accessLevel: "premium",
       category: "Time Management",
@@ -84,7 +84,7 @@ async function addSampleResources(createdById: number) {
     {
       title: "Tax Classification Cheat Sheet",
       description: "Quick reference guide to common tax classifications for small business clients.",
-      downloadUrl: "/resources/tax-classification-cheatsheet.pdf",
+      url: "/resources/tax-classification-cheatsheet.pdf",
       type: "tool",
       accessLevel: "free",
       category: "Tax",
