@@ -248,8 +248,9 @@ export const resources = pgTable("resources", {
   description: text("description"),
   type: text("type").notNull(), // "template", "guide", "tool", etc.
   accessLevel: text("access_level").default("free").notNull(), // "free", "premium"
-  downloadUrl: text("download_url"),
-  imageUrl: text("image_url"),
+  url: text("url"),
+  category: text("category").notNull(),
+  createdById: integer("created_by_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
