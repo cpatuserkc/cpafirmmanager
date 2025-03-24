@@ -52,6 +52,8 @@ async function createUsers() {
       email TEXT NOT NULL UNIQUE,
       first_name TEXT NOT NULL,
       last_name TEXT NOT NULL,
+      phone TEXT,
+      profile_picture TEXT,
       role TEXT NOT NULL,
       is_active BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
