@@ -262,11 +262,11 @@ export const insertResourceSchema = createInsertSchema(resources).omit({
 // Classifications schema - Classification systems
 export const classifications = pgTable("classifications", {
   id: serial("id").primaryKey(),
-  category: text("category").notNull(),
   name: text("name").notNull(),
   description: text("description"),
-  details: jsonb("details"),
+  category: text("category").notNull(),
   accessLevel: text("access_level").default("free").notNull(), // "free", "premium"
+  createdById: integer("created_by_id").notNull().references(() => users.id),
 });
 
 export const insertClassificationSchema = createInsertSchema(classifications).omit({
