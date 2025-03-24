@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { pushSchema } from "./db";
+import { initializeMLProviders } from "./ml-service";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +39,17 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  console.log("Initializing database schema...");
+  try {
+    await pushSchema();
+    console.log("Database schema initialized successfully");
+  } catch (error) {
+    console.error("Error initializing database schema:", error);
+  }
+  
+  console.log("Initializing ML providers...");
+  initializeMLProviders();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
