@@ -36,7 +36,7 @@ const Header = () => {
     {
       label: "Time & Planning",
       items: [
-        { href: "/time-tracking", label: "Time Tracking" },
+        { href: "/time-analytics", label: "Time Analytics" },
         { href: "/season-planner", label: "Season Planner" },
       ]
     },
