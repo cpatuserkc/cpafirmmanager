@@ -13,15 +13,11 @@ const HeroSection = () => {
               Access classification systems, track hours, create accurate proposals, and optimize your time management with our comprehensive platform built for CPAs.
             </p>
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-              <Link href="/signup">
-                <a className="bg-[#f39c12] text-neutral-800 font-semibold px-6 py-3 rounded-md text-center hover:bg-[#f7b541] transition">
-                  Start Free Trial
-                </a>
+              <Link href="/signup" className="bg-[#f39c12] text-neutral-800 font-semibold px-6 py-3 rounded-md text-center hover:bg-[#f7b541] transition">
+                Start Free Trial
               </Link>
-              <Link href="/resources">
-                <a className="bg-white text-primary font-semibold px-6 py-3 rounded-md text-center hover:bg-neutral-200 transition">
-                  Explore Resources
-                </a>
+              <Link href="/resources" className="bg-white text-primary font-semibold px-6 py-3 rounded-md text-center hover:bg-neutral-200 transition">
+                Explore Resources
               </Link>
             </div>
           </div>
