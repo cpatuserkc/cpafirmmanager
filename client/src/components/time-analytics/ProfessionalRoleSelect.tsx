@@ -10,7 +10,7 @@ interface ProfessionalRoleSelectProps {
 }
 
 const ProfessionalRoleSelect = ({ value, onChange, firmId, disabled = false }: ProfessionalRoleSelectProps) => {
-  const { data: roles = [], isLoading } = useQuery({
+  const { data: roles = [], isLoading } = useQuery<ProfessionalRole[]>({
     queryKey: firmId ? ["/api/professional-roles", firmId] : ["/api/professional-roles"],
     enabled: !disabled,
   });
