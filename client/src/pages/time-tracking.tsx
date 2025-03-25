@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import TimeTrackingForm from "@/components/time-tracking/TimeTrackingForm";
+import TimeAnalyticsForm from "@/components/time-tracking/TimeTrackingForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -76,7 +76,7 @@ const TimeAnalytics = () => {
                 <CardTitle>Create Time Estimate</CardTitle>
               </CardHeader>
               <CardContent>
-                <TimeTrackingForm />
+                <TimeAnalyticsForm />
               </CardContent>
             </Card>
           </TabsContent>
@@ -142,7 +142,7 @@ const TimeAnalytics = () => {
                       ) : (
                         <tr className="border-b border-neutral-200">
                           <td colSpan={6} className="py-4 text-center text-neutral-500">
-                            No time entries found. Start tracking your time!
+                            No time estimates found. Create a new time estimate to get started!
                           </td>
                         </tr>
                       )}
@@ -156,13 +156,13 @@ const TimeAnalytics = () => {
           <TabsContent value="reports">
             <Card>
               <CardHeader>
-                <CardTitle>Time Reports</CardTitle>
+                <CardTitle>Time Analytics Dashboard</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="p-8 text-center text-neutral-600">
-                  <Calendar className="h-12 w-12 mx-auto mb-3 text-neutral-400" />
-                  <h3 className="text-lg font-semibold mb-2">Reports Coming Soon</h3>
-                  <p>Advanced time reporting features are currently in development.</p>
+                  <BarChart className="h-12 w-12 mx-auto mb-3 text-neutral-400" />
+                  <h3 className="text-lg font-semibold mb-2">Analytics Dashboard Coming Soon</h3>
+                  <p>Advanced time analytics and forecasting features are currently in development.</p>
                 </div>
               </CardContent>
             </Card>
