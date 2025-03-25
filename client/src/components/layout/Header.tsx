@@ -1,8 +1,14 @@
 import { useState, useContext } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu } from "lucide-react";
+import { Menu, ChevronDown } from "lucide-react";
 import { AuthContext } from "@/App";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -13,17 +19,83 @@ const Header = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  const navLinks = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/resources", label: "Resources" },
-    { href: "/time-tracking", label: "Time Tracking" },
-    { href: "/classification", label: "Classifications" },
-    { href: "/proposals", label: "Proposals" },
-    { href: "/external-proposals", label: "External Requests" },
-    { href: "/clients", label: "Clients" },
-    { href: "/season-planner", label: "Season Planner" },
-    { href: "/analytics", label: "Analytics" },
+  // Organize navigation into groups
+  const navGroups = [
+    { 
+      label: "Dashboard", 
+      href: "/dashboard" 
+    },
+    {
+      label: "Client Management",
+      items: [
+        { href: "/clients", label: "Clients" },
+        { href: "/proposals", label: "Proposals" },
+        { href: "/external-proposals", label: "External Requests" },
+      ]
+    },
+    {
+      label: "Time & Planning",
+      items: [
+        { href: "/time-tracking", label: "Time Tracking" },
+        { href: "/season-planner", label: "Season Planner" },
+      ]
+    },
+    {
+      label: "Resources",
+      items: [
+        { href: "/resources", label: "Resources" },
+        { href: "/classification", label: "Classifications" },
+        { href: "/analytics", label: "Analytics" },
+      ]
+    },
   ];
+
+  // Flatten nav items for mobile view
+  const flatNavLinks = navGroups.flatMap(group => 
+    group.items ? group.items : [{ href: group.href, label: group.label }]
+  );
+
+  const renderMainNav = () => (
+    <div className="hidden md:flex items-center space-x-6">
+      {navGroups.map((group, index) => {
+        // If it's a simple link
+        if (!group.items) {
+          return (
+            <Link key={index} href={group.href}>
+              <Button 
+                variant="link" 
+                className={location === group.href ? "text-primary font-semibold" : "text-neutral-700"}
+              >
+                {group.label}
+              </Button>
+            </Link>
+          );
+        }
+        
+        // If it's a dropdown group
+        return (
+          <DropdownMenu key={index}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="link" className="text-neutral-700 flex items-center gap-1">
+                {group.label} <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {group.items.map((item, itemIndex) => (
+                <Link key={itemIndex} href={item.href}>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <span className={location === item.href ? "text-primary font-semibold" : ""}>
+                      {item.label}
+                    </span>
+                  </DropdownMenuItem>
+                </Link>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      })}
+    </div>
+  );
 
   return (
     <header className="bg-white shadow-md">
@@ -31,22 +103,14 @@ const Header = () => {
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
             <Link href="/">
-              <a className="text-primary font-heading font-bold text-2xl">CPA Resource Hub</a>
+              <Button variant="link" className="text-primary font-heading font-bold text-2xl p-0">
+                CPA Resource Hub
+              </Button>
             </Link>
           </div>
-          <div className="hidden md:flex items-center space-x-6">
-            {navLinks.map((link) => (
-              <Link key={link.label} href={link.href}>
-                <a className={`${
-                  location === link.href 
-                    ? "text-primary font-semibold" 
-                    : "text-neutral-700 hover:text-primary"
-                } transition`}>
-                  {link.label}
-                </a>
-              </Link>
-            ))}
-          </div>
+          
+          {renderMainNav()}
+          
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <Button
@@ -59,14 +123,14 @@ const Header = () => {
             ) : (
               <>
                 <Link href="/login">
-                  <a className="text-primary hover:text-primary-dark transition">
+                  <Button variant="ghost" className="text-primary hover:text-primary-dark">
                     Sign In
-                  </a>
+                  </Button>
                 </Link>
                 <Link href="/signup">
-                  <a className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition">
+                  <Button className="bg-primary text-white hover:bg-primary-dark">
                     Sign Up
-                  </a>
+                  </Button>
                 </Link>
               </>
             )}
@@ -82,18 +146,19 @@ const Header = () => {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t">
             <nav className="flex flex-col space-y-3">
-              {navLinks.map((link) => (
-                <Link key={link.label} href={link.href}>
-                  <a
-                    className={`${
+              {flatNavLinks.map((link, index) => (
+                <Link key={index} href={link.href}>
+                  <Button
+                    variant="link"
+                    className={`justify-start ${
                       location === link.href 
                         ? "text-primary font-semibold" 
-                        : "text-neutral-700 hover:text-primary"
-                    } transition`}
+                        : "text-neutral-700"
+                    }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {link.label}
-                  </a>
+                  </Button>
                 </Link>
               ))}
             </nav>
