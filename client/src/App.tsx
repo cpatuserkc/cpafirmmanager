@@ -7,7 +7,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
 import Resources from "@/pages/resources";
-import TimeTracking from "@/pages/time-tracking";
+import TimeAnalytics from "@/pages/time-tracking";
 import Proposals from "@/pages/proposals";
 import ExternalProposals from "@/pages/external-proposals";
 import Clients from "@/pages/clients";
@@ -42,7 +42,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/resources" component={Resources} />
-      <Route path="/time-tracking" component={TimeTracking} />
+      <Route path="/time-tracking" component={TimeAnalytics} />
       <Route path="/proposals" component={Proposals} />
       <Route path="/external-proposals" component={ExternalProposals} />
       <Route path="/clients" component={Clients} />

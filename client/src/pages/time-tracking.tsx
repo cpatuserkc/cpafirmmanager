@@ -6,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TimeTrackingForm from "@/components/time-tracking/TimeTrackingForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TimeEntry } from "@shared/schema";
+import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/App";
 import { Clock, Calendar, Filter } from "lucide-react";
 
-const TimeTracking = () => {
+const TimeAnalytics = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("track");
@@ -172,6 +172,4 @@ const TimeTracking = () => {
   );
 };
 
-import { Button } from "@/components/ui/button";
-
-export default TimeTracking;
+export default TimeAnalytics;

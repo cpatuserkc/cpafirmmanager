@@ -18,8 +18,8 @@ const FeaturesSection = () => {
     },
     {
       icon: <Clock className="h-8 w-8" />,
-      title: "Time Tracking",
-      description: "Track hours by client and project with our intuitive time management system designed specifically for accounting work.",
+      title: "Time Analytics",
+      description: "Analyze and aggregate time data across clients and projects with our advanced time estimation and reporting tools.",
       href: "/time-tracking"
     },
     {
