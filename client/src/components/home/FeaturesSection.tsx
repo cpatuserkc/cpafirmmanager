@@ -64,24 +64,22 @@ const FeaturesSection = () => {
               </div>
               <h3 className="font-heading font-bold text-xl mb-3 text-neutral-800">{feature.title}</h3>
               <p className="text-neutral-600 mb-4">{feature.description}</p>
-              <Link href={feature.href}>
-                <a className="text-primary font-semibold hover:text-primary-dark flex items-center">
-                  Learn more
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-4 w-4 ml-1" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M9 5l7 7-7 7" 
-                    />
-                  </svg>
-                </a>
+              <Link href={feature.href} className="text-primary font-semibold hover:text-primary-dark flex items-center">
+                Learn more
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-4 w-4 ml-1" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M9 5l7 7-7 7" 
+                  />
+                </svg>
               </Link>
             </div>
           ))}

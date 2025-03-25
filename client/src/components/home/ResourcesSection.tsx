@@ -69,10 +69,8 @@ const ResourcesSection = () => {
           </div>
           
           <div className="text-center mt-10">
-            <Link href="/resources">
-              <a className="inline-block bg-primary text-white px-6 py-3 rounded-md font-semibold hover:bg-primary-dark transition">
-                View All Resources
-              </a>
+            <Link href="/resources" className="inline-block bg-primary text-white px-6 py-3 rounded-md font-semibold hover:bg-primary-dark transition">
+              View All Resources
             </Link>
           </div>
         </div>

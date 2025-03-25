@@ -10,10 +10,8 @@ const CTASection = () => {
             Join thousands of accounting professionals who are optimizing their time, improving accuracy, and growing their practice with our platform.
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link href="/signup">
-              <a className="bg-white text-primary font-semibold px-8 py-3 rounded-md text-center hover:bg-neutral-100 transition">
-                Start Your Free Trial
-              </a>
+            <Link href="/signup" className="bg-white text-primary font-semibold px-8 py-3 rounded-md text-center hover:bg-neutral-100 transition">
+              Start Your Free Trial
             </Link>
             <a href="#" className="bg-transparent border border-white text-white font-semibold px-8 py-3 rounded-md text-center hover:bg-white hover:text-primary transition">
               Schedule a Demo
