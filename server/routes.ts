@@ -147,6 +147,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CLIENT COMPANIES ROUTES
+  app.get("/api/client-companies", async (req, res) => {
+    try {
+      const firmId = req.query.firmId ? Number(req.query.firmId) : undefined;
+      const contactId = req.query.contactId ? Number(req.query.contactId) : undefined;
+      
+      let clientCompanies = [];
+      if (firmId) {
+        clientCompanies = await storage.getClientCompaniesByFirmId(firmId);
+      } else if (contactId) {
+        clientCompanies = await storage.getClientCompaniesByContactId(contactId);
+      } else {
+        return res.status(400).json({ message: "Firm ID or Contact ID is required" });
+      }
+      
+      res.status(200).json(clientCompanies);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching client companies" });
+    }
+  });
+
+  app.get("/api/client-companies/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const clientCompany = await storage.getClientCompany(id);
+      
+      if (!clientCompany) {
+        return res.status(404).json({ message: "Client company not found" });
+      }
+      
+      res.status(200).json(clientCompany);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching client company" });
+    }
+  });
+
+  app.post("/api/client-companies", async (req, res) => {
+    try {
+      const clientCompany = await storage.createClientCompany(req.body);
+      res.status(201).json(clientCompany);
+    } catch (error) {
+      res.status(500).json({ message: "Error creating client company" });
+    }
+  });
+
+  app.put("/api/client-companies/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const updatedClientCompany = await storage.updateClientCompany(id, req.body);
+      
+      if (!updatedClientCompany) {
+        return res.status(404).json({ message: "Client company not found" });
+      }
+      
+      res.status(200).json(updatedClientCompany);
+    } catch (error) {
+      res.status(500).json({ message: "Error updating client company" });
+    }
+  });
+
+  app.delete("/api/client-companies/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const success = await storage.deleteClientCompany(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Client company not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting client company" });
+    }
+  });
+  
+  // CONTACTS ROUTES
+  app.get("/api/contacts", async (req, res) => {
+    try {
+      const clientId = req.query.clientId ? Number(req.query.clientId) : undefined;
+      const firmId = req.query.firmId ? Number(req.query.firmId) : undefined;
+      
+      let contacts = [];
+      if (clientId) {
+        // Get contacts associated with a specific client company
+        const clientCompany = await storage.getClientCompany(clientId);
+        if (clientCompany && clientCompany.primaryContactId) {
+          const contact = await storage.getContact(clientCompany.primaryContactId);
+          contacts = contact ? [contact] : [];
+        }
+      } else if (firmId) {
+        // Get all contacts for a firm
+        contacts = await storage.getContactsByFirmId(firmId);
+      } else {
+        return res.status(400).json({ message: "Client ID or Firm ID is required" });
+      }
+      
+      res.status(200).json(contacts);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching contacts" });
+    }
+  });
+
+  app.get("/api/contacts/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const contact = await storage.getContact(id);
+      
+      if (!contact) {
+        return res.status(404).json({ message: "Contact not found" });
+      }
+      
+      res.status(200).json(contact);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching contact" });
+    }
+  });
+
+  app.post("/api/contacts", async (req, res) => {
+    try {
+      const contact = await storage.createContact(req.body);
+      res.status(201).json(contact);
+    } catch (error) {
+      res.status(500).json({ message: "Error creating contact" });
+    }
+  });
+
+  app.put("/api/contacts/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const updatedContact = await storage.updateContact(id, req.body);
+      
+      if (!updatedContact) {
+        return res.status(404).json({ message: "Contact not found" });
+      }
+      
+      res.status(200).json(updatedContact);
+    } catch (error) {
+      res.status(500).json({ message: "Error updating contact" });
+    }
+  });
+
+  app.delete("/api/contacts/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const success = await storage.deleteContact(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Contact not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting contact" });
+    }
+  });
+
   // PROJECT ROUTES
   app.get("/api/projects", async (req, res) => {
     try {
