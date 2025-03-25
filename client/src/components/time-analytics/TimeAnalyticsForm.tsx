@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { AuthContext } from "@/App";
+// Creating a copy of these components in the time-analytics directory
 import ClientSelect from "../time-tracking/ClientSelect";
 import ProjectSelect from "../time-tracking/ProjectSelect";
 import ServiceSelect from "../time-tracking/ServiceSelect";
