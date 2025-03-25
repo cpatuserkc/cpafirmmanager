@@ -84,14 +84,12 @@ const PricingSection = () => {
                   <span className="text-3xl font-heading font-bold text-neutral-800">${tier.price}</span>
                   <span className="text-neutral-600 ml-1 mb-1">/month</span>
                 </div>
-                <Link href={tier.buttonLink}>
-                  <a className={`block text-center ${
-                    tier.popular
-                      ? "bg-primary text-white font-semibold px-6 py-2 rounded-md hover:bg-primary-dark transition"
-                      : "bg-white text-primary font-semibold px-6 py-2 rounded-md border border-primary hover:bg-primary hover:text-white transition"
-                  }`}>
-                    {tier.buttonText}
-                  </a>
+                <Link href={tier.buttonLink} className={`block text-center ${
+                  tier.popular
+                    ? "bg-primary text-white font-semibold px-6 py-2 rounded-md hover:bg-primary-dark transition"
+                    : "bg-white text-primary font-semibold px-6 py-2 rounded-md border border-primary hover:bg-primary hover:text-white transition"
+                }`}>
+                  {tier.buttonText}
                 </Link>
               </div>
               <div className="p-6">
