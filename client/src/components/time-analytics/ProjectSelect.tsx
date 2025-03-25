@@ -11,7 +11,7 @@ interface ProjectSelectProps {
 }
 
 const ProjectSelect = ({ value, onChange, clientId, disabled = false }: ProjectSelectProps) => {
-  const { data: projects, isLoading } = useQuery({
+  const { data: projects, isLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects", clientId],
     queryFn: async () => {
       if (!clientId) return [];

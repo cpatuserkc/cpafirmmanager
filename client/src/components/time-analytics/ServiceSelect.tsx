@@ -10,7 +10,7 @@ interface ServiceSelectProps {
 }
 
 const ServiceSelect = ({ value, onChange, firmId, disabled = false }: ServiceSelectProps) => {
-  const { data: services = [], isLoading } = useQuery({
+  const { data: services = [], isLoading } = useQuery<Service[]>({
     queryKey: firmId ? ["/api/services", firmId] : ["/api/services"],
     enabled: !disabled,
   });

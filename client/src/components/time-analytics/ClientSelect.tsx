@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AuthContext } from "@/App";
-import { Client } from "@shared/schema";
+import { ClientCompany } from "@shared/schema";
 
 interface ClientSelectProps {
   value?: number;
@@ -47,7 +47,7 @@ const ClientSelect = ({ value, onChange }: ClientSelectProps) => {
         <SelectValue placeholder="Select a client" />
       </SelectTrigger>
       <SelectContent>
-        {clients.map((client: Client) => (
+        {clients.map((client: ClientCompany) => (
           <SelectItem key={client.id} value={client.id.toString()}>
             {client.name}
           </SelectItem>

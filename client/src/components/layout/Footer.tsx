@@ -34,28 +34,28 @@ const Footer = () => {
             <h4 className="text-white font-semibold text-lg mb-4">Platform</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/dashboard">
-                  <a className="hover:text-white transition">Dashboard</a>
+                <Link href="/dashboard" className="hover:text-white transition">
+                  Dashboard
                 </Link>
               </li>
               <li>
-                <Link href="/time-tracking">
-                  <a className="hover:text-white transition">Time Tracking</a>
+                <Link href="/time-analytics" className="hover:text-white transition">
+                  Time Analytics
                 </Link>
               </li>
               <li>
-                <Link href="/proposals">
-                  <a className="hover:text-white transition">Proposals & Estimates</a>
+                <Link href="/proposals" className="hover:text-white transition">
+                  Proposals & Estimates
                 </Link>
               </li>
               <li>
-                <Link href="/classification">
-                  <a className="hover:text-white transition">Classification Systems</a>
+                <Link href="/classification" className="hover:text-white transition">
+                  Classification Systems
                 </Link>
               </li>
               <li>
-                <Link href="#integrations">
-                  <a className="hover:text-white transition">Integrations</a>
+                <Link href="#integrations" className="hover:text-white transition">
+                  Integrations
                 </Link>
               </li>
             </ul>
@@ -65,8 +65,8 @@ const Footer = () => {
             <h4 className="text-white font-semibold text-lg mb-4">Resources</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/resources?type=template&accessLevel=free">
-                  <a className="hover:text-white transition">Free Templates</a>
+                <Link href="/resources?type=template&accessLevel=free" className="hover:text-white transition">
+                  Free Templates
                 </Link>
               </li>
               <li>
