@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/App";
-import { Clock, Calendar, Filter } from "lucide-react";
+import { Clock, Calendar, Filter, BarChart } from "lucide-react";
+import { TimeEstimate } from "@shared/schema";
 
 const TimeAnalytics = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
@@ -22,11 +23,11 @@ const TimeAnalytics = () => {
   }, [isAuthenticated, setLocation]);
 
   const { data: timeEntries, isLoading } = useQuery({
-    queryKey: ["/api/time-entries", user?.id],
+    queryKey: ["/api/time-estimates", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const res = await fetch(`/api/time-entries?userId=${user.id}`);
-      if (!res.ok) throw new Error("Failed to fetch time entries");
+      const res = await fetch(`/api/time-estimates?assignedToId=${user.id}`);
+      if (!res.ok) throw new Error("Failed to fetch time estimates");
       return res.json();
     },
     enabled: !!user,
@@ -53,7 +54,7 @@ const TimeAnalytics = () => {
     <div className="min-h-screen bg-neutral-100 py-8">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-heading font-bold">Time Tracking</h1>
+          <h1 className="text-2xl font-heading font-bold">Time Analytics</h1>
           <div className="flex items-center space-x-2">
             <Clock className="text-neutral-500" />
             <span className="text-neutral-600">
@@ -64,15 +65,15 @@ const TimeAnalytics = () => {
 
         <Tabs defaultValue="track" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
-            <TabsTrigger value="track">Track Time</TabsTrigger>
-            <TabsTrigger value="history">Time History</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="track">Create Estimate</TabsTrigger>
+            <TabsTrigger value="history">Time Estimates</TabsTrigger>
+            <TabsTrigger value="reports">Analytics</TabsTrigger>
           </TabsList>
           
           <TabsContent value="track">
             <Card>
               <CardHeader>
-                <CardTitle>Record Time Entry</CardTitle>
+                <CardTitle>Create Time Estimate</CardTitle>
               </CardHeader>
               <CardContent>
                 <TimeTrackingForm />
@@ -83,7 +84,7 @@ const TimeAnalytics = () => {
           <TabsContent value="history">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Time Entry History</CardTitle>
+                <CardTitle>Time Estimates History</CardTitle>
                 <div className="flex items-center space-x-2">
                   <Button variant="outline" size="sm">
                     <Filter className="h-4 w-4 mr-2" />
@@ -122,12 +123,12 @@ const TimeAnalytics = () => {
                           </tr>
                         ))
                       ) : timeEntries && timeEntries.length > 0 ? (
-                        timeEntries.map((entry: TimeEntry) => (
+                        timeEntries.map((entry: TimeEstimate) => (
                           <tr key={entry.id} className="border-b border-neutral-200 hover:bg-neutral-100">
-                            <td className="py-3 px-2">Client {entry.clientId}</td>
+                            <td className="py-3 px-2">Client {entry.clientCompanyId}</td>
                             <td className="py-3 px-2">Project {entry.projectId}</td>
-                            <td className="py-3 px-2">{format(new Date(entry.date), "MMM dd, yyyy")}</td>
-                            <td className="py-3 px-2">{Number(entry.hours).toFixed(2)}</td>
+                            <td className="py-3 px-2">{format(new Date(entry.createdAt), "MMM dd, yyyy")}</td>
+                            <td className="py-3 px-2">{Number(entry.estimatedHours).toFixed(2)}</td>
                             <td className="py-3 px-2">
                               {entry.description ? entry.description.slice(0, 30) + (entry.description.length > 30 ? '...' : '') : '-'}
                             </td>
