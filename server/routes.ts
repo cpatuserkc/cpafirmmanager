@@ -1347,6 +1347,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // TIME ANALYTICS DASHBOARD
+  app.get("/api/time-analytics-dashboard", async (req, res) => {
+    try {
+      const { 
+        startDate, 
+        endDate, 
+        firmId, 
+        staffId, 
+        clientId, 
+        serviceCategory 
+      } = req.query;
+      
+      // Validate required parameters
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "Start date and end date are required" });
+      }
+      
+      // For now, return a sample response structure that matches what our dashboard needs
+      res.json({
+        firmOverview: {
+          totalHours: 1240,
+          totalRevenue: 187500,
+          averageRate: 151.21,
+          byMonth: [
+            { month: "Jan", hours: 410, revenue: 62000 },
+            { month: "Feb", hours: 380, revenue: 58000 },
+            { month: "Mar", hours: 450, revenue: 67500 }
+          ],
+          byService: [
+            { name: "Tax Prep", hours: 580, revenue: 84000 },
+            { name: "Bookkeeping", hours: 320, revenue: 41000 },
+            { name: "Advisory", hours: 220, revenue: 44000 },
+            { name: "Audit", hours: 120, revenue: 18500 }
+          ],
+          byStaff: [
+            { name: "Partner", hours: 280, revenue: 70000 },
+            { name: "Manager", hours: 360, revenue: 61200 },
+            { name: "Senior", hours: 400, revenue: 40000 },
+            { name: "Staff", hours: 200, revenue: 16300 }
+          ]
+        },
+        staffOverview: {
+          utilization: 78,
+          totalStaff: 12,
+          byUtilization: [
+            { name: "Partner", utilization: 65, target: 70 },
+            { name: "Manager", utilization: 82, target: 80 },
+            { name: "Senior", utilization: 88, target: 85 },
+            { name: "Staff", utilization: 72, target: 75 }
+          ],
+          byRevenue: [
+            { name: "Partner", revenue: 70000 },
+            { name: "Manager", revenue: 61200 },
+            { name: "Senior", revenue: 40000 },
+            { name: "Staff", revenue: 16300 }
+          ]
+        },
+        clientOverview: {
+          totalClients: 38,
+          activeClients: 24,
+          byRevenue: [
+            { name: "Adams Family", revenue: 12500 },
+            { name: "XYZ Corp", revenue: 8700 },
+            { name: "123 Industries", revenue: 7300 },
+            { name: "Smith Consulting", revenue: 6800 },
+            { name: "Other Clients", revenue: 152200 }
+          ],
+          byHours: [
+            { name: "Adams Family", hours: 82 },
+            { name: "XYZ Corp", hours: 64 },
+            { name: "123 Industries", hours: 51 },
+            { name: "Smith Consulting", hours: 48 },
+            { name: "Other Clients", hours: 995 }
+          ],
+          byProfitability: [
+            { name: "High", count: 8 },
+            { name: "Medium", count: 12 },
+            { name: "Low", count: 4 }
+          ]
+        }
+      });
+    } catch (error: any) {
+      console.error("Error fetching time analytics data:", error);
+      res.status(500).json({ error: "Failed to fetch time analytics data" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
