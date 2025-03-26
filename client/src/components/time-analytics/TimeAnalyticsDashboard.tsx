@@ -61,15 +61,42 @@ const TimeAnalyticsDashboard = () => {
   const [activeTab, setActiveTab] = useState('firm');
   const [startDate, setStartDate] = useState<Date>(new Date(new Date().getFullYear(), 0, 1)); // January 1 of current year
   const [endDate, setEndDate] = useState<Date>(new Date());
-  const firmId = user?.defaultFirmId || 1;
+  const firmId = user?.id || 1; // Using user id until we implement proper firm selection
 
   const queryFn = getQueryFn({ on401: 'throw' });
 
+  // Define the response type for our analytics data
+  interface TimeAnalyticsResponse {
+    firmOverview: {
+      totalHours: number;
+      totalRevenue: number;
+      averageRate: number;
+      byMonth: Array<{ month: string; hours: number; revenue: number }>;
+      byService: Array<{ name: string; hours: number; revenue: number }>;
+      byStaff: Array<{ name: string; hours: number; revenue: number }>;
+    };
+    staffOverview: {
+      utilization: number;
+      totalStaff: number;
+      byUtilization: Array<{ name: string; utilization: number; target: number }>;
+      byRevenue: Array<{ name: string; revenue: number }>;
+    };
+    clientOverview: {
+      totalClients: number;
+      activeClients: number;
+      byRevenue: Array<{ name: string; revenue: number }>;
+      byHours: Array<{ name: string; hours: number }>;
+      byProfitability: Array<{ name: string; count: number }>;
+    };
+  }
+
   // Fetch analytics data
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<TimeAnalyticsResponse>({
     queryKey: ['/api/time-analytics-dashboard', firmId, startDate.toISOString(), endDate.toISOString()],
-    queryFn: () => 
-      queryFn(`/api/time-analytics-dashboard?firmId=${firmId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`),
+    queryFn: async () => {
+      const result = await queryFn(`/api/time-analytics-dashboard?firmId=${firmId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+      return result as TimeAnalyticsResponse;
+    },
     enabled: !!firmId,
   });
 
