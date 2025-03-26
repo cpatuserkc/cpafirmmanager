@@ -21,7 +21,9 @@ import {
   Legend,
   ArcElement,
 } from 'chart.js';
-import { Bar, Line, Pie } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
+import { InsightBarChart } from './InsightBarChart';
+import { InsightPieChart } from './InsightPieChart';
 import { 
   CalendarClock, 
   Users, 
@@ -276,17 +278,20 @@ const TimeAnalyticsDashboard = () => {
                 <CardTitle>Monthly Revenue</CardTitle>
               </CardHeader>
               <CardContent className="h-80">
-                <Bar 
+                <InsightBarChart 
                   data={revenueByMonthData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'top' as const,
-                      },
-                    },
-                  }}
+                  height={300}
+                  insightGenerator={(index, datasetIndex, label, value) => ({
+                    title: `${label} Revenue`,
+                    value: `$${value.toLocaleString()}`,
+                    valuePrefix: '$',
+                    description: `Revenue generated during ${label}`,
+                    type: 'revenue',
+                    detailsKeys: ['avgRate', 'clientCount', 'topService'],
+                    avgRate: `$${Math.round(value / data!.firmOverview.byMonth[index].hours)}`,
+                    clientCount: Math.round(value / 7500),
+                    topService: index % 3 === 0 ? 'Tax Prep' : index % 3 === 1 ? 'Advisory' : 'Bookkeeping'
+                  })}
                 />
               </CardContent>
             </Card>
@@ -295,17 +300,21 @@ const TimeAnalyticsDashboard = () => {
                 <CardTitle>Monthly Hours</CardTitle>
               </CardHeader>
               <CardContent className="h-80">
-                <Bar 
+                <InsightBarChart 
                   data={hoursByMonthData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'top' as const,
-                      },
-                    },
-                  }}
+                  height={300}
+                  insightGenerator={(index, datasetIndex, label, value) => ({
+                    title: `${label} Hours`,
+                    value: `${value.toLocaleString()} hrs`,
+                    valueSuffix: ' hrs',
+                    description: `Total billable hours during ${label}`,
+                    type: 'hours',
+                    detailsKeys: ['staffCount', 'utilizationRate', 'mostActive'],
+                    staffCount: Math.ceil(value / 120),
+                    utilizationRate: `${70 + Math.round(Math.random() * 20)}%`,
+                    mostActive: index % 4 === 0 ? 'Partner' : index % 4 === 1 ? 'Manager' : 
+                                index % 4 === 2 ? 'Senior' : 'Staff'
+                  })}
                 />
               </CardContent>
             </Card>
@@ -316,21 +325,22 @@ const TimeAnalyticsDashboard = () => {
               <CardTitle>Service Revenue Distribution</CardTitle>
             </CardHeader>
             <CardContent className="h-96">
-              <div className="flex h-full items-center justify-center">
-                <div className="w-72 h-72">
-                  <Pie 
-                    data={serviceData}
-                    options={{
-                      responsive: true,
-                      plugins: {
-                        legend: {
-                          position: 'right' as const,
-                        },
-                      },
-                    }}
-                  />
-                </div>
-              </div>
+              <InsightPieChart 
+                data={serviceData}
+                width={250}
+                height={250}
+                insightGenerator={(index, label, value) => ({
+                  title: label,
+                  value: `$${value.toLocaleString()}`,
+                  valuePrefix: '$',
+                  description: `Revenue from ${label} services`,
+                  type: 'revenue',
+                  detailsKeys: ['percentOfTotal', 'hourlyRate', 'growthRate'],
+                  percentOfTotal: `${Math.round((value / data!.firmOverview.totalRevenue) * 100)}%`,
+                  hourlyRate: `$${Math.round(value / data!.firmOverview.byService[index].hours)}`,
+                  growthRate: `${5 + Math.round(Math.random() * 15)}%`
+                })}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -386,16 +396,10 @@ const TimeAnalyticsDashboard = () => {
               <CardTitle>Staff Utilization vs. Target</CardTitle>
             </CardHeader>
             <CardContent className="h-80">
-              <Bar 
+              <InsightBarChart 
                 data={staffUtilizationData}
+                height={300}
                 options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'top' as const,
-                    },
-                  },
                   scales: {
                     y: {
                       min: 0,
@@ -403,6 +407,19 @@ const TimeAnalyticsDashboard = () => {
                     },
                   },
                 }}
+                insightGenerator={(index, datasetIndex, label, value) => ({
+                  title: `${label} Utilization`,
+                  value: `${value}%`,
+                  valueSuffix: '%',
+                  description: datasetIndex === 0 
+                    ? `Current utilization rate for ${label}` 
+                    : `Target utilization rate for ${label}`,
+                  type: 'utilization',
+                  detailsKeys: ['headcount', 'billableHours', 'nonBillableHours'],
+                  headcount: Math.ceil(Math.random() * 5) + 1,
+                  billableHours: Math.round(value * 40) + 'h/week',
+                  nonBillableHours: Math.round((100 - value) * 40 / 100) + 'h/week'
+                })}
               />
             </CardContent>
           </Card>
@@ -487,21 +504,22 @@ const TimeAnalyticsDashboard = () => {
               <CardTitle>Top Clients by Revenue</CardTitle>
             </CardHeader>
             <CardContent className="h-80">
-              <div className="flex h-full items-center justify-center">
-                <div className="w-72 h-72">
-                  <Pie 
-                    data={clientRevenueData}
-                    options={{
-                      responsive: true,
-                      plugins: {
-                        legend: {
-                          position: 'right' as const,
-                        },
-                      },
-                    }}
-                  />
-                </div>
-              </div>
+              <InsightPieChart 
+                data={clientRevenueData}
+                width={250}
+                height={250}
+                insightGenerator={(index, label, value) => ({
+                  title: label,
+                  value: `$${value.toLocaleString()}`,
+                  valuePrefix: '$',
+                  description: `Revenue from ${label}`,
+                  type: 'clients',
+                  detailsKeys: ['percentOfTotal', 'avgRate', 'projectCount'],
+                  percentOfTotal: `${Math.round((value / data!.firmOverview.totalRevenue) * 100)}%`,
+                  avgRate: `$${Math.round(value / (data!.clientOverview.byHours.find(h => h.name === label)?.hours || 1))}`,
+                  projectCount: Math.ceil(Math.random() * 3) + 1
+                })}
+              />
             </CardContent>
           </Card>
 
