@@ -21,7 +21,7 @@ import {
   Legend,
   ArcElement,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Bar, Line, Pie } from 'react-chartjs-2';
 import { InsightBarChart } from './InsightBarChart';
 import { InsightPieChart } from './InsightPieChart';
 import { 
@@ -336,8 +336,8 @@ const TimeAnalyticsDashboard = () => {
                   description: `Revenue from ${label} services`,
                   type: 'revenue',
                   detailsKeys: ['percentOfTotal', 'hourlyRate', 'growthRate'],
-                  percentOfTotal: `${Math.round((value / data!.firmOverview.totalRevenue) * 100)}%`,
-                  hourlyRate: `$${Math.round(value / data!.firmOverview.byService[index].hours)}`,
+                  percentOfTotal: `${Math.round((value / (data?.firmOverview.totalRevenue || 1)) * 100)}%`,
+                  hourlyRate: `$${Math.round(value / (data?.firmOverview.byService[index]?.hours || 1))}`,
                   growthRate: `${5 + Math.round(Math.random() * 15)}%`
                 })}
               />
@@ -382,7 +382,7 @@ const TimeAnalyticsDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  ${Math.round(data?.firmOverview.totalRevenue / data?.staffOverview.totalStaff).toLocaleString()}
+                  ${Math.round((data?.firmOverview.totalRevenue || 0) / (data?.staffOverview.totalStaff || 1)).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Average revenue per staff member
@@ -443,7 +443,7 @@ const TimeAnalyticsDashboard = () => {
                       <td className="py-3 px-4">{role.name}</td>
                       <td className="text-right py-3 px-4">${role.revenue.toLocaleString()}</td>
                       <td className="text-right py-3 px-4">
-                        {Math.round((role.revenue / data.firmOverview.totalRevenue) * 100)}%
+                        {Math.round((role.revenue / (data.firmOverview.totalRevenue || 1)) * 100)}%
                       </td>
                     </tr>
                   ))}
@@ -476,7 +476,7 @@ const TimeAnalyticsDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  ${Math.round(data?.firmOverview.totalRevenue / data?.clientOverview.activeClients).toLocaleString()}
+                  ${Math.round((data?.firmOverview.totalRevenue || 0) / (data?.clientOverview.activeClients || 1)).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Average for active clients
@@ -515,8 +515,8 @@ const TimeAnalyticsDashboard = () => {
                   description: `Revenue from ${label}`,
                   type: 'clients',
                   detailsKeys: ['percentOfTotal', 'avgRate', 'projectCount'],
-                  percentOfTotal: `${Math.round((value / data!.firmOverview.totalRevenue) * 100)}%`,
-                  avgRate: `$${Math.round(value / (data!.clientOverview.byHours.find(h => h.name === label)?.hours || 1))}`,
+                  percentOfTotal: `${Math.round((value / (data?.firmOverview.totalRevenue || 1)) * 100)}%`,
+                  avgRate: `$${Math.round(value / (data?.clientOverview.byHours.find(h => h.name === label)?.hours || 1))}`,
                   projectCount: Math.ceil(Math.random() * 3) + 1
                 })}
               />
@@ -539,7 +539,7 @@ const TimeAnalyticsDashboard = () => {
                 </thead>
                 <tbody>
                   {data?.clientOverview.byRevenue.slice(0, 4).map((client, index) => {
-                    const hours = data.clientOverview.byHours.find(
+                    const hours = data?.clientOverview.byHours.find(
                       h => h.name === client.name
                     )?.hours || 0;
                     
