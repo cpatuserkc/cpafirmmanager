@@ -155,18 +155,7 @@ const TimeAnalytics = () => {
           </TabsContent>
           
           <TabsContent value="reports">
-            <Card>
-              <CardHeader>
-                <CardTitle>Time Analytics Dashboard</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="p-8 text-center text-neutral-600">
-                  <BarChart className="h-12 w-12 mx-auto mb-3 text-neutral-400" />
-                  <h3 className="text-lg font-semibold mb-2">Analytics Dashboard Coming Soon</h3>
-                  <p>Advanced time analytics and forecasting features are currently in development.</p>
-                </div>
-              </CardContent>
-            </Card>
+            <TimeAnalyticsDashboard />
           </TabsContent>
         </Tabs>
       </div>
