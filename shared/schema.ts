@@ -1,4 +1,13 @@
-import { pgTable, text, serial, integer, boolean, timestamp, numeric, jsonb } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  numeric,
+  jsonb,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -29,7 +38,7 @@ export const firms = pgTable("firms", {
   ein: text("ein"), // Federal Employer Identification Number
   address: text("address"),
   city: text("city"),
-  state: text("state"), 
+  state: text("state"),
   zipCode: text("zip_code"),
   phone: text("phone"),
   email: text("email"),
@@ -48,13 +57,19 @@ export const insertFirmSchema = createInsertSchema(firms).omit({
 // UserFirmRelationships - Many-to-many relationship between users and firms
 export const userFirmRelationships = pgTable("user_firm_relationships", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  firmId: integer("firm_id").notNull().references(() => firms.id),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
   role: text("role").default("owner").notNull(), // "owner", "manager", "employee"
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertUserFirmRelationshipSchema = createInsertSchema(userFirmRelationships).omit({
+export const insertUserFirmRelationshipSchema = createInsertSchema(
+  userFirmRelationships,
+).omit({
   id: true,
   createdAt: true,
 });
@@ -62,8 +77,12 @@ export const insertUserFirmRelationshipSchema = createInsertSchema(userFirmRelat
 // Contacts schema - Individual people a firm interacts with
 export const contacts = pgTable("contacts", {
   id: serial("id").primaryKey(),
-  firmId: integer("firm_id").notNull().references(() => firms.id),
-  createdById: integer("created_by_id").notNull().references(() => users.id),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email"),
@@ -86,8 +105,12 @@ export const insertContactSchema = createInsertSchema(contacts).omit({
 // Client Companies schema - Business entities that receive services
 export const clientCompanies = pgTable("client_companies", {
   id: serial("id").primaryKey(),
-  firmId: integer("firm_id").notNull().references(() => firms.id),
-  contactId: integer("contact_id").notNull().references(() => contacts.id), // Primary contact/owner
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
+  contactId: integer("contact_id")
+    .notNull()
+    .references(() => contacts.id), // Primary contact/owner
   name: text("name").notNull(),
   ein: text("ein"), // Federal Employer Identification Number
   industry: text("industry"),
@@ -103,7 +126,9 @@ export const clientCompanies = pgTable("client_companies", {
   isActive: boolean("is_active").default(true).notNull(),
 });
 
-export const insertClientCompanySchema = createInsertSchema(clientCompanies).omit({
+export const insertClientCompanySchema = createInsertSchema(
+  clientCompanies,
+).omit({
   id: true,
   createdAt: true,
 });
@@ -111,15 +136,21 @@ export const insertClientCompanySchema = createInsertSchema(clientCompanies).omi
 // Projects schema - Work performed for client companies
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
-  firmId: integer("firm_id").notNull().references(() => firms.id),
-  clientCompanyId: integer("client_company_id").notNull().references(() => clientCompanies.id),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
+  clientCompanyId: integer("client_company_id")
+    .notNull()
+    .references(() => clientCompanies.id),
   name: text("name").notNull(),
   description: text("description"),
   estimatedHours: numeric("estimated_hours"),
   status: text("status").default("active").notNull(), // "active", "completed", "pending"
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
-  createdById: integer("created_by_id").notNull().references(() => users.id),
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -131,11 +162,19 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 // Time estimates schema - Projected time for projects and services
 export const timeEstimates = pgTable("time_estimates", {
   id: serial("id").primaryKey(),
-  firmId: integer("firm_id").notNull().references(() => firms.id),
-  clientCompanyId: integer("client_company_id").notNull().references(() => clientCompanies.id),
-  projectId: integer("project_id").notNull().references(() => projects.id),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
+  clientCompanyId: integer("client_company_id")
+    .notNull()
+    .references(() => clientCompanies.id),
+  projectId: integer("project_id")
+    .notNull()
+    .references(() => projects.id),
   serviceId: integer("service_id").references(() => services.id),
-  professionalRoleId: integer("professional_role_id").references(() => professionalRoles.id),
+  professionalRoleId: integer("professional_role_id").references(
+    () => professionalRoles.id,
+  ),
   tier: text("tier").default("mid"), // "top", "mid", "low"
   assignedToId: integer("assigned_to_id").references(() => users.id), // Person assigned to the work
   periodStart: timestamp("period_start"), // Projected start date
@@ -145,7 +184,9 @@ export const timeEstimates = pgTable("time_estimates", {
   estimatedCost: numeric("estimated_cost"), // estimatedHours × hourlyRate
   description: text("description"),
   status: text("status").default("planned").notNull(), // "planned", "in_progress", "completed"
-  createdById: integer("created_by_id").notNull().references(() => users.id), // Person who created the estimate
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id), // Person who created the estimate
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -157,18 +198,24 @@ export const insertTimeEstimateSchema = createInsertSchema(timeEstimates).omit({
 // Professional Roles schema - Staff roles in the firm
 export const professionalRoles = pgTable("professional_roles", {
   id: serial("id").primaryKey(),
-  firmId: integer("firm_id").notNull().references(() => firms.id),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
   name: text("name").notNull(), // "Accountant", "Tax Specialist", "Auditor", etc.
   description: text("description"),
   topTierRate: numeric("top_tier_rate").notNull(), // Base hourly rate for top tier
   midTierRatePercent: numeric("mid_tier_rate_percent").default("75").notNull(), // % of top tier (e.g., 75%)
   lowTierRatePercent: numeric("low_tier_rate_percent").default("50").notNull(), // % of top tier (e.g., 50%)
-  createdById: integer("created_by_id").notNull().references(() => users.id),
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true).notNull(),
 });
 
-export const insertProfessionalRoleSchema = createInsertSchema(professionalRoles).omit({
+export const insertProfessionalRoleSchema = createInsertSchema(
+  professionalRoles,
+).omit({
   id: true,
   createdAt: true,
 });
@@ -176,16 +223,22 @@ export const insertProfessionalRoleSchema = createInsertSchema(professionalRoles
 // Services schema - Services offered by the firm
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
-  firmId: integer("firm_id").notNull().references(() => firms.id),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
   name: text("name").notNull(),
   description: text("description"),
   category: text("category"), // "tax", "audit", "advisory", etc.
-  defaultRoleId: integer("default_role_id").references(() => professionalRoles.id), // Default professional role
+  defaultRoleId: integer("default_role_id").references(
+    () => professionalRoles.id,
+  ), // Default professional role
   defaultTier: text("default_tier").default("mid"), // "top", "mid", "low"
   jurisdictionFederal: boolean("jurisdiction_federal").default(false),
   jurisdictionState: text("jurisdiction_state"), // State code if applicable
   estimatedHours: numeric("estimated_hours"),
-  createdById: integer("created_by_id").notNull().references(() => users.id),
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true).notNull(),
 });
@@ -198,15 +251,21 @@ export const insertServiceSchema = createInsertSchema(services).omit({
 // Proposals schema - Service proposals for client companies
 export const proposals = pgTable("proposals", {
   id: serial("id").primaryKey(),
-  firmId: integer("firm_id").notNull().references(() => firms.id),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
   contactId: integer("contact_id").references(() => contacts.id), // Primary client contact - optional for external requests
-  clientCompanyId: integer("client_company_id").references(() => clientCompanies.id), // Optional for external requests
+  clientCompanyId: integer("client_company_id").references(
+    () => clientCompanies.id,
+  ), // Optional for external requests
   title: text("title").notNull(),
   content: text("content"),
   estimatedHours: numeric("estimated_hours"),
   estimatedCost: numeric("estimated_cost"),
   status: text("status").default("draft").notNull(), // "draft", "sent", "accepted", "rejected", "pending_assignment"
-  createdById: integer("created_by_id").notNull().references(() => users.id),
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiryDate: timestamp("expiry_date"),
   estimatedStartDate: timestamp("estimated_start_date"),
@@ -218,15 +277,21 @@ export const proposals = pgTable("proposals", {
 export const insertProposalSchema = createInsertSchema(proposals).omit({
   id: true,
   createdAt: true,
-  requestDetails: true
+  requestDetails: true,
 });
 
 // Proposal Services - Many-to-many between proposals and services
 export const proposalServices = pgTable("proposal_services", {
   id: serial("id").primaryKey(),
-  proposalId: integer("proposal_id").notNull().references(() => proposals.id),
-  serviceId: integer("service_id").notNull().references(() => services.id),
-  professionalRoleId: integer("professional_role_id").references(() => professionalRoles.id),
+  proposalId: integer("proposal_id")
+    .notNull()
+    .references(() => proposals.id),
+  serviceId: integer("service_id")
+    .notNull()
+    .references(() => services.id),
+  professionalRoleId: integer("professional_role_id").references(
+    () => professionalRoles.id,
+  ),
   tier: text("tier").default("mid"), // "top", "mid", "low"
   quantity: numeric("quantity").default("1").notNull(),
   rate: numeric("rate"), // Calculated rate based on role and tier
@@ -237,7 +302,9 @@ export const proposalServices = pgTable("proposal_services", {
   jurisdictionState: text("jurisdiction_state"), // State code if applicable
 });
 
-export const insertProposalServiceSchema = createInsertSchema(proposalServices).omit({
+export const insertProposalServiceSchema = createInsertSchema(
+  proposalServices,
+).omit({
   id: true,
 });
 
@@ -250,7 +317,9 @@ export const resources = pgTable("resources", {
   accessLevel: text("access_level").default("free").notNull(), // "free", "premium"
   url: text("url"),
   category: text("category").notNull(),
-  createdById: integer("created_by_id").notNull().references(() => users.id),
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -266,23 +335,33 @@ export const classifications = pgTable("classifications", {
   description: text("description"),
   category: text("category").notNull(),
   accessLevel: text("access_level").default("free").notNull(), // "free", "premium"
-  createdById: integer("created_by_id").notNull().references(() => users.id),
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id),
 });
 
-export const insertClassificationSchema = createInsertSchema(classifications).omit({
+export const insertClassificationSchema = createInsertSchema(
+  classifications,
+).omit({
   id: true,
 });
 
 // Deadlines schema - Important dates for client work
 export const deadlines = pgTable("deadlines", {
   id: serial("id").primaryKey(),
-  firmId: integer("firm_id").notNull().references(() => firms.id),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
   contactId: integer("contact_id").references(() => contacts.id),
-  clientCompanyId: integer("client_company_id").references(() => clientCompanies.id),
+  clientCompanyId: integer("client_company_id").references(
+    () => clientCompanies.id,
+  ),
   title: text("title").notNull(),
   dueDate: timestamp("due_date").notNull(),
   description: text("description"),
-  createdById: integer("created_by_id").notNull().references(() => users.id),
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id),
   assignedToId: integer("assigned_to_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   isCompleted: boolean("is_completed").default(false).notNull(),
@@ -301,7 +380,9 @@ export type Firm = typeof firms.$inferSelect;
 export type InsertFirm = z.infer<typeof insertFirmSchema>;
 
 export type UserFirmRelationship = typeof userFirmRelationships.$inferSelect;
-export type InsertUserFirmRelationship = z.infer<typeof insertUserFirmRelationshipSchema>;
+export type InsertUserFirmRelationship = z.infer<
+  typeof insertUserFirmRelationshipSchema
+>;
 
 export type Contact = typeof contacts.$inferSelect;
 export type InsertContact = z.infer<typeof insertContactSchema>;
@@ -316,7 +397,9 @@ export type TimeEstimate = typeof timeEstimates.$inferSelect;
 export type InsertTimeEstimate = z.infer<typeof insertTimeEstimateSchema>;
 
 export type ProfessionalRole = typeof professionalRoles.$inferSelect;
-export type InsertProfessionalRole = z.infer<typeof insertProfessionalRoleSchema>;
+export type InsertProfessionalRole = z.infer<
+  typeof insertProfessionalRoleSchema
+>;
 
 export type Service = typeof services.$inferSelect;
 export type InsertService = z.infer<typeof insertServiceSchema>;
