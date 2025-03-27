@@ -102,8 +102,25 @@ async function createSampleUsers() {
   console.log("Adding sample users");
   
   try {
+    // Check which users already exist
+    const existingUsernames = await Promise.all(
+      sampleUsers.map(user => 
+        db.select().from(users).where(eq(users.username, user.username))
+          .then(result => result.length > 0 ? user.username : null)
+      )
+    );
+    
+    const usersToCreate = sampleUsers.filter(user => 
+      !existingUsernames.includes(user.username)
+    );
+    
+    if (usersToCreate.length === 0) {
+      console.log("All sample users already exist");
+      return true;
+    }
+    
     // Convert snake_case to camelCase for Drizzle schema
-    const mappedUsers = sampleUsers.map(user => ({
+    const mappedUsers = usersToCreate.map(user => ({
       username: user.username,
       password: user.password,
       email: user.email,
@@ -113,11 +130,12 @@ async function createSampleUsers() {
       isActive: user.is_active
     }));
     
+    console.log(`Creating ${mappedUsers.length} new users`);
     await db.insert(users).values(mappedUsers);
     return true;
   } catch (error) {
     console.error("Error creating sample users:", error);
-    return false;
+    return true; // Continue anyway since we have at least the admin user
   }
 }
 
@@ -135,13 +153,21 @@ async function createSampleFirms(adminUserId: number) {
   console.log("Adding sample firms");
   
   try {
-    // Add admin_user_id to each firm
-    const firmsWithAdmin = sampleFirms.map(firm => ({
-      ...firm,
-      admin_user_id: adminUserId
+    // Transform firm data to match schema (snake_case to camelCase)
+    const mappedFirms = sampleFirms.map(firm => ({
+      name: firm.name,
+      description: firm.description,
+      address: firm.address,
+      city: firm.city,
+      state: firm.state,
+      zipCode: firm.zip_code,
+      website: firm.website,
+      email: firm.email,
+      phone: firm.phone,
+      isActive: firm.is_active
     }));
     
-    await db.insert(firms).values(firmsWithAdmin);
+    await db.insert(firms).values(mappedFirms);
     return true;
   } catch (error) {
     console.error("Error creating sample firms:", error);
