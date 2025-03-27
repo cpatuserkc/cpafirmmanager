@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,9 +22,16 @@ type FormValues = z.infer<typeof formSchema>;
 const Login = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { login } = useContext(AuthContext);
+  const { login, user, isAuthenticated } = useContext(AuthContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation("/dashboard");
+    }
+  }, [isAuthenticated, setLocation]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -75,8 +82,8 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-neutral-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/">
-            <a className="text-primary font-heading font-bold text-3xl">CPA Resource Hub</a>
+          <Link href="/" className="text-primary font-heading font-bold text-3xl">
+            CPA Resource Hub
           </Link>
         </div>
         
@@ -145,10 +152,8 @@ const Login = () => {
             </div>
             <div className="text-center text-sm">
               Don't have an account?{" "}
-              <Link href="/signup">
-                <a className="text-primary hover:text-primary-dark font-semibold">
-                  Sign up
-                </a>
+              <Link href="/signup" className="text-primary hover:text-primary-dark font-semibold">
+                Sign up
               </Link>
             </div>
           </CardFooter>
