@@ -58,15 +58,22 @@ const Login = () => {
         throw new Error(errorData.message || "Invalid credentials");
       }
       
+      // Get the response JSON
       const userData = await response.json();
+      
+      // Update auth context with user data
       login(userData);
       
+      // Show success message
       toast({
         title: "Login Successful",
         description: "Welcome back!",
       });
       
-      setLocation("/dashboard");
+      // Wait a moment before redirect to ensure state updates
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 100);
     } catch (error) {
       toast({
         title: "Login Failed",
