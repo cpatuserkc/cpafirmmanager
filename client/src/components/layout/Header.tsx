@@ -48,6 +48,12 @@ const Header = () => {
         { href: "/analytics", label: "Analytics" },
       ]
     },
+    {
+      label: "Team",
+      items: [
+        { href: "/collaborations", label: "Collaborations" },
+      ]
+    },
   ];
 
   // Flatten nav items for mobile view

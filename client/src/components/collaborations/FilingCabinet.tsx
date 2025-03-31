@@ -1,83 +1,143 @@
 import { useState } from "react";
-import { Folder, File, Share2, MoreHorizontal, Lock, UserPlus, ExternalLink } from "lucide-react";
+import { 
+  FolderOpen, 
+  File, 
+  MoreHorizontal, 
+  Users, 
+  Lock, 
+  Trash2, 
+  Download, 
+  Edit,
+  Copy
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger 
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Temporary mock data - would come from API in production
-const mockFolders = [
-  { id: 1, name: "Client Files", owner: "You", shared: true, sharedWith: ["Jane Smith", "Mark Johnson"] },
-  { id: 2, name: "Tax Documents", owner: "You", shared: false, sharedWith: [] },
-  { id: 3, name: "Financial Reports", owner: "You", shared: true, sharedWith: ["Jane Smith"] },
-  { id: 4, name: "Audit Materials", owner: "Jane Smith", shared: true, sharedWith: ["You"] },
-];
-
-interface FolderItemProps {
-  folder: typeof mockFolders[0];
-  onShare: (folderId: number) => void;
+// Define interfaces for our folder structure
+interface FileItem {
+  id: number;
+  name: string;
+  type: string;
+  size: string;
+  date: string;
 }
 
-const FolderItem = ({ folder, onShare }: FolderItemProps) => {
+interface FolderType {
+  id: number;
+  name: string;
+  shared: boolean;
+  files: FileItem[];
+  subfolders?: FolderType[];
+}
+
+// Sample data - would be fetched from API in production
+const mockFolders: FolderType[] = [
+  {
+    id: 1,
+    name: "Client Files",
+    shared: true,
+    files: [
+      { id: 1, name: "Adams Family Proposal 02-25-25.pdf", type: "pdf", size: "2.4 MB", date: "Feb 25, 2025" },
+      { id: 2, name: "D. White Proposal 02-24-25.pdf", type: "pdf", size: "1.8 MB", date: "Feb 24, 2025" }
+    ],
+    subfolders: [
+      {
+        id: 1,
+        name: "Tax Documents",
+        shared: true,
+        files: [
+          { id: 3, name: "2024 Tax Planning.xlsx", type: "excel", size: "1.2 MB", date: "Jan 15, 2025" }
+        ]
+      }
+    ]
+  },
+  {
+    id: 2,
+    name: "Firm Documents",
+    shared: false,
+    files: [
+      { id: 4, name: "Staff Meeting Notes.docx", type: "word", size: "0.5 MB", date: "Mar 10, 2025" },
+      { id: 5, name: "Office Policies.pdf", type: "pdf", size: "1.5 MB", date: "Dec 5, 2024" }
+    ]
+  },
+  {
+    id: 3,
+    name: "Financial Reports",
+    shared: true,
+    files: [
+      { id: 6, name: "Q1 2025 Analysis.xlsx", type: "excel", size: "2.1 MB", date: "Mar 15, 2025" }
+    ]
+  }
+];
+
+interface FileItemProps {
+  file: FileItem;
+  onView: (file: FileItem) => void;
+}
+
+const FileItem = ({ file, onView }: FileItemProps) => {
+  const getFileIcon = (type: string) => {
+    switch(type) {
+      case 'pdf':
+        return <File className="h-4 w-4 text-red-500" />;
+      case 'excel':
+        return <File className="h-4 w-4 text-green-500" />;
+      case 'word':
+        return <File className="h-4 w-4 text-blue-500" />;
+      default:
+        return <File className="h-4 w-4 text-neutral-500" />;
+    }
+  };
+
   return (
-    <div className="flex items-center justify-between p-4 border border-neutral-200 rounded-md bg-white hover:bg-neutral-50 transition-colors">
+    <div 
+      className="flex items-center justify-between p-2 hover:bg-neutral-100 rounded-md cursor-pointer transition-colors"
+      onClick={() => onView(file)}
+    >
       <div className="flex items-center space-x-3">
-        <div className="bg-primary/10 p-2 rounded">
-          <Folder className="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <div className="font-medium">{folder.name}</div>
-          <div className="text-sm text-neutral-500">Owner: {folder.owner}</div>
-        </div>
+        {getFileIcon(file.type)}
+        <span className="text-sm">{file.name}</span>
       </div>
-      
-      <div className="flex items-center space-x-2">
-        {folder.shared && (
-          <Badge variant="outline" className="flex items-center gap-1">
-            <UserPlus className="h-3 w-3" />
-            <span>{folder.sharedWith.length}</span>
-          </Badge>
-        )}
-        
+      <div className="flex items-center space-x-4">
+        <span className="text-xs text-neutral-500">{file.date}</span>
+        <span className="text-xs text-neutral-500">{file.size}</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" className="h-8 w-8 p-0">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onShare(folder.id)}>
-              <Share2 className="mr-2 h-4 w-4" />
+            <DropdownMenuItem className="cursor-pointer">
+              <Download className="mr-2 h-4 w-4" />
+              <span>Download</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">
+              <Users className="mr-2 h-4 w-4" />
               <span>Share</span>
             </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">
+              <Copy className="mr-2 h-4 w-4" />
+              <span>Copy Link</span>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <ExternalLink className="mr-2 h-4 w-4" />
-              <span>Open</span>
+            <DropdownMenuItem className="cursor-pointer text-red-600">
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Delete</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -86,147 +146,90 @@ const FolderItem = ({ folder, onShare }: FolderItemProps) => {
   );
 };
 
-const FilingCabinet = () => {
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [newCollaborator, setNewCollaborator] = useState("");
-  const [permissionLevel, setPermissionLevel] = useState("view");
-  
-  const selectedFolder = mockFolders.find(f => f.id === selectedFolderId);
-  
-  const handleShareFolder = (folderId: number) => {
-    setSelectedFolderId(folderId);
-    setShareDialogOpen(true);
-  };
-  
-  const handleAddCollaborator = () => {
-    // In a real implementation, this would call an API to update permissions
-    console.log(`Adding ${newCollaborator} with ${permissionLevel} permissions to folder ${selectedFolderId}`);
-    setNewCollaborator("");
-    // Close dialog after adding
-    setShareDialogOpen(false);
-  };
-  
-  const filteredFolders = searchQuery 
-    ? mockFolders.filter(folder => 
-        folder.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : mockFolders;
-  
+interface FolderProps {
+  folder: FolderType;
+  level?: number;
+}
+
+const Folder = ({ folder, level = 0 }: FolderProps) => {
   return (
-    <div>
-      <div className="mb-4">
-        <div className="relative">
-          <Input
-            placeholder="Search folders..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-10"
-          />
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="absolute right-0 top-0 h-full"
-            onClick={() => setSearchQuery("")}
-          >
-            {searchQuery && "✕"}
-          </Button>
+    <AccordionItem value={`folder-${folder.id}`} className="border-none">
+      <AccordionTrigger className="hover:bg-neutral-100 rounded-md px-2 py-2">
+        <div className="flex items-center space-x-2">
+          <FolderOpen className={`h-5 w-5 ${level === 0 ? 'text-amber-500' : 'text-amber-400'}`} />
+          <span>{folder.name}</span>
+          {folder.shared && (
+            <Badge variant="outline" className="ml-2 py-0 px-2 h-5 font-normal">
+              <Users className="h-3 w-3 mr-1" /> Shared
+            </Badge>
+          )}
         </div>
-      </div>
-      
-      <div className="space-y-4 mt-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Your Folders</h3>
-          <Button size="sm" variant="outline">
-            + New Folder
-          </Button>
-        </div>
-        
-        <div className="space-y-2">
-          {filteredFolders.length > 0 ? (
-            filteredFolders.map((folder) => (
-              <FolderItem 
-                key={folder.id} 
-                folder={folder} 
-                onShare={handleShareFolder} 
-              />
-            ))
-          ) : (
-            <div className="text-center py-8 text-neutral-500">
-              No folders found
+      </AccordionTrigger>
+      <AccordionContent className="pt-1 pb-2">
+        <div className="space-y-1 pl-6">
+          {/* Files in this folder */}
+          {folder.files.map((file) => (
+            <FileItem key={file.id} file={file} onView={() => console.log("Viewing file:", file.name)} />
+          ))}
+          
+          {/* Subfolders */}
+          {folder.subfolders && folder.subfolders.length > 0 && (
+            <div className="pt-2">
+              <Accordion type="multiple" className="space-y-2">
+                {folder.subfolders.map((subfolder) => (
+                  <Folder key={subfolder.id} folder={subfolder} level={level + 1} />
+                ))}
+              </Accordion>
             </div>
           )}
         </div>
+      </AccordionContent>
+    </AccordionItem>
+  );
+};
+
+const FilingCabinet = () => {
+  const [, setSelectedFile] = useState<FileItem | null>(null);
+
+  const handleFileView = (file: FileItem) => {
+    setSelectedFile(file);
+    // In a real application, this would open the file or show file details
+    console.log("Opening file:", file.name);
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-medium">Your Files</h3>
+        <div className="flex items-center space-x-2">
+          <Button size="sm" variant="outline" className="flex items-center gap-1">
+            <Edit className="h-4 w-4" />
+            New Folder
+          </Button>
+        </div>
       </div>
       
-      {/* Share Dialog */}
-      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Share "{selectedFolder?.name}"</DialogTitle>
-            <DialogDescription>
-              Add people to collaborate on this folder
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="collaborator">Add collaborator</Label>
-              <div className="flex space-x-2">
-                <Input
-                  id="collaborator"
-                  placeholder="Email or username"
-                  value={newCollaborator}
-                  onChange={(e) => setNewCollaborator(e.target.value)}
-                />
-                <Select 
-                  value={permissionLevel} 
-                  onValueChange={setPermissionLevel}
-                >
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="view">View only</SelectItem>
-                    <SelectItem value="comment">Comment</SelectItem>
-                    <SelectItem value="edit">Can edit</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            {selectedFolder?.sharedWith.length ? (
-              <div>
-                <Label>Already shared with</Label>
-                <div className="mt-2 space-y-2">
-                  {selectedFolder.sharedWith.map((user, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 bg-neutral-50 rounded">
-                      <span>{user}</span>
-                      <Badge>Can edit</Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-            
-            <div className="flex items-center space-x-2 text-sm">
-              <Lock className="h-4 w-4 text-neutral-500" />
-              <span className="text-neutral-500">
-                Only people who have access can see and collaborate
-              </span>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddCollaborator} disabled={!newCollaborator}>
-              Share
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <div className="relative">
+        <div 
+          className="absolute -left-6 -right-6 top-0 opacity-20 pointer-events-none"
+          style={{ 
+            backgroundImage: "url('/images/filing-cabinet.svg')", 
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            backgroundSize: "contain",
+            height: "500px",
+            zIndex: -1
+          }}
+        />
+        
+        <ScrollArea className="h-[400px] pr-4">
+          <Accordion type="multiple" className="space-y-2">
+            {mockFolders.map((folder) => (
+              <Folder key={folder.id} folder={folder} />
+            ))}
+          </Accordion>
+        </ScrollArea>
+      </div>
     </div>
   );
 };
