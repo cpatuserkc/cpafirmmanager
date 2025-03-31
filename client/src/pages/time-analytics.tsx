@@ -5,11 +5,12 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TimeAnalyticsForm from "@/components/time-analytics/TimeAnalyticsForm";
 import TimeAnalyticsDashboard from "@/components/time-analytics/TimeAnalyticsDashboard";
+import BudgetVsActualDashboard from "@/components/time-analytics/BudgetVsActualDashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/App";
-import { Clock, Calendar, Filter, BarChart } from "lucide-react";
+import { Clock, Calendar, Filter, BarChart, ClipboardCheck } from "lucide-react";
 import { TimeEstimate } from "@shared/schema";
 
 const TimeAnalytics = () => {
@@ -69,6 +70,10 @@ const TimeAnalytics = () => {
             <TabsTrigger value="track">Create Estimate</TabsTrigger>
             <TabsTrigger value="history">Time Estimates</TabsTrigger>
             <TabsTrigger value="reports">Analytics</TabsTrigger>
+            <TabsTrigger value="budget-actual">
+              <ClipboardCheck className="h-4 w-4 mr-2" />
+              Budget vs. Actual
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="track">
@@ -156,6 +161,10 @@ const TimeAnalytics = () => {
           
           <TabsContent value="reports">
             <TimeAnalyticsDashboard />
+          </TabsContent>
+          
+          <TabsContent value="budget-actual">
+            <BudgetVsActualDashboard />
           </TabsContent>
         </Tabs>
       </div>
