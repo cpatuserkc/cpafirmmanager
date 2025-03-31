@@ -1,155 +1,138 @@
-import React, { useRef, useState } from 'react';
+import { useState, useRef } from 'react';
 import { Bar } from 'react-chartjs-2';
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  BarElement, 
-  Tooltip, 
-  Legend, 
-  ChartData,
-  ChartOptions
-} from 'chart.js';
-import { AnimatedInsightTooltip } from './AnimatedInsightTooltip';
-import { useInsightTooltip } from '@/hooks/use-insight-tooltip';
+import { Card, CardContent } from "@/components/ui/card";
+import { Chart as ChartJS, ChartData, ChartOptions } from 'chart.js';
 
-// Register ChartJS components
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+interface InsightCardProps {
+  title: string;
+  value: string;
+  valuePrefix?: string;
+  valueSuffix?: string;
+  description: string;
+  type: 'revenue' | 'hours' | 'utilization' | 'variance';
+  detailsKeys: string[];
+  [key: string]: any;
+}
 
 interface InsightBarChartProps {
   data: ChartData<'bar'>;
-  options?: ChartOptions<'bar'>;
   height?: number;
-  insightGenerator?: (
+  width?: number;
+  options?: ChartOptions<'bar'>;
+  insightGenerator: (
     index: number, 
     datasetIndex: number, 
     label: string, 
     value: number
-  ) => any;
-  previousPeriodData?: any;
+  ) => InsightCardProps;
 }
 
-export const InsightBarChart: React.FC<InsightBarChartProps> = ({
-  data,
+export const InsightBarChart = ({ 
+  data, 
+  height = 400, 
+  width, 
   options = {},
-  height = 300,
   insightGenerator,
-  previousPeriodData
-}) => {
+}: InsightBarChartProps) => {
+  const [selectedBar, setSelectedBar] = useState<{
+    index: number;
+    datasetIndex: number;
+    value: number;
+    label: string;
+  } | null>(null);
+  
   const chartRef = useRef<ChartJS>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [activeDatasetIndex, setActiveDatasetIndex] = useState<number | null>(null);
   
-  const { 
-    tooltipState, 
-    showTooltip, 
-    hideTooltip, 
-    generateInsightData 
-  } = useInsightTooltip();
-
-  const handleHover = (event: React.MouseEvent) => {
-    if (!chartRef.current) return;
-    
-    const chart = chartRef.current;
-    const points = chart.getElementsAtEventForMode(
-      event.nativeEvent,
-      'nearest',
-      { intersect: true },
-      true
-    );
-    
-    if (points.length > 0) {
-      const firstPoint = points[0];
-      const { datasetIndex, index } = firstPoint;
-      
-      if (
-        insightGenerator && 
-        activeIndex !== index || 
-        activeDatasetIndex !== datasetIndex
-      ) {
-        setActiveIndex(index);
-        setActiveDatasetIndex(datasetIndex);
-        
-        const dataset = data.datasets[datasetIndex];
-        const label = data.labels?.[index] as string || '';
-        const value = dataset.data[index] as number;
-        
-        // Get the insight data for this data point
-        const insightData = insightGenerator(index, datasetIndex, label, value);
-        
-        // Calculate position relative to container
-        const rect = containerRef.current?.getBoundingClientRect();
-        const x = event.clientX - (rect?.left || 0);
-        const y = event.clientY - (rect?.top || 0);
-        
-        // Show tooltip with this data
-        showTooltip(
-          generateInsightData(
-            insightData.type || 'revenue',
-            insightData,
-            {
-              title: insightData.title || label,
-              valuePrefix: insightData.valuePrefix || '',
-              valueSuffix: insightData.valueSuffix || '',
-              description: insightData.description || '',
-              compareKey: insightData.compareKey,
-              previousPeriod: previousPeriodData,
-              detailsKeys: insightData.detailsKeys || []
-            }
-          ),
-          event
-        );
-      }
-    } else if (activeIndex !== null) {
-      setActiveIndex(null);
-      setActiveDatasetIndex(null);
-      hideTooltip();
-    }
-  };
-  
-  const handleMouseLeave = () => {
-    setActiveIndex(null);
-    setActiveDatasetIndex(null);
-    hideTooltip();
-  };
-
-  // Merge default options with provided options
   const defaultOptions: ChartOptions<'bar'> = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
     plugins: {
       tooltip: {
-        enabled: false, // Disable the default tooltip
+        enabled: true,
+        position: 'nearest',
       },
       legend: {
-        position: 'top' as const,
+        position: 'top',
+      },
+    },
+    onClick: (event, elements) => {
+      if (elements && elements.length > 0) {
+        const { datasetIndex, index } = elements[0];
+        const value = data.datasets[datasetIndex].data[index] as number;
+        const label = data.labels?.[index]?.toString() || '';
+        
+        setSelectedBar({ datasetIndex, index, value, label });
       }
     },
   };
   
   const mergedOptions = { ...defaultOptions, ...options };
   
+  // Generate insight for the selected bar
+  const insight = selectedBar 
+    ? insightGenerator(
+        selectedBar.index, 
+        selectedBar.datasetIndex, 
+        selectedBar.label, 
+        selectedBar.value
+      ) 
+    : null;
+
+  // Determine color based on insight type
+  const getInsightColor = (type: string, value: number | string): string => {
+    if (type === 'revenue') return 'bg-green-50 border-green-200';
+    if (type === 'hours') return 'bg-blue-50 border-blue-200';
+    if (type === 'utilization') {
+      return Number(value) >= 85 
+        ? 'bg-green-50 border-green-200' 
+        : Number(value) >= 70 
+          ? 'bg-yellow-50 border-yellow-200' 
+          : 'bg-red-50 border-red-200';
+    }
+    if (type === 'variance') {
+      return Number(value) <= 5 
+        ? 'bg-green-50 border-green-200'
+        : Number(value) <= 15 
+          ? 'bg-yellow-50 border-yellow-200'
+          : 'bg-red-50 border-red-200';
+    }
+    return 'bg-gray-50 border-gray-200';
+  };
+
   return (
-    <div 
-      ref={containerRef}
-      className="relative h-full w-full"
-      onMouseMove={handleHover}
-      onMouseLeave={handleMouseLeave}
-    >
-      <Bar 
-        ref={chartRef}
-        data={data} 
-        options={mergedOptions}
-        height={height}
-      />
+    <div className="relative w-full h-full">
+      <div style={{ height: `${height}px`, width: width ? `${width}px` : '100%' }}>
+        <Bar ref={chartRef} data={data} options={mergedOptions} />
+      </div>
       
-      <AnimatedInsightTooltip
-        data={tooltipState.data!}
-        visible={tooltipState.visible}
-        position={tooltipState.position}
-        onClose={hideTooltip}
-      />
+      {insight && (
+        <div className="absolute top-16 right-4 w-64">
+          <Card className={`border ${getInsightColor(insight.type, insight.value)} shadow-sm`}>
+            <CardContent className="p-4">
+              <h4 className="font-medium text-sm">{insight.title}</h4>
+              <p className="text-xl font-bold mt-1 mb-2">
+                {insight.valuePrefix}{insight.value}{insight.valueSuffix}
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">{insight.description}</p>
+              
+              <div className="space-y-1 text-xs border-t pt-2">
+                {insight.detailsKeys.map(key => (
+                  <div key={key} className="flex justify-between">
+                    <span className="text-muted-foreground capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').toLowerCase()}:
+                    </span>
+                    <span className="font-medium">{insight[key]}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

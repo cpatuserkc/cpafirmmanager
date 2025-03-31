@@ -1,150 +1,141 @@
-import React, { useRef, useState } from 'react';
+import { useState, useRef } from 'react';
 import { Pie } from 'react-chartjs-2';
-import { 
-  Chart as ChartJS, 
-  ArcElement, 
-  Tooltip, 
-  Legend, 
-  ChartData,
-  ChartOptions
-} from 'chart.js';
-import { AnimatedInsightTooltip } from './AnimatedInsightTooltip';
-import { useInsightTooltip } from '@/hooks/use-insight-tooltip';
+import { Card, CardContent } from "@/components/ui/card";
+import { Chart as ChartJS, ChartData, ChartOptions } from 'chart.js';
 
-// Register ChartJS components
-ChartJS.register(ArcElement, Tooltip, Legend);
+interface InsightCardProps {
+  title: string;
+  value: string;
+  valuePrefix?: string;
+  valueSuffix?: string;
+  description: string;
+  type: 'revenue' | 'hours' | 'utilization' | 'variance';
+  detailsKeys: string[];
+  [key: string]: any;
+}
 
 interface InsightPieChartProps {
   data: ChartData<'pie'>;
-  options?: ChartOptions<'pie'>;
   height?: number;
   width?: number;
-  insightGenerator?: (
+  options?: ChartOptions<'pie'>;
+  insightGenerator: (
     index: number,
-    label: string, 
+    label: string,
     value: number
-  ) => any;
-  previousPeriodData?: any;
+  ) => InsightCardProps;
 }
 
-export const InsightPieChart: React.FC<InsightPieChartProps> = ({
+export const InsightPieChart = ({
   data,
+  height = 400,
+  width = 400,
   options = {},
-  height = 300,
-  width = 300,
   insightGenerator,
-  previousPeriodData
-}) => {
+}: InsightPieChartProps) => {
+  const [selectedSegment, setSelectedSegment] = useState<{
+    index: number;
+    value: number;
+    label: string;
+  } | null>(null);
+
   const chartRef = useRef<ChartJS>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  
-  const { 
-    tooltipState, 
-    showTooltip, 
-    hideTooltip, 
-    generateInsightData 
-  } = useInsightTooltip();
 
-  const handleHover = (event: React.MouseEvent) => {
-    if (!chartRef.current) return;
-    
-    const chart = chartRef.current;
-    const points = chart.getElementsAtEventForMode(
-      event.nativeEvent,
-      'nearest',
-      { intersect: true },
-      true
-    );
-    
-    if (points.length > 0) {
-      const firstPoint = points[0];
-      const { index } = firstPoint;
-      
-      if (insightGenerator && activeIndex !== index) {
-        setActiveIndex(index);
-        
-        const dataset = data.datasets[0]; // Pie chart typically has one dataset
-        const label = data.labels?.[index] as string || '';
-        const value = dataset.data[index] as number;
-        
-        // Get the insight data for this segment
-        const insightData = insightGenerator(index, label, value);
-        
-        // Calculate position relative to container
-        const rect = containerRef.current?.getBoundingClientRect();
-        const x = event.clientX - (rect?.left || 0);
-        const y = event.clientY - (rect?.top || 0);
-        
-        // Show tooltip with this data
-        showTooltip(
-          generateInsightData(
-            insightData.type || 'revenue',
-            insightData,
-            {
-              title: insightData.title || label,
-              valuePrefix: insightData.valuePrefix || '',
-              valueSuffix: insightData.valueSuffix || '',
-              description: insightData.description || '',
-              compareKey: insightData.compareKey,
-              previousPeriod: previousPeriodData,
-              detailsKeys: insightData.detailsKeys || []
-            }
-          ),
-          event
-        );
-      }
-    } else if (activeIndex !== null) {
-      setActiveIndex(null);
-      hideTooltip();
-    }
-  };
-  
-  const handleMouseLeave = () => {
-    setActiveIndex(null);
-    hideTooltip();
-  };
-
-  // Merge default options with provided options
   const defaultOptions: ChartOptions<'pie'> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       tooltip: {
-        enabled: false, // Disable the default tooltip
+        enabled: true,
       },
       legend: {
-        position: 'right' as const,
+        position: 'right',
+        align: 'center',
+      },
+    },
+    onClick: (event, elements) => {
+      if (elements && elements.length > 0) {
+        const { index } = elements[0];
+        const value = data.datasets[0].data[index] as number;
+        const label = data.labels?.[index]?.toString() || '';
+
+        setSelectedSegment({ index, value, label });
       }
     },
   };
-  
+
   const mergedOptions = { ...defaultOptions, ...options };
-  
+
+  // Generate insight for the selected segment
+  const insight = selectedSegment
+    ? insightGenerator(
+        selectedSegment.index,
+        selectedSegment.label,
+        selectedSegment.value
+      )
+    : null;
+
+  // Determine color based on insight type
+  const getInsightColor = (type: string, value: number | string): string => {
+    if (type === 'revenue') return 'bg-green-50 border-green-200';
+    if (type === 'hours') return 'bg-blue-50 border-blue-200';
+    if (type === 'utilization') {
+      return Number(value) >= 85
+        ? 'bg-green-50 border-green-200'
+        : Number(value) >= 70
+          ? 'bg-yellow-50 border-yellow-200'
+          : 'bg-red-50 border-red-200';
+    }
+    if (type === 'variance') {
+      return Number(value) <= 5
+        ? 'bg-green-50 border-green-200'
+        : Number(value) <= 15
+          ? 'bg-yellow-50 border-yellow-200'
+          : 'bg-red-50 border-red-200';
+    }
+    return 'bg-gray-50 border-gray-200';
+  };
+
   return (
-    <div 
-      ref={containerRef}
-      className="relative w-full"
-      style={{ height }}
-      onMouseMove={handleHover}
-      onMouseLeave={handleMouseLeave}
-    >
-      <div className="flex h-full items-center justify-center">
-        <div style={{ width, height }}>
-          <Pie 
-            ref={chartRef}
-            data={data} 
-            options={mergedOptions}
-          />
-        </div>
+    <div className="flex flex-col lg:flex-row items-center justify-center gap-8 h-full">
+      <div style={{ height: `${height}px`, width: `${width}px` }}>
+        <Pie ref={chartRef} data={data} options={mergedOptions} />
       </div>
-      
-      <AnimatedInsightTooltip
-        data={tooltipState.data!}
-        visible={tooltipState.visible}
-        position={tooltipState.position}
-        onClose={hideTooltip}
-      />
+
+      {insight ? (
+        <div className="w-full lg:w-1/3">
+          <Card className={`border ${getInsightColor(insight.type, insight.value)} shadow-sm`}>
+            <CardContent className="p-4">
+              <h4 className="font-medium text-lg">{insight.title}</h4>
+              <p className="text-2xl font-bold mt-1 mb-2">
+                {insight.valuePrefix}{insight.value}{insight.valueSuffix}
+              </p>
+              <p className="text-sm text-muted-foreground mb-3">{insight.description}</p>
+
+              <div className="space-y-2 text-sm border-t pt-3">
+                {insight.detailsKeys.map(key => (
+                  <div key={key} className="flex justify-between">
+                    <span className="text-muted-foreground capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').toLowerCase()}:
+                    </span>
+                    <span className="font-medium">{insight[key]}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="w-full lg:w-1/3">
+          <Card>
+            <CardContent className="p-4 text-center">
+              <p className="text-muted-foreground">
+                Click on a segment in the chart to see detailed information
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

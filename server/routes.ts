@@ -1449,6 +1449,387 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // TIME ANALYTICS DASHBOARD
+  // Budget vs. Actual Analysis Endpoint
+  app.get("/api/budget-vs-actual", async (req, res) => {
+    try {
+      const { 
+        startDate, 
+        endDate, 
+        firmId, 
+        projectId 
+      } = req.query;
+      
+      // Validate required parameters
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "Start date and end date are required" });
+      }
+      
+      // In the future, this would be fetched from the database based on the provided parameters
+      // This would include getting all projects for the firm with their phases, staff assignments,
+      // budget hours, and actual hours logged
+      const firmIdNum = parseInt(firmId as string) || 1;
+      
+      // For now, return structured sample data for the budget vs. actual dashboard
+      res.json({
+        projects: [
+          {
+            id: 1,
+            name: "Adams Family Tax Return",
+            client: "Adams Family",
+            totalBudgetHours: 28,
+            totalActualHours: 34.5,
+            totalVariance: 6.5,
+            totalVariancePercent: 23.2,
+            status: "completed",
+            startDate: "2025-01-15",
+            endDate: "2025-02-20",
+            phases: [
+              {
+                id: 101,
+                name: "Initial Review",
+                budgetHours: 4,
+                actualHours: 5.5,
+                variance: 1.5,
+                variancePercent: 37.5,
+                status: "over_budget"
+              },
+              {
+                id: 102,
+                name: "Data Collection",
+                budgetHours: 8,
+                actualHours: 12,
+                variance: 4,
+                variancePercent: 50,
+                status: "over_budget"
+              },
+              {
+                id: 103,
+                name: "Tax Preparation",
+                budgetHours: 12,
+                actualHours: 13,
+                variance: 1,
+                variancePercent: 8.3,
+                status: "over_budget"
+              },
+              {
+                id: 104,
+                name: "Review & Finalization",
+                budgetHours: 4,
+                actualHours: 4,
+                variance: 0,
+                variancePercent: 0,
+                status: "on_budget"
+              }
+            ],
+            staffPerformance: [
+              {
+                id: 1,
+                name: "John Smith",
+                role: "Senior Tax Associate",
+                budgetHours: 16,
+                actualHours: 22,
+                variance: 6,
+                variancePercent: 37.5,
+                efficiency: 73
+              },
+              {
+                id: 2,
+                name: "Sarah Johnson",
+                role: "Tax Manager",
+                budgetHours: 8,
+                actualHours: 8.5,
+                variance: 0.5,
+                variancePercent: 6.25,
+                efficiency: 94
+              },
+              {
+                id: 3,
+                name: "Michael Brown",
+                role: "Tax Partner",
+                budgetHours: 4,
+                actualHours: 4,
+                variance: 0,
+                variancePercent: 0,
+                efficiency: 100
+              }
+            ]
+          },
+          {
+            id: 2,
+            name: "White Family Business Advisory",
+            client: "D. White Enterprises",
+            totalBudgetHours: 40,
+            totalActualHours: 36,
+            totalVariance: -4,
+            totalVariancePercent: -10,
+            status: "completed",
+            startDate: "2025-02-01",
+            endDate: "2025-02-28",
+            phases: [
+              {
+                id: 201,
+                name: "Initial Assessment",
+                budgetHours: 6,
+                actualHours: 5,
+                variance: -1,
+                variancePercent: -16.7,
+                status: "under_budget"
+              },
+              {
+                id: 202,
+                name: "Financial Analysis",
+                budgetHours: 14,
+                actualHours: 12,
+                variance: -2,
+                variancePercent: -14.3,
+                status: "under_budget"
+              },
+              {
+                id: 203,
+                name: "Strategy Development",
+                budgetHours: 12,
+                actualHours: 11,
+                variance: -1,
+                variancePercent: -8.3,
+                status: "under_budget"
+              },
+              {
+                id: 204,
+                name: "Implementation Planning",
+                budgetHours: 8,
+                actualHours: 8,
+                variance: 0,
+                variancePercent: 0,
+                status: "on_budget"
+              }
+            ],
+            staffPerformance: [
+              {
+                id: 4,
+                name: "Emily Davis",
+                role: "Advisory Associate",
+                budgetHours: 20,
+                actualHours: 16,
+                variance: -4,
+                variancePercent: -20,
+                efficiency: 125
+              },
+              {
+                id: 5,
+                name: "Daniel Wilson",
+                role: "Advisory Manager",
+                budgetHours: 14,
+                actualHours: 14,
+                variance: 0,
+                variancePercent: 0,
+                efficiency: 100
+              },
+              {
+                id: 6,
+                name: "Lisa Rodriguez",
+                role: "Advisory Partner",
+                budgetHours: 6,
+                actualHours: 6,
+                variance: 0,
+                variancePercent: 0,
+                efficiency: 100
+              }
+            ]
+          },
+          {
+            id: 3,
+            name: "Johnson Corp Bookkeeping",
+            client: "Johnson Corporation",
+            totalBudgetHours: 60,
+            totalActualHours: 72,
+            totalVariance: 12,
+            totalVariancePercent: 20,
+            status: "in_progress",
+            startDate: "2025-03-01",
+            endDate: "2025-03-31",
+            phases: [
+              {
+                id: 301,
+                name: "Account Reconciliation",
+                budgetHours: 20,
+                actualHours: 28,
+                variance: 8,
+                variancePercent: 40,
+                status: "over_budget"
+              },
+              {
+                id: 302,
+                name: "Financial Statement Preparation",
+                budgetHours: 25,
+                actualHours: 30,
+                variance: 5,
+                variancePercent: 20,
+                status: "over_budget"
+              },
+              {
+                id: 303,
+                name: "Tax Preparation",
+                budgetHours: 15,
+                actualHours: 14,
+                variance: -1,
+                variancePercent: -6.7,
+                status: "under_budget"
+              }
+            ],
+            staffPerformance: [
+              {
+                id: 7,
+                name: "Robert Taylor",
+                role: "Bookkeeping Staff",
+                budgetHours: 40,
+                actualHours: 48,
+                variance: 8,
+                variancePercent: 20,
+                efficiency: 83
+              },
+              {
+                id: 8,
+                name: "Jessica Lee",
+                role: "Senior Bookkeeper",
+                budgetHours: 15,
+                actualHours: 18,
+                variance: 3,
+                variancePercent: 20,
+                efficiency: 83
+              },
+              {
+                id: 9,
+                name: "Kevin Moore",
+                role: "Bookkeeping Manager",
+                budgetHours: 5,
+                actualHours: 6,
+                variance: 1,
+                variancePercent: 20,
+                efficiency: 83
+              }
+            ]
+          }
+        ],
+        summary: {
+          totalProjects: 3,
+          projectsOnBudget: 0,
+          projectsOverBudget: 2,
+          projectsUnderBudget: 1,
+          avgBudgetVariance: 11.1,
+          mostOverBudgetPhase: "Data Collection",
+          mostEfficientStaff: "Emily Davis (125%)",
+          leastEfficientStaff: "John Smith (73%)"
+        },
+        recentlyCompletedProjects: [
+          {
+            id: 1,
+            name: "Adams Family Tax Return",
+            client: "Adams Family",
+            budgetHours: 28,
+            actualHours: 34.5,
+            variance: 6.5,
+            variancePercent: 23.2
+          },
+          {
+            id: 2,
+            name: "White Family Business Advisory",
+            client: "D. White Enterprises",
+            budgetHours: 40,
+            actualHours: 36,
+            variance: -4,
+            variancePercent: -10
+          },
+          {
+            id: 4,
+            name: "Smith & Co Audit",
+            client: "Smith & Co",
+            budgetHours: 120,
+            actualHours: 118,
+            variance: -2,
+            variancePercent: -1.7
+          }
+        ],
+        topProblematicPhases: [
+          {
+            name: "Data Collection",
+            avgVariancePercent: 50,
+            occurrences: 3
+          },
+          {
+            name: "Initial Review",
+            avgVariancePercent: 37.5,
+            occurrences: 5
+          },
+          {
+            name: "Account Reconciliation",
+            avgVariancePercent: 40,
+            occurrences: 2
+          },
+          {
+            name: "Financial Statement Preparation",
+            avgVariancePercent: 20,
+            occurrences: 4
+          },
+          {
+            name: "Tax Preparation",
+            avgVariancePercent: 8.3,
+            occurrences: 8
+          }
+        ],
+        staffEfficiency: [
+          {
+            name: "Emily Davis",
+            role: "Advisory Associate",
+            efficiency: 125
+          },
+          {
+            name: "Michael Brown",
+            role: "Tax Partner",
+            efficiency: 100
+          },
+          {
+            name: "Lisa Rodriguez",
+            role: "Advisory Partner",
+            efficiency: 100
+          },
+          {
+            name: "Daniel Wilson",
+            role: "Advisory Manager",
+            efficiency: 100
+          },
+          {
+            name: "Sarah Johnson",
+            role: "Tax Manager",
+            efficiency: 94
+          },
+          {
+            name: "Jessica Lee",
+            role: "Senior Bookkeeper",
+            efficiency: 83
+          },
+          {
+            name: "Kevin Moore",
+            role: "Bookkeeping Manager",
+            efficiency: 83
+          },
+          {
+            name: "Robert Taylor",
+            role: "Bookkeeping Staff",
+            efficiency: 83
+          },
+          {
+            name: "John Smith",
+            role: "Senior Tax Associate",
+            efficiency: 73
+          }
+        ]
+      });
+    } catch (error) {
+      console.error("Error generating budget vs. actual data:", error);
+      res.status(500).json({ error: "Error generating budget vs. actual data" });
+    }
+  });
+
   app.get("/api/time-analytics-dashboard", async (req, res) => {
     try {
       const { 
