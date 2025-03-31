@@ -10,6 +10,7 @@ import Resources from "@/pages/resources";
 import TimeAnalytics from "@/pages/time-analytics";
 import Proposals from "@/pages/proposals";
 import ExternalProposals from "@/pages/external-proposals";
+import EnhancedProposals from "@/pages/enhanced-proposals";
 import Clients from "@/pages/clients";
 import Classification from "@/pages/classification";
 import Analytics from "@/pages/analytics";
@@ -56,6 +57,7 @@ function Router() {
       </Route>
       <Route path="/proposals" component={Proposals} />
       <Route path="/external-proposals" component={ExternalProposals} />
+      <Route path="/enhanced-proposals" component={EnhancedProposals} />
       <Route path="/clients" component={Clients} />
       <Route path="/classification" component={Classification} />
       <Route path="/analytics" component={Analytics} />

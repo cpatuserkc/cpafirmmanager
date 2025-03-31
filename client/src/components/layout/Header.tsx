@@ -30,6 +30,7 @@ const Header = () => {
       items: [
         { href: "/clients", label: "Clients" },
         { href: "/proposals", label: "Proposals" },
+        { href: "/enhanced-proposals", label: "AI-Enhanced Proposals" },
         { href: "/external-proposals", label: "External Requests" },
       ]
     },
