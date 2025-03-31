@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="500" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bookcase frame -->
+  <rect x="50" y="50" width="300" height="400" fill="#8d6e63" stroke="#5d4037" stroke-width="4"/>
+  
+  <!-- Back panel -->
+  <rect x="54" y="54" width="292" height="392" fill="#a1887f"/>
+  
+  <!-- Top shelf -->
+  <rect x="50" y="150" width="300" height="10" fill="#6d4c41" stroke="#5d4037" stroke-width="2"/>
+  
+  <!-- Middle shelf -->
+  <rect x="50" y="250" width="300" height="10" fill="#6d4c41" stroke="#5d4037" stroke-width="2"/>
+  
+  <!-- Bottom shelf -->
+  <rect x="50" y="350" width="300" height="10" fill="#6d4c41" stroke="#5d4037" stroke-width="2"/>
+  
+  <!-- Top edge -->
+  <rect x="45" y="40" width="310" height="10" fill="#795548" stroke="#5d4037" stroke-width="2" rx="2"/>
+  
+  <!-- Bottom shelf edge -->
+  <rect x="45" y="450" width="310" height="10" fill="#795548" stroke="#5d4037" stroke-width="2" rx="2"/>
+  
+  <!-- Side panels -->
+  <rect x="50" y="50" width="5" height="400" fill="#6d4c41" stroke="#5d4037" stroke-width="1"/>
+  <rect x="345" y="50" width="5" height="400" fill="#6d4c41" stroke="#5d4037" stroke-width="1"/>
+  
+  <!-- Books on top shelf -->
+  <rect x="60" y="70" width="25" height="80" fill="#f44336" />
+  <rect x="85" y="70" width="20" height="80" fill="#2196f3" />
+  <rect x="105" y="70" width="15" height="80" fill="#4caf50" />
+  <rect x="120" y="70" width="30" height="80" fill="#ff9800" />
+  <rect x="150" y="70" width="10" height="80" fill="#9c27b0" />
+  <rect x="160" y="70" width="25" height="80" fill="#ffeb3b" />
+  <rect x="185" y="70" width="20" height="80" fill="#3f51b5" />
+  <rect x="205" y="70" width="30" height="80" fill="#009688" />
+  <rect x="235" y="70" width="15" height="80" fill="#e91e63" />
+  <rect x="250" y="70" width="20" height="80" fill="#673ab7" />
+  <rect x="270" y="70" width="25" height="80" fill="#8bc34a" />
+  <rect x="295" y="70" width="15" height="80" fill="#ff5722" />
+  <rect x="310" y="70" width="25" height="80" fill="#03a9f4" />
+  
+  <!-- Books on middle shelf -->
+  <rect x="70" y="170" width="30" height="80" fill="#673ab7" />
+  <rect x="100" y="170" width="15" height="80" fill="#cddc39" />
+  <rect x="115" y="170" width="25" height="80" fill="#795548" />
+  <rect x="140" y="170" width="20" height="80" fill="#607d8b" />
+  <rect x="160" y="170" width="30" height="80" fill="#e91e63" />
+  <rect x="190" y="170" width="25" height="80" fill="#ffc107" />
+  <rect x="215" y="170" width="15" height="80" fill="#3f51b5" />
+  <rect x="230" y="170" width="20" height="80" fill="#4caf50" />
+  <rect x="250" y="170" width="30" height="80" fill="#f44336" />
+  <rect x="280" y="170" width="25" height="80" fill="#03a9f4" />
+  <rect x="305" y="170" width="25" height="80" fill="#9c27b0" />
+  
+  <!-- Books on bottom shelf -->
+  <rect x="60" y="270" width="20" height="80" fill="#f44336" />
+  <rect x="80" y="270" width="30" height="80" fill="#2196f3" />
+  <rect x="110" y="270" width="25" height="80" fill="#4caf50" />
+  <rect x="135" y="270" width="15" height="80" fill="#ff9800" />
+  <rect x="150" y="270" width="20" height="80" fill="#9c27b0" />
+  <rect x="170" y="270" width="25" height="80" fill="#ffeb3b" />
+  <rect x="195" y="270" width="30" height="80" fill="#3f51b5" />
+  <rect x="225" y="270" width="20" height="80" fill="#009688" />
+  <rect x="245" y="270" width="25" height="80" fill="#e91e63" />
+  <rect x="270" y="270" width="15" height="80" fill="#673ab7" />
+  <rect x="285" y="270" width="30" height="80" fill="#8bc34a" />
+  <rect x="315" y="270" width="20" height="80" fill="#ff5722" />
+  
+  <!-- Decorative items on bottom -->
+  <circle cx="100" cy="400" r="20" fill="#78909c" />
+  <circle cx="200" cy="410" r="15" fill="#ffcc80" />
+  <rect x="250" y="370" width="80" height="70" fill="#a5d6a7" />
+  
+  <!-- Details on books -->
+  <line x1="85" y1="80" x2="85" y2="140" stroke="#1976d2" stroke-width="1" />
+  <line x1="160" y1="80" x2="160" y2="140" stroke="#ffeb3b" stroke-width="1" opacity="0.7" />
+  <line x1="205" y1="80" x2="205" y2="140" stroke="#00796b" stroke-width="1" />
+  <line x1="140" y1="180" x2="140" y2="240" stroke="#546e7a" stroke-width="1" />
+  <line x1="215" y1="180" x2="215" y2="240" stroke="#303f9f" stroke-width="1" />
+  <line x1="80" y1="280" x2="80" y2="340" stroke="#1565c0" stroke-width="1" />
+  <line x1="170" y1="280" x2="170" y2="340" stroke="#fdd835" stroke-width="1" />
+  <line x1="225" y1="280" x2="225" y2="340" stroke="#00796b" stroke-width="1" />
+</svg>

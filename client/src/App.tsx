@@ -16,6 +16,7 @@ import Analytics from "@/pages/analytics";
 import SeasonPlanner from "@/pages/season-planner";
 import Login from "@/pages/login";
 import SignUp from "@/pages/signup";
+import Collaborations from "@/pages/collaborations";
 import { useState, useEffect, createContext, useContext } from "react";
 import { User } from "@shared/schema";
 
@@ -59,6 +60,7 @@ function Router() {
       <Route path="/classification" component={Classification} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/season-planner" component={SeasonPlanner} />
+      <Route path="/collaborations" component={Collaborations} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={SignUp} />
       <Route component={NotFound} />
