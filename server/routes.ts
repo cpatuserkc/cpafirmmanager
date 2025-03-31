@@ -13,6 +13,8 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { initializeMLProviders, generateMLInsights } from "./ml-service";
+import { generateProposalRecommendations } from "./ml-adapter";
+import { generateAIProposalRecommendations, analyzeProposalDocument } from "./openai-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Error handler middleware for zod validation errors
@@ -695,6 +697,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize ML providers when app starts
   initializeMLProviders();
 
+  // AI-ENHANCED PROPOSALS ROUTES
+  app.get("/api/ai-proposal-recommendations", async (req, res) => {
+    try {
+      const clientId = Number(req.query.clientId);
+      const firmId = Number(req.query.firmId);
+      const industry = req.query.industry ? String(req.query.industry) : undefined;
+      
+      if (!clientId || !firmId) {
+        return res.status(400).json({ message: "Client ID and Firm ID are required" });
+      }
+      
+      // Get client data
+      const client = await storage.getClientCompany(clientId);
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      // Get previous proposals for client
+      const previousProposals = await storage.getProposalsByClientCompanyId(clientId);
+      
+      // Get services for the firm
+      const services = await storage.getServicesByFirmId(firmId);
+      
+      // Get previous time estimates
+      const timeEstimates = await storage.getTimeEstimatesByClientCompanyId(clientId);
+      
+      // Prepare client data for the AI model
+      const clientData = {
+        client,
+        previousProposals,
+        previousTimeEstimates: timeEstimates
+      };
+      
+      // Generate AI-powered proposal recommendations
+      const recommendations = await generateAIProposalRecommendations(
+        clientId,
+        firmId,
+        services,
+        clientData,
+        industry
+      );
+      
+      res.status(200).json(recommendations);
+    } catch (error) {
+      console.error("Error generating AI proposal recommendations:", error);
+      res.status(500).json({ message: "Error generating AI proposal recommendations" });
+    }
+  });
+  
+  // PDF Proposal Analysis Endpoint
+  app.post("/api/analyze-proposal-document", async (req, res) => {
+    try {
+      const { pdfContent } = req.body;
+      
+      if (!pdfContent) {
+        return res.status(400).json({ message: "PDF content is required" });
+      }
+      
+      // Analyze the proposal document using OpenAI
+      const analysis = await analyzeProposalDocument(pdfContent);
+      
+      res.status(200).json(analysis);
+    } catch (error) {
+      console.error("Error analyzing proposal document:", error);
+      res.status(500).json({ message: "Error analyzing proposal document" });
+    }
+  });
+
   app.get("/api/ml-insights", async (req, res) => {
     try {
       const firmId = parseInt(req.query.firmId as string) || 1;
@@ -749,6 +819,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching ML providers:", error);
       res.status(500).json({ error: "Error fetching ML providers" });
+    }
+  });
+  
+  // API endpoint to get AI-powered proposal recommendations
+  app.get("/api/proposals/recommendations", async (req, res) => {
+    try {
+      const clientId = parseInt(req.query.clientId as string);
+      const firmId = parseInt(req.query.firmId as string);
+      const industry = req.query.industry as string;
+      
+      if (!clientId || !firmId) {
+        return res.status(400).json({ error: "Client ID and Firm ID are required" });
+      }
+      
+      // Get client company to verify it exists and belongs to the firm
+      const clientCompany = await storage.getClientCompany(clientId);
+      if (!clientCompany || clientCompany.firmId !== firmId) {
+        return res.status(404).json({ error: "Client not found or does not belong to the specified firm" });
+      }
+      
+      // Generate AI recommendations for the proposal
+      const recommendations = await generateProposalRecommendations(
+        clientId,
+        firmId,
+        industry
+      );
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error generating proposal recommendations:", error);
+      res.status(500).json({ error: "Error generating proposal recommendations" });
     }
   });
 
