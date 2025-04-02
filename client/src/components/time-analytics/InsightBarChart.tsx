@@ -1,138 +1,157 @@
-import { useState, useRef } from 'react';
-import { Bar } from 'react-chartjs-2';
-import { Card, CardContent } from "@/components/ui/card";
-import { Chart as ChartJS, ChartData, ChartOptions } from 'chart.js';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { BarChart } from "@/components/ui/charts";
 
-interface InsightCardProps {
+export interface InsightProps {
   title: string;
   value: string;
-  valuePrefix?: string;
   valueSuffix?: string;
   description: string;
-  type: 'revenue' | 'hours' | 'utilization' | 'variance';
-  detailsKeys: string[];
+  type: "hours" | "variance" | "utilization" | "revenue";
+  detailsKeys?: string[];
   [key: string]: any;
 }
 
 interface InsightBarChartProps {
-  data: ChartData<'bar'>;
-  height?: number;
-  width?: number;
-  options?: ChartOptions<'bar'>;
+  data: {
+    labels: string[];
+    datasets: {
+      label: string;
+      data: number[];
+      backgroundColor: string;
+      borderColor: string;
+      borderWidth?: number;
+    }[];
+  };
   insightGenerator: (
-    index: number, 
-    datasetIndex: number, 
-    label: string, 
+    index: number,
+    datasetIndex: number,
+    label: string,
     value: number
-  ) => InsightCardProps;
+  ) => InsightProps;
+  height?: number;
 }
 
-export const InsightBarChart = ({ 
-  data, 
-  height = 400, 
-  width, 
-  options = {},
+export function InsightBarChart({
+  data,
   insightGenerator,
-}: InsightBarChartProps) => {
-  const [selectedBar, setSelectedBar] = useState<{
-    index: number;
-    datasetIndex: number;
-    value: number;
-    label: string;
-  } | null>(null);
+  height = 300
+}: InsightBarChartProps) {
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [selectedDatasetIndex, setSelectedDatasetIndex] = useState<number>(0);
   
-  const chartRef = useRef<ChartJS>(null);
+  // Generate the insight based on selection
+  const selectedLabel = data.labels[selectedIndex];
+  const selectedValue = data.datasets[selectedDatasetIndex].data[selectedIndex];
+  const insight = insightGenerator(selectedIndex, selectedDatasetIndex, selectedLabel, selectedValue);
   
-  const defaultOptions: ChartOptions<'bar'> = {
+  const handleBarClick = (event: React.MouseEvent, elements: any[]) => {
+    if (elements.length === 0) return;
+    const { datasetIndex, index } = elements[0];
+    setSelectedIndex(index);
+    setSelectedDatasetIndex(datasetIndex);
+  };
+  
+  // Chart options with click handler
+  const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
     plugins: {
-      tooltip: {
-        enabled: true,
-        position: 'nearest',
-      },
       legend: {
-        position: 'top',
+        position: 'top' as const,
       },
-    },
-    onClick: (event, elements) => {
-      if (elements && elements.length > 0) {
-        const { datasetIndex, index } = elements[0];
-        const value = data.datasets[datasetIndex].data[index] as number;
-        const label = data.labels?.[index]?.toString() || '';
-        
-        setSelectedBar({ datasetIndex, index, value, label });
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const label = context.dataset.label || '';
+            const value = context.parsed.y;
+            return `${label}: ${value}`;
+          }
+        }
       }
     },
+    onClick: handleBarClick,
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
   };
   
-  const mergedOptions = { ...defaultOptions, ...options };
-  
-  // Generate insight for the selected bar
-  const insight = selectedBar 
-    ? insightGenerator(
-        selectedBar.index, 
-        selectedBar.datasetIndex, 
-        selectedBar.label, 
-        selectedBar.value
-      ) 
-    : null;
-
-  // Determine color based on insight type
-  const getInsightColor = (type: string, value: number | string): string => {
-    if (type === 'revenue') return 'bg-green-50 border-green-200';
-    if (type === 'hours') return 'bg-blue-50 border-blue-200';
-    if (type === 'utilization') {
-      return Number(value) >= 85 
-        ? 'bg-green-50 border-green-200' 
-        : Number(value) >= 70 
-          ? 'bg-yellow-50 border-yellow-200' 
-          : 'bg-red-50 border-red-200';
-    }
-    if (type === 'variance') {
-      return Number(value) <= 5 
-        ? 'bg-green-50 border-green-200'
-        : Number(value) <= 15 
-          ? 'bg-yellow-50 border-yellow-200'
-          : 'bg-red-50 border-red-200';
-    }
-    return 'bg-gray-50 border-gray-200';
-  };
-
   return (
-    <div className="relative w-full h-full">
-      <div style={{ height: `${height}px`, width: width ? `${width}px` : '100%' }}>
-        <Bar ref={chartRef} data={data} options={mergedOptions} />
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="lg:col-span-2">
+        <div style={{ height: height }}>
+          <BarChart data={data} options={chartOptions} />
+        </div>
       </div>
-      
-      {insight && (
-        <div className="absolute top-16 right-4 w-64">
-          <Card className={`border ${getInsightColor(insight.type, insight.value)} shadow-sm`}>
-            <CardContent className="p-4">
-              <h4 className="font-medium text-sm">{insight.title}</h4>
-              <p className="text-xl font-bold mt-1 mb-2">
-                {insight.valuePrefix}{insight.value}{insight.valueSuffix}
-              </p>
-              <p className="text-xs text-muted-foreground mb-3">{insight.description}</p>
-              
-              <div className="space-y-1 text-xs border-t pt-2">
-                {insight.detailsKeys.map(key => (
-                  <div key={key} className="flex justify-between">
-                    <span className="text-muted-foreground capitalize">
-                      {key.replace(/([A-Z])/g, ' $1').toLowerCase()}:
+      <div>
+        <Card className="h-full">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-start">
+              <CardTitle className="text-xl">{insight.title}</CardTitle>
+              <Badge variant={getVariantByType(insight.type)}>
+                {getTypeLabel(insight.type)}
+              </Badge>
+            </div>
+            <div className="text-3xl font-bold mt-2">
+              {insight.value}
+              {insight.valueSuffix && (
+                <span className="text-sm font-normal text-muted-foreground ml-1">
+                  {insight.valueSuffix}
+                </span>
+              )}
+            </div>
+            <CardDescription className="mt-1">{insight.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {insight.detailsKeys && (
+              <div className="space-y-3">
+                {insight.detailsKeys.map((key) => (
+                  <div key={key} className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').trim()}
                     </span>
                     <span className="font-medium">{insight[key]}</span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
-};
+}
+
+// Helper functions for styling
+function getVariantByType(type: InsightProps['type']) {
+  switch (type) {
+    case 'hours':
+      return 'default';
+    case 'variance':
+      return 'destructive';
+    case 'utilization':
+      return 'outline';
+    case 'revenue':
+      return 'secondary';
+    default:
+      return 'default';
+  }
+}
+
+function getTypeLabel(type: InsightProps['type']) {
+  switch (type) {
+    case 'hours':
+      return 'Hours';
+    case 'variance':
+      return 'Variance';
+    case 'utilization':
+      return 'Utilization';
+    case 'revenue':
+      return 'Revenue';
+    default:
+      return 'Info';
+  }
+}
