@@ -59,26 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-      
-      const user = await storage.getUserByUsername(username);
-      if (!user || user.password !== password) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      
-      // Don't return password in response
-      const { password: _, ...userData } = user;
-      res.status(200).json(userData);
-    } catch (error) {
-      res.status(500).json({ message: "Error logging in" });
-    }
-  });
+  // Login route is handled by auth.ts with passport authentication
 
   // CLIENT ROUTES
   app.get("/api/clients", async (req, res) => {
