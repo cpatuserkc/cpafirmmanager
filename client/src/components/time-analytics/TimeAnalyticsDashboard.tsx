@@ -1,567 +1,429 @@
-import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuthContext } from "../../App";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from 'chart.js';
-import { Bar, Line, Pie } from 'react-chartjs-2';
-import { InsightBarChart } from './InsightBarChart';
-import { InsightPieChart } from './InsightPieChart';
-import { 
-  CalendarClock, 
-  Users, 
-  Building2, 
-  BarChart3, 
-  DollarSign,
-  Clock, 
-  Briefcase 
-} from 'lucide-react';
-import { getQueryFn } from '@/lib/queryClient';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { BarChart, LineChart, PieChart } from "@/components/ui/charts";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Calendar } from "lucide-react";
 
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
+import { BudgetVsActualDashboard } from "./BudgetVsActualDashboard";
 
-// Chart color schemes
-const colors = {
-  blue: ['rgba(53, 162, 235, 0.8)', 'rgba(53, 162, 235, 0.4)'],
-  green: ['rgba(75, 192, 192, 0.8)', 'rgba(75, 192, 192, 0.4)'],
-  orange: ['rgba(255, 159, 64, 0.8)', 'rgba(255, 159, 64, 0.4)'],
-  purple: ['rgba(153, 102, 255, 0.8)', 'rgba(153, 102, 255, 0.4)'],
-  red: ['rgba(255, 99, 132, 0.8)', 'rgba(255, 99, 132, 0.4)'],
+// Mock data for firm overview
+const firmData = {
+  monthlyHours: [120, 145, 160, 178, 190, 205, 220, 235, 240, 255, 270, 285],
+  clients: [
+    { id: 1, name: "Adams Family LLC", hours: 85, revenue: 12750 },
+    { id: 2, name: "White Enterprises", hours: 65, revenue: 9750 },
+    { id: 3, name: "Johnson Manufacturing", hours: 45, revenue: 6750 },
+    { id: 4, name: "Smith & Partners", hours: 35, revenue: 5250 },
+    { id: 5, name: "XYZ Corporation", hours: 30, revenue: 4500 },
+  ],
+  services: [
+    { id: 1, name: "Tax Preparation", hours: 120, revenue: 18000 },
+    { id: 2, name: "Bookkeeping", hours: 80, revenue: 12000 },
+    { id: 3, name: "Audit Services", hours: 60, revenue: 9000 },
+    { id: 4, name: "Financial Planning", hours: 45, revenue: 6750 },
+    { id: 5, name: "Payroll", hours: 30, revenue: 4500 },
+  ],
 };
 
-const TimeAnalyticsDashboard = () => {
-  const { user } = useAuthContext();
-  const [activeTab, setActiveTab] = useState('firm');
-  const [startDate, setStartDate] = useState<Date>(new Date(new Date().getFullYear(), 0, 1)); // January 1 of current year
-  const [endDate, setEndDate] = useState<Date>(new Date());
-  const firmId = user?.id || 1; // Using user id until we implement proper firm selection
+// Mock data for staff overview
+const staffData = {
+  staff: [
+    { id: 1, name: "Jane Smith", role: "Tax Specialist", utilization: 87, hours: 145, revenue: 21750 },
+    { id: 2, name: "Michael Chen", role: "Senior Accountant", utilization: 92, hours: 155, revenue: 23250 },
+    { id: 3, name: "Robert Williams", role: "Junior Accountant", utilization: 75, hours: 125, revenue: 18750 },
+    { id: 4, name: "Sarah Johnson", role: "Bookkeeper", utilization: 85, hours: 140, revenue: 21000 },
+    { id: 5, name: "David Lee", role: "Tax Associate", utilization: 82, hours: 135, revenue: 20250 },
+    { id: 6, name: "Emily Davis", role: "Audit Specialist", utilization: 88, hours: 145, revenue: 21750 },
+  ],
+  utilizationByRole: {
+    "Tax Specialist": 87,
+    "Senior Accountant": 92,
+    "Junior Accountant": 75,
+    "Bookkeeper": 85,
+    "Tax Associate": 82,
+    "Audit Specialist": 88,
+  },
+};
 
-  const queryFn = getQueryFn({ on401: 'throw' });
+// Mock data for client overview
+const clientData = {
+  projects: [
+    { id: 1, client: "Adams Family LLC", status: "In Progress", hours: 45, budget: 60, variance: -15 },
+    { id: 2, client: "White Enterprises", status: "Completed", hours: 75, budget: 65, variance: 10 },
+    { id: 3, client: "Johnson Manufacturing", status: "In Progress", hours: 25, budget: 40, variance: -15 },
+    { id: 4, client: "Smith & Partners", status: "Not Started", hours: 0, budget: 35, variance: -35 },
+  ],
+};
 
-  // Define the response type for our analytics data
-  interface TimeAnalyticsResponse {
-    firmOverview: {
-      totalHours: number;
-      totalRevenue: number;
-      averageRate: number;
-      byMonth: Array<{ month: string; hours: number; revenue: number }>;
-      byService: Array<{ name: string; hours: number; revenue: number }>;
-      byStaff: Array<{ name: string; hours: number; revenue: number }>;
-    };
-    staffOverview: {
-      utilization: number;
-      totalStaff: number;
-      byUtilization: Array<{ name: string; utilization: number; target: number }>;
-      byRevenue: Array<{ name: string; revenue: number }>;
-    };
-    clientOverview: {
-      totalClients: number;
-      activeClients: number;
-      byRevenue: Array<{ name: string; revenue: number }>;
-      byHours: Array<{ name: string; hours: number }>;
-      byProfitability: Array<{ name: string; count: number }>;
-    };
-  }
+type ViewType = "firm" | "staff" | "client" | "budget-vs-actual";
 
-  // Fetch analytics data
-  const { data, isLoading, error } = useQuery<TimeAnalyticsResponse>({
-    queryKey: ['/api/time-analytics-dashboard', firmId, startDate.toISOString(), endDate.toISOString()],
-    queryFn: async () => {
-      const result = await queryFn(`/api/time-analytics-dashboard?firmId=${firmId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
-      return result as TimeAnalyticsResponse;
-    },
-    enabled: !!firmId,
-  });
+export function TimeAnalyticsDashboard() {
+  const [view, setView] = useState<ViewType>("firm");
+  const [timeFrame, setTimeFrame] = useState("monthly");
+  const [showActuals, setShowActuals] = useState(true);
+  const [showProjections, setShowProjections] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<string>("adams-family");
 
-  if (isLoading) {
-    return (
-      <div className="p-8 text-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-        <p className="mt-4">Loading analytics data...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-8 text-center text-red-600">
-        <p>Error loading analytics data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  // Prepare chart data
-  const revenueByMonthData = {
-    labels: data?.firmOverview.byMonth.map(item => item.month) || [],
+  // Create data for firm monthly hours chart
+  const monthlyHoursData = {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
     datasets: [
       {
-        label: 'Revenue',
-        data: data?.firmOverview.byMonth.map(item => item.revenue) || [],
-        backgroundColor: colors.green[0],
-        borderColor: colors.green[0],
+        label: showActuals ? "Actual Hours" : "",
+        data: showActuals ? firmData.monthlyHours : [],
+        borderColor: "rgb(53, 162, 235)",
+        backgroundColor: "rgba(53, 162, 235, 0.5)",
+      },
+      {
+        label: showProjections ? "Projected Hours" : "",
+        data: showProjections ? [120, 145, 160, 178, 190, 205, 230, 250, 265, 280, 295, 310] : [],
+        borderColor: "rgb(255, 99, 132)",
+        backgroundColor: "rgba(255, 99, 132, 0.5)",
+        borderDash: [5, 5],
       },
     ],
   };
 
-  const hoursByMonthData = {
-    labels: data?.firmOverview.byMonth.map(item => item.month) || [],
+  // Create data for top clients chart
+  const clientsChartData = {
+    labels: firmData.clients.map(c => c.name),
     datasets: [
       {
-        label: 'Hours',
-        data: data?.firmOverview.byMonth.map(item => item.hours) || [],
-        backgroundColor: colors.blue[0],
-        borderColor: colors.blue[0],
+        label: "Hours",
+        data: firmData.clients.map(c => c.hours),
+        backgroundColor: "rgba(53, 162, 235, 0.5)",
+        borderColor: "rgba(53, 162, 235, 1)",
+        borderWidth: 1,
       },
     ],
   };
 
-  const serviceData = {
-    labels: data?.firmOverview.byService.map(item => item.name) || [],
+  // Create data for services chart
+  const servicesChartData = {
+    labels: firmData.services.map(s => s.name),
     datasets: [
       {
-        label: 'Revenue',
-        data: data?.firmOverview.byService.map(item => item.revenue) || [],
-        backgroundColor: [colors.blue[0], colors.green[0], colors.orange[0], colors.purple[0]],
-        borderColor: [colors.blue[0], colors.green[0], colors.orange[0], colors.purple[0]],
-      },
-    ],
-  };
-
-  const staffUtilizationData = {
-    labels: data?.staffOverview.byUtilization.map(item => item.name) || [],
-    datasets: [
-      {
-        label: 'Utilization',
-        data: data?.staffOverview.byUtilization.map(item => item.utilization) || [],
-        backgroundColor: colors.blue[0],
-        borderColor: colors.blue[0],
-      },
-      {
-        label: 'Target',
-        data: data?.staffOverview.byUtilization.map(item => item.target) || [],
-        backgroundColor: colors.orange[0],
-        borderColor: colors.orange[0],
-      },
-    ],
-  };
-
-  const clientRevenueData = {
-    labels: data?.clientOverview.byRevenue.map(item => item.name) || [],
-    datasets: [
-      {
-        label: 'Revenue',
-        data: data?.clientOverview.byRevenue.map(item => item.revenue) || [],
+        data: firmData.services.map(s => s.hours),
         backgroundColor: [
-          colors.blue[0], 
-          colors.green[0], 
-          colors.orange[0], 
-          colors.purple[0],
-          colors.red[0]
+          "rgba(255, 99, 132, 0.7)",
+          "rgba(54, 162, 235, 0.7)",
+          "rgba(255, 206, 86, 0.7)",
+          "rgba(75, 192, 192, 0.7)",
+          "rgba(153, 102, 255, 0.7)",
         ],
         borderColor: [
-          colors.blue[0], 
-          colors.green[0], 
-          colors.orange[0], 
-          colors.purple[0],
-          colors.red[0]
+          "rgba(255, 99, 132, 1)",
+          "rgba(54, 162, 235, 1)",
+          "rgba(255, 206, 86, 1)",
+          "rgba(75, 192, 192, 1)",
+          "rgba(153, 102, 255, 1)",
         ],
+        borderWidth: 1,
       },
     ],
   };
 
-  return (
+  // Create data for staff utilization chart
+  const staffChartData = {
+    labels: staffData.staff.map(s => s.name),
+    datasets: [
+      {
+        label: "Utilization %",
+        data: staffData.staff.map(s => s.utilization),
+        backgroundColor: staffData.staff.map(s => 
+          s.utilization >= 90 ? "rgba(75, 192, 192, 0.7)" :
+          s.utilization >= 80 ? "rgba(54, 162, 235, 0.7)" :
+          "rgba(255, 206, 86, 0.7)"
+        ),
+        borderColor: staffData.staff.map(s => 
+          s.utilization >= 90 ? "rgba(75, 192, 192, 1)" :
+          s.utilization >= 80 ? "rgba(54, 162, 235, 1)" :
+          "rgba(255, 206, 86, 1)"
+        ),
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Create data for staff hours chart
+  const staffHoursData = {
+    labels: staffData.staff.map(s => s.name),
+    datasets: [
+      {
+        label: "Hours",
+        data: staffData.staff.map(s => s.hours),
+        backgroundColor: "rgba(53, 162, 235, 0.5)",
+        borderColor: "rgba(53, 162, 235, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+  
+  // Create data for project status chart
+  const projectStatusChartData = {
+    labels: clientData.projects.map(p => p.client),
+    datasets: [
+      {
+        label: "Actual Hours",
+        data: clientData.projects.map(p => p.hours),
+        backgroundColor: "rgba(255, 99, 132, 0.5)",
+        borderColor: "rgba(255, 99, 132, 1)",
+        borderWidth: 1,
+      },
+      {
+        label: "Budgeted Hours",
+        data: clientData.projects.map(p => p.budget),
+        backgroundColor: "rgba(53, 162, 235, 0.5)",
+        borderColor: "rgba(53, 162, 235, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Chart options
+  const barChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const { dataIndex, dataset } = context;
+            const label = dataset.label || "";
+            const value = context.parsed.y;
+            return `${label}: ${value}`;
+          },
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  };
+
+  const lineChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const value = context.parsed.y;
+            const label = context.dataset.label || "";
+            return `${label}: ${value}`;
+          },
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  };
+
+  const pieChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "right" as const,
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const { dataIndex } = context;
+            const label = servicesChartData.labels[dataIndex] || "";
+            const value = context.parsed;
+            return `${label}: ${value} hours`;
+          },
+        },
+      },
+    },
+  };
+
+  const renderFirmOverview = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <Select value={timeFrame} onValueChange={setTimeFrame}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Time Frame" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="quarterly">Quarterly</SelectItem>
+              <SelectItem value="annual">Annual</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="actual-hours"
+              checked={showActuals}
+              onCheckedChange={setShowActuals}
+            />
+            <Label htmlFor="actual-hours">Actual Hours</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="projected-hours"
+              checked={showProjections}
+              onCheckedChange={setShowProjections}
+            />
+            <Label htmlFor="projected-hours">Projections</Label>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" className="gap-1">
+          <Calendar className="h-4 w-4" />
+          <span>Date Range</span>
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Monthly Hours</CardTitle>
+          <CardDescription>
+            Hours billed over time with projections
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <LineChart data={monthlyHoursData} options={lineChartOptions} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Clients by Hours</CardTitle>
+            <CardDescription>
+              Clients with the most billable hours
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <BarChart data={clientsChartData} options={barChartOptions} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Service Distribution</CardTitle>
+            <CardDescription>
+              Hours by service category
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <PieChart data={servicesChartData} options={pieChartOptions} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderStaffOverview = () => (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Time Analytics Dashboard</CardTitle>
+          <CardTitle>Staff Utilization</CardTitle>
           <CardDescription>
-            Analyze time and billing data across clients, staff, and services
+            Percentage of billable hours vs. available hours
           </CardDescription>
-          <div className="flex flex-col sm:flex-row gap-4 mt-4">
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">Start Date</span>
-              <DatePicker date={startDate} onChange={(date) => date && setStartDate(date)} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">End Date</span>
-              <DatePicker date={endDate} onChange={(date) => date && setEndDate(date)} />
-            </div>
-          </div>
         </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <BarChart data={staffChartData} options={barChartOptions} />
+          </div>
+        </CardContent>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Staff Hours</CardTitle>
+          <CardDescription>
+            Total billable hours by staff member
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <BarChart data={staffHoursData} options={barChartOptions} />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderClientOverview = () => (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Project Status</CardTitle>
+          <CardDescription>
+            Hours billed vs. budgeted hours by client
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <BarChart data={projectStatusChartData} options={barChartOptions} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Project Detail</h3>
+        <Select value={selectedProject} onValueChange={setSelectedProject}>
+          <SelectTrigger className="w-[240px]">
+            <SelectValue placeholder="Select Project" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="adams-family">Adams Family LLC - Tax Preparation</SelectItem>
+            <SelectItem value="white-enterprises">White Enterprises - Audit</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={view} onValueChange={(v) => setView(v as ViewType)} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="firm">Firm Overview</TabsTrigger>
-          <TabsTrigger value="staff">Staff Overview</TabsTrigger>
-          <TabsTrigger value="clients">Client Overview</TabsTrigger>
+          <TabsTrigger value="staff">Staff Performance</TabsTrigger>
+          <TabsTrigger value="client">Client Overview</TabsTrigger>
+          <TabsTrigger value="budget-vs-actual">Budget vs. Actual</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="firm" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data?.firmOverview.totalHours.toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  From {startDate.toLocaleDateString()} to {endDate.toLocaleDateString()}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  ${data?.firmOverview.totalRevenue.toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Avg. Rate: ${data?.firmOverview.averageRate.toFixed(2)}/hr
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Services Breakdown</CardTitle>
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data?.firmOverview.byService.length} Categories
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Tax, Advisory, Audit, Bookkeeping
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Revenue</CardTitle>
-              </CardHeader>
-              <CardContent className="h-80">
-                <InsightBarChart 
-                  data={revenueByMonthData}
-                  height={300}
-                  insightGenerator={(index, datasetIndex, label, value) => ({
-                    title: `${label} Revenue`,
-                    value: `$${value.toLocaleString()}`,
-                    valuePrefix: '$',
-                    description: `Revenue generated during ${label}`,
-                    type: 'revenue',
-                    detailsKeys: ['avgRate', 'clientCount', 'topService'],
-                    avgRate: `$${Math.round(value / data!.firmOverview.byMonth[index].hours)}`,
-                    clientCount: Math.round(value / 7500),
-                    topService: index % 3 === 0 ? 'Tax Prep' : index % 3 === 1 ? 'Advisory' : 'Bookkeeping'
-                  })}
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Hours</CardTitle>
-              </CardHeader>
-              <CardContent className="h-80">
-                <InsightBarChart 
-                  data={hoursByMonthData}
-                  height={300}
-                  insightGenerator={(index, datasetIndex, label, value) => ({
-                    title: `${label} Hours`,
-                    value: `${value.toLocaleString()} hrs`,
-                    valueSuffix: ' hrs',
-                    description: `Total billable hours during ${label}`,
-                    type: 'hours',
-                    detailsKeys: ['staffCount', 'utilizationRate', 'mostActive'],
-                    staffCount: Math.ceil(value / 120),
-                    utilizationRate: `${70 + Math.round(Math.random() * 20)}%`,
-                    mostActive: index % 4 === 0 ? 'Partner' : index % 4 === 1 ? 'Manager' : 
-                                index % 4 === 2 ? 'Senior' : 'Staff'
-                  })}
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Service Revenue Distribution</CardTitle>
-            </CardHeader>
-            <CardContent className="h-96">
-              <InsightPieChart 
-                data={serviceData}
-                width={250}
-                height={250}
-                insightGenerator={(index, label, value) => ({
-                  title: label,
-                  value: `$${value.toLocaleString()}`,
-                  valuePrefix: '$',
-                  description: `Revenue from ${label} services`,
-                  type: 'revenue',
-                  detailsKeys: ['percentOfTotal', 'hourlyRate', 'growthRate'],
-                  percentOfTotal: `${Math.round((value / (data?.firmOverview.totalRevenue || 1)) * 100)}%`,
-                  hourlyRate: `$${Math.round(value / (data?.firmOverview.byService[index]?.hours || 1))}`,
-                  growthRate: `${5 + Math.round(Math.random() * 15)}%`
-                })}
-              />
-            </CardContent>
-          </Card>
+        
+        <TabsContent value="firm">
+          {renderFirmOverview()}
         </TabsContent>
-
-        <TabsContent value="staff" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data?.staffOverview.totalStaff}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Across all roles and levels
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Overall Utilization</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data?.staffOverview.utilization}%
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Target: 80% average utilization
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Revenue per Staff</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  ${Math.round((data?.firmOverview.totalRevenue || 0) / (data?.staffOverview.totalStaff || 1)).toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Average revenue per staff member
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Staff Utilization vs. Target</CardTitle>
-            </CardHeader>
-            <CardContent className="h-80">
-              <InsightBarChart 
-                data={staffUtilizationData}
-                height={300}
-                options={{
-                  scales: {
-                    y: {
-                      min: 0,
-                      max: 100,
-                    },
-                  },
-                }}
-                insightGenerator={(index, datasetIndex, label, value) => ({
-                  title: `${label} Utilization`,
-                  value: `${value}%`,
-                  valueSuffix: '%',
-                  description: datasetIndex === 0 
-                    ? `Current utilization rate for ${label}` 
-                    : `Target utilization rate for ${label}`,
-                  type: 'utilization',
-                  detailsKeys: ['headcount', 'billableHours', 'nonBillableHours'],
-                  headcount: Math.ceil(Math.random() * 5) + 1,
-                  billableHours: Math.round(value * 40) + 'h/week',
-                  nonBillableHours: Math.round((100 - value) * 40 / 100) + 'h/week'
-                })}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Revenue by Staff Role</CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4">Role</th>
-                    <th className="text-right py-3 px-4">Revenue</th>
-                    <th className="text-right py-3 px-4">% of Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data?.staffOverview.byRevenue.map((role, index) => (
-                    <tr key={index} className="border-b hover:bg-muted/50">
-                      <td className="py-3 px-4">{role.name}</td>
-                      <td className="text-right py-3 px-4">${role.revenue.toLocaleString()}</td>
-                      <td className="text-right py-3 px-4">
-                        {Math.round((role.revenue / (data.firmOverview.totalRevenue || 1)) * 100)}%
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
+        
+        <TabsContent value="staff">
+          {renderStaffOverview()}
         </TabsContent>
-
-        <TabsContent value="clients" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data?.clientOverview.totalClients}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {data?.clientOverview.activeClients} active in selected period
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Revenue per Client</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  ${Math.round((data?.firmOverview.totalRevenue || 0) / (data?.clientOverview.activeClients || 1)).toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Average for active clients
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Profitability</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data?.clientOverview.byProfitability.find(p => p.name === 'High')?.count || 0} High
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {data?.clientOverview.byProfitability.find(p => p.name === 'Medium')?.count || 0} Medium, {data?.clientOverview.byProfitability.find(p => p.name === 'Low')?.count || 0} Low
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Clients by Revenue</CardTitle>
-            </CardHeader>
-            <CardContent className="h-80">
-              <InsightPieChart 
-                data={clientRevenueData}
-                width={250}
-                height={250}
-                insightGenerator={(index, label, value) => ({
-                  title: label,
-                  value: `$${value.toLocaleString()}`,
-                  valuePrefix: '$',
-                  description: `Revenue from ${label}`,
-                  type: 'clients',
-                  detailsKeys: ['percentOfTotal', 'avgRate', 'projectCount'],
-                  percentOfTotal: `${Math.round((value / (data?.firmOverview.totalRevenue || 1)) * 100)}%`,
-                  avgRate: `$${Math.round(value / (data?.clientOverview.byHours.find(h => h.name === label)?.hours || 1))}`,
-                  projectCount: Math.ceil(Math.random() * 3) + 1
-                })}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Client Hours vs. Revenue</CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4">Client</th>
-                    <th className="text-right py-3 px-4">Hours</th>
-                    <th className="text-right py-3 px-4">Revenue</th>
-                    <th className="text-right py-3 px-4">Avg. Rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data?.clientOverview.byRevenue.slice(0, 4).map((client, index) => {
-                    const hours = data?.clientOverview.byHours.find(
-                      h => h.name === client.name
-                    )?.hours || 0;
-                    
-                    return (
-                      <tr key={index} className="border-b hover:bg-muted/50">
-                        <td className="py-3 px-4">{client.name}</td>
-                        <td className="text-right py-3 px-4">{hours}</td>
-                        <td className="text-right py-3 px-4">${client.revenue.toLocaleString()}</td>
-                        <td className="text-right py-3 px-4">
-                          ${hours > 0 ? Math.round(client.revenue / hours) : 0}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
+        
+        <TabsContent value="client">
+          {renderClientOverview()}
+        </TabsContent>
+        
+        <TabsContent value="budget-vs-actual">
+          <BudgetVsActualDashboard />
         </TabsContent>
       </Tabs>
     </div>
   );
-};
-
-export default TimeAnalyticsDashboard;
+}

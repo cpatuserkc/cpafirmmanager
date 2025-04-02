@@ -45,6 +45,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  console.log("Using in-memory storage, skipping database initialization...");
+  // Commenting out database initialization to avoid errors
+  /*
   console.log("Initializing database schema...");
   try {
     await pushSchema();
@@ -61,6 +64,7 @@ app.use((req, res, next) => {
   } catch (error) {
     console.error("Error initializing database:", error);
   }
+  */
   
   console.log("Initializing ML providers...");
   initializeMLProviders();

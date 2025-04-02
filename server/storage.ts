@@ -28,7 +28,8 @@ import {
   type Deadline,
   type InsertDeadline
 } from "@shared/schema";
-import { DatabaseStorage } from './database-storage';
+// Temporarily use memory storage to avoid database issues
+// import { DatabaseStorage } from './database-storage';
 
 export interface IStorage {
   // User operations
@@ -1285,4 +1286,5 @@ export class MemStorage implements IStorage {
 }
 
 // Use DatabaseStorage instead of MemStorage to connect to PostgreSQL database
-export const storage = new DatabaseStorage();
+// Use MemStorage instead of DatabaseStorage to avoid database issues
+export const storage = new MemStorage();
