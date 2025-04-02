@@ -209,7 +209,7 @@ export class MemStorage implements IStorage {
     const adminUser = {
       id: this.userIdCounter++,
       username: "admin",
-      password: "6b97ed68d14eb3f1aa959ce5d49c7dc612e1eb1dafd73b1e705847483fd6a638fcfa128a011e7800d1b0af48326a26fd7f7f5abd6ef9e69e48a0c54c6ed2a051.4c8322c23bb8d3075c6fe5fdf8ee5197", // password123
+      password: "2e991e6b78c7d321f6cc668a4e36930d51fb92485d1ee893540d63b19bfb593b9b4003443acb4724f55ad02163b8baf2615bf49aee61cc5a3233783ad54a8091.4e94366aca93807a45ba46c1248e3534", // password123
       email: "admin@example.com",
       firstName: "Admin",
       lastName: "User",
