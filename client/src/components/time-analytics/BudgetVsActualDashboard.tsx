@@ -1,747 +1,742 @@
-import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { DatePicker } from "@/components/ui/date-picker";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { useAuthContext } from "../../App";
-import { getQueryFn } from '@/lib/queryClient';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  Percent, 
-  AlertCircle, 
-  CheckCircle, 
-  TrendingDown, 
-  TrendingUp, 
-  BarChart3,
-  Clock,
-  Users,
-  Layers
-} from 'lucide-react';
-import { Bar } from 'react-chartjs-2';
-import { InsightBarChart } from './InsightBarChart';
+import { InsightBarChart } from "./InsightBarChart";
+import { InsightPieChart } from "./InsightPieChart";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement,
+} from "chart.js";
+import { ClipboardCheck, Clock, Clock4, Users, AlertCircle, TrendingUp } from "lucide-react";
+import { format } from "date-fns";
 
-// Define types for our budget vs actual data
-interface ProjectPhase {
-  id: number;
-  name: string;
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+// Demo data for projects
+const demoProjects = [
+  { id: 1, name: "Adams Family Tax Return" },
+  { id: 2, name: "D. White Business Advisement" },
+  { id: 3, name: "Jackson LLC Audit" },
+  { id: 4, name: "Martinez Financial Review" },
+];
+
+// Sample data structure
+interface BudgetVsActualDataPoint {
+  phaseName: string;
   budgetHours: number;
   actualHours: number;
-  variance: number;
-  variancePercent: number;
-  status: 'on_budget' | 'over_budget' | 'under_budget';
+  budgetCost: number;
+  actualCost: number;
+  efficiency: number;
+  assignedTo: string;
+  startDate: string;
+  endDate: string;
+  status: string;
 }
 
 interface StaffPerformance {
-  id: number;
   name: string;
   role: string;
   budgetHours: number;
   actualHours: number;
-  variance: number;
-  variancePercent: number;
   efficiency: number;
+  projectCount: number;
+  phaseCount: number;
 }
 
-interface ProjectDetails {
-  id: number;
-  name: string;
-  client: string;
+interface DashboardSummary {
   totalBudgetHours: number;
   totalActualHours: number;
-  totalVariance: number;
-  totalVariancePercent: number;
-  status: 'completed' | 'in_progress' | 'not_started';
-  startDate: string;
-  endDate: string;
-  phases: ProjectPhase[];
-  staffPerformance: StaffPerformance[];
+  totalBudgetCost: number;
+  totalActualCost: number;
+  avgEfficiency: number;
+  avgBudgetVariance: number;
+  completedPhases: number;
+  inProgressPhases: number;
+  notStartedPhases: number;
+  totalPhases: number;
 }
 
-interface BudgetVsActualResponse {
-  projects: ProjectDetails[];
-  summary: {
-    totalProjects: number;
-    projectsOnBudget: number;
-    projectsOverBudget: number;
-    projectsUnderBudget: number;
-    avgBudgetVariance: number;
-    mostOverBudgetPhase: string;
-    mostEfficientStaff: string;
-    leastEfficientStaff: string;
-  };
-  recentlyCompletedProjects: {
-    id: number;
-    name: string;
-    client: string;
-    budgetHours: number;
-    actualHours: number;
-    variance: number;
-    variancePercent: number;
-  }[];
-  topProblematicPhases: {
-    name: string;
-    avgVariancePercent: number;
-    occurrences: number;
-  }[];
-  staffEfficiency: {
-    name: string;
-    role: string;
-    efficiency: number;
-  }[];
+interface ProjectBudgetData {
+  projectId: number;
+  projectName: string;
+  phases: BudgetVsActualDataPoint[];
+  staffPerformance: StaffPerformance[];
+  summary: DashboardSummary;
 }
 
 const BudgetVsActualDashboard = () => {
-  const { user } = useAuthContext();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [startDate, setStartDate] = useState<Date>(new Date(new Date().getFullYear(), 0, 1)); // January 1 of current year
-  const [endDate, setEndDate] = useState<Date>(new Date());
-  const [selectedProject, setSelectedProject] = useState<number | null>(null);
-  const firmId = user?.id || 1; // Using user id until we implement proper firm selection
+  const [selectedProject, setSelectedProject] = useState<number>(1);
+  const [activeTab, setActiveTab] = useState<string>("overview");
 
-  const queryFn = getQueryFn({ on401: 'throw' });
-
-  // Fetch budget vs actual data
-  const { data, isLoading, error } = useQuery<BudgetVsActualResponse>({
-    queryKey: ['/api/budget-vs-actual', firmId, startDate.toISOString(), endDate.toISOString()],
+  // Fetch data for the selected project
+  const { data, isLoading, isError } = useQuery<ProjectBudgetData>({
+    queryKey: ["/api/time-analytics/budget-actual", selectedProject],
     queryFn: async () => {
-      const result = await queryFn(`/api/budget-vs-actual?firmId=${firmId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
-      return result as BudgetVsActualResponse;
+      // In a real app, we would fetch from the API
+      // For demo, we'll return mock data
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
+      
+      return {
+        projectId: selectedProject,
+        projectName: demoProjects.find(p => p.id === selectedProject)?.name || "",
+        phases: [
+          {
+            phaseName: "Initial Consultation",
+            budgetHours: 10,
+            actualHours: 12,
+            budgetCost: 1500,
+            actualCost: 1800,
+            efficiency: 83,
+            assignedTo: "John Smith",
+            startDate: "2024-02-01",
+            endDate: "2024-02-15",
+            status: "completed"
+          },
+          {
+            phaseName: "Document Collection",
+            budgetHours: 15,
+            actualHours: 20,
+            budgetCost: 2250,
+            actualCost: 3000,
+            efficiency: 75,
+            assignedTo: "Emily Johnson",
+            startDate: "2024-02-16",
+            endDate: "2024-03-01",
+            status: "completed"
+          },
+          {
+            phaseName: "Tax Preparation",
+            budgetHours: 25,
+            actualHours: 28,
+            budgetCost: 3750,
+            actualCost: 4200,
+            efficiency: 89,
+            assignedTo: "Robert Chen",
+            startDate: "2024-03-02",
+            endDate: "2024-03-20",
+            status: "completed"
+          },
+          {
+            phaseName: "Review & Quality Check",
+            budgetHours: 8,
+            actualHours: 6,
+            budgetCost: 1600,
+            actualCost: 1200,
+            efficiency: 133,
+            assignedTo: "Maria Garcia",
+            startDate: "2024-03-21",
+            endDate: "2024-03-28",
+            status: "completed"
+          },
+          {
+            phaseName: "Client Review Meeting",
+            budgetHours: 4,
+            actualHours: 4.5,
+            budgetCost: 800,
+            actualCost: 900,
+            efficiency: 89,
+            assignedTo: "John Smith",
+            startDate: "2024-03-29",
+            endDate: "2024-04-01",
+            status: "in_progress"
+          },
+          {
+            phaseName: "Final Filing",
+            budgetHours: 3,
+            actualHours: 0,
+            budgetCost: 450,
+            actualCost: 0,
+            efficiency: 0,
+            assignedTo: "Emily Johnson",
+            startDate: "2024-04-02",
+            endDate: "2024-04-05",
+            status: "not_started"
+          }
+        ],
+        staffPerformance: [
+          {
+            name: "John Smith",
+            role: "Senior CPA",
+            budgetHours: 14,
+            actualHours: 16.5,
+            efficiency: 85,
+            projectCount: 1,
+            phaseCount: 2
+          },
+          {
+            name: "Emily Johnson",
+            role: "Tax Specialist",
+            budgetHours: 18,
+            actualHours: 20,
+            efficiency: 90,
+            projectCount: 1,
+            phaseCount: 2
+          },
+          {
+            name: "Robert Chen",
+            role: "Staff Accountant",
+            budgetHours: 25,
+            actualHours: 28,
+            efficiency: 89,
+            projectCount: 1,
+            phaseCount: 1
+          },
+          {
+            name: "Maria Garcia",
+            role: "Senior Manager",
+            budgetHours: 8,
+            actualHours: 6,
+            efficiency: 133,
+            projectCount: 1,
+            phaseCount: 1
+          }
+        ],
+        summary: {
+          totalBudgetHours: 65,
+          totalActualHours: 70.5,
+          totalBudgetCost: 10350,
+          totalActualCost: 11100,
+          avgEfficiency: 92.2,
+          avgBudgetVariance: 8.5,
+          completedPhases: 4,
+          inProgressPhases: 1,
+          notStartedPhases: 1,
+          totalPhases: 6
+        }
+      };
     },
-    enabled: !!firmId,
+    enabled: !!selectedProject,
   });
 
-  // Get selected project details
-  const selectedProjectDetails = selectedProject 
-    ? data?.projects.find(p => p.id === selectedProject)
-    : null;
-
-  // Chart colors
-  const colors = {
-    blue: ['rgba(53, 162, 235, 0.8)', 'rgba(53, 162, 235, 0.4)'],
-    green: ['rgba(75, 192, 192, 0.8)', 'rgba(75, 192, 192, 0.4)'],
-    orange: ['rgba(255, 159, 64, 0.8)', 'rgba(255, 159, 64, 0.4)'],
-    purple: ['rgba(153, 102, 255, 0.8)', 'rgba(153, 102, 255, 0.4)'],
-    red: ['rgba(255, 99, 132, 0.8)', 'rgba(255, 99, 132, 0.4)'],
-  };
-
-  // Prepare chart data for budget vs actual comparison
-  const budgetVsActualData = {
-    labels: selectedProjectDetails?.phases.map(phase => phase.name) || [],
+  // Chart data for budget vs actual phases
+  const phaseChartData = {
+    labels: data?.phases.map(phase => phase.phaseName) || [],
     datasets: [
       {
         label: 'Budget Hours',
-        data: selectedProjectDetails?.phases.map(phase => phase.budgetHours) || [],
-        backgroundColor: colors.blue[1],
-        borderColor: colors.blue[0],
+        data: data?.phases.map(phase => phase.budgetHours) || [],
+        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+        borderColor: 'rgba(53, 162, 235, 1)',
         borderWidth: 1,
       },
       {
         label: 'Actual Hours',
-        data: selectedProjectDetails?.phases.map(phase => phase.actualHours) || [],
-        backgroundColor: colors.orange[1],
-        borderColor: colors.orange[0],
+        data: data?.phases.map(phase => phase.actualHours) || [],
+        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+        borderColor: 'rgba(255, 99, 132, 1)',
         borderWidth: 1,
       },
     ],
   };
-
-  // Staff performance chart data
-  const staffPerformanceData = {
-    labels: selectedProjectDetails?.staffPerformance.map(staff => staff.name) || [],
+  
+  // Chart data for staff performance
+  const staffChartData = {
+    labels: data?.staffPerformance.map(staff => staff.name) || [],
     datasets: [
       {
         label: 'Budget Hours',
-        data: selectedProjectDetails?.staffPerformance.map(staff => staff.budgetHours) || [],
-        backgroundColor: colors.blue[1],
-        borderColor: colors.blue[0],
+        data: data?.staffPerformance.map(staff => staff.budgetHours) || [],
+        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+        borderColor: 'rgba(53, 162, 235, 1)',
         borderWidth: 1,
       },
       {
         label: 'Actual Hours',
-        data: selectedProjectDetails?.staffPerformance.map(staff => staff.actualHours) || [],
-        backgroundColor: colors.orange[1],
-        borderColor: colors.orange[0],
+        data: data?.staffPerformance.map(staff => staff.actualHours) || [],
+        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+        borderColor: 'rgba(255, 99, 132, 1)',
         borderWidth: 1,
       },
     ],
   };
-
-  // Problem phases chart
-  const problematicPhasesData = {
-    labels: data?.topProblematicPhases.map(phase => phase.name) || [],
-    datasets: [
-      {
-        label: 'Avg. Variance %',
-        data: data?.topProblematicPhases.map(phase => phase.avgVariancePercent) || [],
-        backgroundColor: colors.red[1],
-        borderColor: colors.red[0],
-        borderWidth: 1,
-      },
-    ],
+  
+  // Pie chart data for phase statuses
+  const statusPieData = {
+    labels: ['Completed', 'In Progress', 'Not Started'],
+    datasets: [{
+      data: data ? [
+        data.summary.completedPhases, 
+        data.summary.inProgressPhases, 
+        data.summary.notStartedPhases
+      ] : [0, 0, 0],
+      backgroundColor: [
+        'rgba(75, 192, 192, 0.6)',
+        'rgba(255, 159, 64, 0.6)',
+        'rgba(201, 203, 207, 0.6)'
+      ],
+      borderColor: [
+        'rgba(75, 192, 192, 1)',
+        'rgba(255, 159, 64, 1)',
+        'rgba(201, 203, 207, 1)'
+      ],
+      borderWidth: 1,
+    }]
   };
 
-  if (isLoading) {
+  // Functions to generate insight cards
+  const generatePhaseInsight = (index: number, datasetIndex: number, label: string, value: number) => {
+    if (!data || !data.phases[index]) return {
+      title: "No data available",
+      value: "0",
+      description: "No phase data found",
+      type: "hours" as const,
+      detailsKeys: []
+    };
+    
+    const phase = data.phases[index];
+    const isActual = datasetIndex === 1;
+    const budgetHours = phase.budgetHours;
+    const actualHours = phase.actualHours;
+    const variance = actualHours - budgetHours;
+    const variancePercent = ((actualHours / budgetHours) * 100) - 100;
+    
+    return {
+      title: `${phase.phaseName} ${isActual ? 'Actual' : 'Budget'}`,
+      value: value.toFixed(1),
+      valueSuffix: " hours",
+      description: isActual 
+        ? `This is ${Math.abs(variance).toFixed(1)} hours ${variance >= 0 ? 'over' : 'under'} budget (${Math.abs(variancePercent).toFixed(1)}%)`
+        : `The budgeted time for this phase`,
+      type: "variance" as const,
+      efficiency: `${phase.efficiency}%`,
+      assignedTo: phase.assignedTo,
+      status: phase.status.replace('_', ' '),
+      dates: `${format(new Date(phase.startDate), 'MMM d')} - ${format(new Date(phase.endDate), 'MMM d, yyyy')}`,
+      detailsKeys: ['efficiency', 'assignedTo', 'status', 'dates']
+    };
+  };
+  
+  const generateStaffInsight = (index: number, datasetIndex: number, label: string, value: number) => {
+    if (!data || !data.staffPerformance[index]) return {
+      title: "No data available",
+      value: "0",
+      description: "No staff data found",
+      type: "hours" as const,
+      detailsKeys: []
+    };
+    
+    const staff = data.staffPerformance[index];
+    const isActual = datasetIndex === 1;
+    const budgetHours = staff.budgetHours;
+    const actualHours = staff.actualHours;
+    const variance = actualHours - budgetHours;
+    const variancePercent = ((actualHours / budgetHours) * 100) - 100;
+    
+    return {
+      title: `${staff.name} ${isActual ? 'Actual' : 'Budget'}`,
+      value: value.toFixed(1),
+      valueSuffix: " hours",
+      description: isActual 
+        ? `This is ${Math.abs(variance).toFixed(1)} hours ${variance >= 0 ? 'over' : 'under'} budget (${Math.abs(variancePercent).toFixed(1)}%)`
+        : `The budgeted time for this staff member`,
+      type: "utilization" as const,
+      role: staff.role,
+      efficiency: `${staff.efficiency}%`,
+      phases: staff.phaseCount.toString(),
+      averageHours: (staff.actualHours / staff.phaseCount).toFixed(1),
+      detailsKeys: ['role', 'efficiency', 'phases', 'averageHours']
+    };
+  };
+  
+  const generateStatusInsight = (index: number, label: string, value: number) => {
+    if (!data) return {
+      title: "No data available",
+      value: "0",
+      description: "No status data found",
+      type: "hours" as const,
+      detailsKeys: []
+    };
+    
+    const totalPhases = data.summary.totalPhases;
+    const percentOfTotal = ((value / totalPhases) * 100).toFixed(1);
+    
+    const descriptions = [
+      `${percentOfTotal}% of project phases are complete`,
+      `${percentOfTotal}% of project phases are currently in progress`,
+      `${percentOfTotal}% of project phases have not yet started`
+    ];
+    
+    return {
+      title: `${label} Phases`,
+      value: value.toString(),
+      valueSuffix: ` (${percentOfTotal}%)`,
+      description: descriptions[index],
+      type: (index === 0 ? "hours" : index === 1 ? "variance" : "revenue") as "hours" | "variance" | "revenue",
+      percentComplete: `${(data.summary.completedPhases / totalPhases * 100).toFixed(1)}%`,
+      totalHours: index === 0 
+        ? data.phases.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.actualHours, 0).toFixed(1)
+        : index === 1
+          ? data.phases.filter(p => p.status === 'in_progress').reduce((sum, p) => sum + p.actualHours, 0).toFixed(1)
+          : '0',
+      remainingHours: data.phases.filter(p => p.status !== 'completed').reduce((sum, p) => sum + p.budgetHours, 0).toFixed(1),
+      estimatedCompletion: index === 2 ? "Apr 5, 2024" : "N/A",
+      detailsKeys: index === 2 
+        ? ['percentComplete', 'remainingHours', 'estimatedCompletion'] 
+        : ['percentComplete', 'totalHours', 'remainingHours']
+    };
+  };
+
+  if (isError) {
     return (
-      <div className="p-8 text-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-        <p className="mt-4">Loading budget comparison data...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-8 text-center text-red-600">
-        <p>Error loading budget comparison data. Please try again later.</p>
-      </div>
-    );
-  }
-
-  // Helper function to render variance badges
-  const renderVarianceBadge = (variance: number, variancePercent: number) => {
-    if (variancePercent <= 5 && variancePercent >= -5) {
-      return (
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-          <CheckCircle className="h-3 w-3 mr-1" /> On Budget
-        </Badge>
-      );
-    } else if (variancePercent < 0) {
-      return (
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-          <TrendingDown className="h-3 w-3 mr-1" /> Under ({variancePercent.toFixed(1)}%)
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-          <TrendingUp className="h-3 w-3 mr-1" /> Over ({variancePercent.toFixed(1)}%)
-        </Badge>
-      );
-    }
-  };
-
-  // Helper function to determine color based on variance
-  const getVarianceColor = (variancePercent: number) => {
-    if (variancePercent <= 5 && variancePercent >= -5) {
-      return 'text-green-600';
-    } else if (variancePercent < 0) {
-      return 'text-blue-600';
-    } else {
-      return 'text-red-600';
-    }
-  };
-
-  return (
-    <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Budget vs. Actual Time Analysis</CardTitle>
-          <CardDescription>
-            Compare estimated hours against actual time spent on projects, phases, and staff
-          </CardDescription>
-          <div className="flex flex-col sm:flex-row gap-4 mt-4">
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">Start Date</span>
-              <DatePicker date={startDate} onChange={(date) => date && setStartDate(date)} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">End Date</span>
-              <DatePicker date={endDate} onChange={(date) => date && setEndDate(date)} />
-            </div>
-          </div>
+          <CardTitle className="text-red-500">Error loading data</CardTitle>
         </CardHeader>
+        <CardContent>
+          <p>There was an error loading the budget vs. actual data. Please try again later.</p>
+        </CardContent>
       </Card>
+    );
+  }
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Summary</TabsTrigger>
-          <TabsTrigger value="project-detail">Project Detail</TabsTrigger>
-          <TabsTrigger value="staff-efficiency">Staff Efficiency</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-                <Layers className="h-4 w-4 text-muted-foreground" />
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Budget vs. Actual Analysis</h2>
+          <p className="text-muted-foreground">
+            Compare budgeted time and actual time spent on projects and phases
+          </p>
+        </div>
+        
+        <div className="w-full lg:w-64">
+          <Select 
+            value={selectedProject.toString()} 
+            onValueChange={(value) => setSelectedProject(parseInt(value))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {demoProjects.map((project) => (
+                  <SelectItem key={project.id} value={project.id.toString()}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array(4).fill(0).map((_, index) => (
+            <Card key={index}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {data?.summary.totalProjects}
+                <Skeleton className="h-12 w-32 mb-2" />
+                <Skeleton className="h-4 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : data ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Budget vs. Actual Hours
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline space-x-2">
+                  <div className="text-2xl font-bold">
+                    {data.summary.totalActualHours.toFixed(1)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    of {data.summary.totalBudgetHours.toFixed(1)} budgeted
+                  </div>
                 </div>
-                <div className="mt-2 flex gap-2">
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    On Budget: {data?.summary.projectsOnBudget}
-                  </Badge>
-                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                    Over: {data?.summary.projectsOverBudget}
-                  </Badge>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    Under: {data?.summary.projectsUnderBudget}
+                <div className="mt-1">
+                  <Badge variant={data.summary.avgBudgetVariance > 15 ? "destructive" : 
+                                 data.summary.avgBudgetVariance > 5 ? "outline" : "default"}>
+                    {data.summary.totalActualHours > data.summary.totalBudgetHours ? "+" : ""}
+                    {(data.summary.totalActualHours - data.summary.totalBudgetHours).toFixed(1)} hours
+                    ({((data.summary.totalActualHours / data.summary.totalBudgetHours * 100) - 100).toFixed(1)}%)
                   </Badge>
                 </div>
               </CardContent>
             </Card>
+            
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg. Budget Variance</CardTitle>
-                <Percent className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Overall Efficiency
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${getVarianceColor(data?.summary.avgBudgetVariance || 0)}`}>
-                  {data?.summary.avgBudgetVariance > 0 ? '+' : ''}{data?.summary.avgBudgetVariance.toFixed(1)}%
+                <div className="flex items-baseline space-x-2">
+                  <div className="text-2xl font-bold">
+                    {data.summary.avgEfficiency.toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    optimum target: 100%
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {data?.summary.avgBudgetVariance > 5 
-                    ? 'Over budget on average' 
-                    : data?.summary.avgBudgetVariance < -5
-                      ? 'Under budget on average'
-                      : 'On target overall'}
-                </p>
+                <div className="mt-1">
+                  <Badge variant={data.summary.avgEfficiency < 80 ? "destructive" : 
+                                 data.summary.avgEfficiency < 90 ? "outline" : 
+                                 data.summary.avgEfficiency > 110 ? "outline" : 
+                                 "default"}>
+                    {data.summary.avgEfficiency < 100 ? "Under budget" : 
+                     data.summary.avgEfficiency > 100 ? "Over budget" : "On target"}
+                  </Badge>
+                </div>
               </CardContent>
             </Card>
+            
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Problematic Phase</CardTitle>
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Completion Status
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-lg font-bold text-red-600 truncate">
-                  {data?.summary.mostOverBudgetPhase}
+                <div className="flex items-baseline space-x-2">
+                  <div className="text-2xl font-bold">
+                    {Math.round(data.summary.completedPhases / data.summary.totalPhases * 100)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {data.summary.completedPhases} of {data.summary.totalPhases} phases
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Most frequently over budget phase
-                </p>
+                <div className="mt-1 flex space-x-1">
+                  <Badge variant="default">
+                    {data.summary.completedPhases} Completed
+                  </Badge>
+                  <Badge variant="outline">
+                    {data.summary.inProgressPhases} In Progress
+                  </Badge>
+                </div>
               </CardContent>
             </Card>
+            
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Staff Efficiency</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Budget Variance
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div>
-                  <div className="text-xs text-muted-foreground">Most Efficient:</div>
-                  <div className="text-sm font-medium text-green-600">{data?.summary.mostEfficientStaff}</div>
+              <CardContent>
+                <div className="flex items-baseline space-x-2">
+                  <div className="text-2xl font-bold">
+                    {data.summary.avgBudgetVariance.toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    avg. across all phases
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Least Efficient:</div>
-                  <div className="text-sm font-medium text-red-600">{data?.summary.leastEfficientStaff}</div>
+                <div className="mt-1">
+                  <Badge variant={data.summary.avgBudgetVariance > 15 ? "destructive" : 
+                                 data.summary.avgBudgetVariance > 5 ? "outline" : 
+                                 "default"}>
+                    {data.summary.avgBudgetVariance <= 5 ? "Excellent" : 
+                     data.summary.avgBudgetVariance <= 10 ? "Good" : 
+                     data.summary.avgBudgetVariance <= 15 ? "Fair" : "Needs Attention"}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Recently Completed Projects</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Client</TableHead>
-                    <TableHead className="text-right">Budget</TableHead>
-                    <TableHead className="text-right">Actual</TableHead>
-                    <TableHead className="text-right">Variance</TableHead>
-                    <TableHead className="text-right">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data?.recentlyCompletedProjects.map((project) => (
-                    <TableRow key={project.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedProject(project.id)}>
-                      <TableCell className="font-medium">{project.name}</TableCell>
-                      <TableCell>{project.client}</TableCell>
-                      <TableCell className="text-right">{project.budgetHours.toFixed(1)}h</TableCell>
-                      <TableCell className="text-right">{project.actualHours.toFixed(1)}h</TableCell>
-                      <TableCell className={`text-right ${getVarianceColor(project.variancePercent)}`}>
-                        {project.variance > 0 ? '+' : ''}{project.variance.toFixed(1)}h
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {renderVarianceBadge(project.variance, project.variancePercent)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Most Problematic Project Phases</CardTitle>
-              <CardDescription>Phases with the highest average budget overruns</CardDescription>
-            </CardHeader>
-            <CardContent className="h-80">
-              <InsightBarChart 
-                data={problematicPhasesData}
-                height={300}
-                insightGenerator={(index, datasetIndex, label, value) => ({
-                  title: `${label} Phase Analysis`,
-                  value: `${value.toFixed(1)}%`,
-                  valueSuffix: '%',
-                  description: `Average budget variance for ${label} phase`,
-                  type: 'variance',
-                  detailsKeys: ['frequency', 'avgOverage', 'recommendation'],
-                  frequency: `${data?.topProblematicPhases[index].occurrences} projects`,
-                  avgOverage: `${value.toFixed(1)}% over budget`,
-                  recommendation: value > 20 
-                    ? 'Revise estimation methodology' 
-                    : value > 10 
-                      ? 'Review scope definition' 
-                      : 'Monitor closely'
-                })}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="project-detail" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Detail Analysis</CardTitle>
-              <CardDescription>Select a project to see detailed budget vs. actual breakdown</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6">
-                <Select value={selectedProject?.toString()} onValueChange={(value) => setSelectedProject(Number(value))}>
-                  <SelectTrigger className="w-full md:w-[350px]">
-                    <SelectValue placeholder="Select a project" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data?.projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id.toString()}>
-                        {project.name} ({project.client})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          
+          <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="mt-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview">
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                Project Overview
+              </TabsTrigger>
+              <TabsTrigger value="phases">
+                <Clock className="h-4 w-4 mr-2" />
+                Phase Analysis
+              </TabsTrigger>
+              <TabsTrigger value="staff">
+                <Users className="h-4 w-4 mr-2" />
+                Staff Performance
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="overview" className="mt-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Project Phases Overview</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-[400px]">
+                    <InsightBarChart 
+                      data={phaseChartData}
+                      insightGenerator={generatePhaseInsight}
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Phase Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <InsightPieChart
+                      data={statusPieData}
+                      insightGenerator={generateStatusInsight}
+                    />
+                  </CardContent>
+                </Card>
               </div>
-
-              {selectedProjectDetails ? (
-                <div className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Budget Hours</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {selectedProjectDetails.totalBudgetHours.toFixed(1)}h
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Original time estimate
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Actual Hours</CardTitle>
-                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {selectedProjectDetails.totalActualHours.toFixed(1)}h
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Time actually spent
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Variance</CardTitle>
-                        <Percent className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className={`text-2xl font-bold ${getVarianceColor(selectedProjectDetails.totalVariancePercent)}`}>
-                          {selectedProjectDetails.totalVariance > 0 ? '+' : ''}{selectedProjectDetails.totalVariance.toFixed(1)}h
-                          <span className="ml-1 text-sm">
-                            ({selectedProjectDetails.totalVariancePercent > 0 ? '+' : ''}{selectedProjectDetails.totalVariancePercent.toFixed(1)}%)
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {selectedProjectDetails.status === 'completed' ? 'Final variance' : 'Current variance'}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Project Phases</h3>
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Phase</TableHead>
-                            <TableHead className="text-right">Budget</TableHead>
-                            <TableHead className="text-right">Actual</TableHead>
-                            <TableHead className="text-right">Variance</TableHead>
-                            <TableHead className="text-right">Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {selectedProjectDetails.phases.map((phase) => (
-                            <TableRow key={phase.id}>
-                              <TableCell className="font-medium">{phase.name}</TableCell>
-                              <TableCell className="text-right">{phase.budgetHours.toFixed(1)}h</TableCell>
-                              <TableCell className="text-right">{phase.actualHours.toFixed(1)}h</TableCell>
-                              <TableCell className={`text-right ${getVarianceColor(phase.variancePercent)}`}>
-                                {phase.variance > 0 ? '+' : ''}{phase.variance.toFixed(1)}h
-                                <span className="text-xs ml-1">
-                                  ({phase.variancePercent > 0 ? '+' : ''}{phase.variancePercent.toFixed(1)}%)
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {renderVarianceBadge(phase.variance, phase.variancePercent)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Phase Comparison</h3>
-                    <div className="h-80">
-                      <Bar
-                        data={budgetVsActualData}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          scales: {
-                            y: {
-                              beginAtZero: true,
-                              title: {
-                                display: true,
-                                text: 'Hours'
-                              }
-                            },
-                            x: {
-                              title: {
-                                display: true,
-                                text: 'Project Phase'
-                              }
-                            }
-                          },
-                          plugins: {
-                            legend: {
-                              position: 'top' as const,
-                            },
-                            tooltip: {
-                              callbacks: {
-                                footer: (tooltipItems) => {
-                                  if (tooltipItems.length >= 2) {
-                                    const budgetValue = tooltipItems[0].raw as number;
-                                    const actualValue = tooltipItems[1].raw as number;
-                                    const variance = actualValue - budgetValue;
-                                    const variancePercent = budgetValue > 0 ? (variance / budgetValue) * 100 : 0;
-                                    return `Variance: ${variance > 0 ? '+' : ''}${variance.toFixed(1)}h (${variancePercent > 0 ? '+' : ''}${variancePercent.toFixed(1)}%)`;
+            </TabsContent>
+            
+            <TabsContent value="phases" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Phase-by-Phase Comparison</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="py-3 text-left font-medium">Phase</th>
+                          <th className="py-3 text-left font-medium">Status</th>
+                          <th className="py-3 text-right font-medium">Budget Hours</th>
+                          <th className="py-3 text-right font-medium">Actual Hours</th>
+                          <th className="py-3 text-right font-medium">Variance</th>
+                          <th className="py-3 text-right font-medium">Efficiency</th>
+                          <th className="py-3 text-left font-medium">Assigned To</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.phases.map((phase, index) => {
+                          const variance = phase.actualHours - phase.budgetHours;
+                          const variancePercent = ((phase.actualHours / phase.budgetHours) * 100) - 100;
+                          
+                          return (
+                            <tr key={index} className="border-b hover:bg-neutral-50">
+                              <td className="py-3">{phase.phaseName}</td>
+                              <td className="py-3">
+                                <Badge
+                                  variant={
+                                    phase.status === "completed" ? "default" :
+                                    phase.status === "in_progress" ? "outline" : "secondary"
                                   }
-                                  return '';
-                                }
-                              }
-                            }
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Staff Performance</h3>
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Staff</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead className="text-right">Budget</TableHead>
-                            <TableHead className="text-right">Actual</TableHead>
-                            <TableHead className="text-right">Variance</TableHead>
-                            <TableHead className="text-right">Efficiency</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {selectedProjectDetails.staffPerformance.map((staff) => (
-                            <TableRow key={staff.id}>
-                              <TableCell className="font-medium">{staff.name}</TableCell>
-                              <TableCell>{staff.role}</TableCell>
-                              <TableCell className="text-right">{staff.budgetHours.toFixed(1)}h</TableCell>
-                              <TableCell className="text-right">{staff.actualHours.toFixed(1)}h</TableCell>
-                              <TableCell className={`text-right ${getVarianceColor(staff.variancePercent)}`}>
-                                {staff.variance > 0 ? '+' : ''}{staff.variance.toFixed(1)}h
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  <div className="w-24">
-                                    <Progress value={staff.efficiency} className="h-2" />
-                                  </div>
-                                  <span className={`
-                                    ${staff.efficiency >= 95 ? 'text-green-600' : 
-                                      staff.efficiency >= 80 ? 'text-amber-600' : 'text-red-600'}
-                                  `}>
-                                    {staff.efficiency}%
+                                >
+                                  {phase.status.replace("_", " ")}
+                                </Badge>
+                              </td>
+                              <td className="py-3 text-right">{phase.budgetHours.toFixed(1)}</td>
+                              <td className="py-3 text-right">{phase.status === "not_started" ? "-" : phase.actualHours.toFixed(1)}</td>
+                              <td className="py-3 text-right">
+                                {phase.status === "not_started" ? "-" : (
+                                  <span className={
+                                    Math.abs(variancePercent) <= 5 ? "text-green-600" :
+                                    Math.abs(variancePercent) <= 15 ? "text-amber-600" : "text-red-600"
+                                  }>
+                                    {variance >= 0 ? "+" : ""}{variance.toFixed(1)} ({variancePercent.toFixed(1)}%)
                                   </span>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                                )}
+                              </td>
+                              <td className="py-3 text-right">
+                                {phase.status === "not_started" ? "-" : (
+                                  <span className={
+                                    phase.efficiency >= 95 ? "text-green-600" :
+                                    phase.efficiency >= 85 ? "text-amber-600" : "text-red-600"
+                                  }>
+                                    {phase.efficiency}%
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3">{phase.assignedTo}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Staff Comparison</h3>
-                    <div className="h-80">
-                      <Bar
-                        data={staffPerformanceData}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          scales: {
-                            y: {
-                              beginAtZero: true,
-                              title: {
-                                display: true,
-                                text: 'Hours'
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="staff" className="mt-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Staff Performance</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-[400px]">
+                    <InsightBarChart 
+                      data={staffChartData}
+                      insightGenerator={generateStaffInsight}
+                    />
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Staff Efficiency</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {data.staffPerformance.map((staff, index) => (
+                        <div key={index} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="font-semibold">{staff.name}</div>
+                              <div className="text-sm text-neutral-500">{staff.role}</div>
+                            </div>
+                            <Badge
+                              variant={
+                                staff.efficiency >= 95 ? "default" :
+                                staff.efficiency >= 85 ? "outline" : "destructive"
                               }
-                            },
-                            x: {
-                              title: {
-                                display: true,
-                                text: 'Staff Member'
-                              }
-                            }
-                          },
-                          plugins: {
-                            legend: {
-                              position: 'top' as const,
-                            },
-                            tooltip: {
-                              callbacks: {
-                                footer: (tooltipItems) => {
-                                  if (tooltipItems.length >= 2) {
-                                    const budgetValue = tooltipItems[0].raw as number;
-                                    const actualValue = tooltipItems[1].raw as number;
-                                    const variance = actualValue - budgetValue;
-                                    const variancePercent = budgetValue > 0 ? (variance / budgetValue) * 100 : 0;
-                                    return `Variance: ${variance > 0 ? '+' : ''}${variance.toFixed(1)}h (${variancePercent > 0 ? '+' : ''}${variancePercent.toFixed(1)}%)`;
-                                  }
-                                  return '';
-                                }
-                              }
-                            }
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Select a project to view detailed budget vs. actual analysis</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="staff-efficiency" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Staff Efficiency Analysis</CardTitle>
-              <CardDescription>View staff performance across all projects</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Staff Member</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Efficiency</TableHead>
-                    <TableHead>Rating</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data?.staffEfficiency.map((staff, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{staff.name}</TableCell>
-                      <TableCell>{staff.role}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <div className="w-24">
-                            <Progress 
-                              value={staff.efficiency} 
-                              className={`h-2 ${
-                                staff.efficiency >= 95 ? 'bg-green-600' : 
-                                staff.efficiency >= 80 ? 'bg-amber-600' : 'bg-red-600'
-                              }`} 
+                            >
+                              {staff.efficiency}%
+                            </Badge>
+                          </div>
+                          <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${
+                                staff.efficiency >= 95 ? "bg-green-500" :
+                                staff.efficiency >= 85 ? "bg-amber-500" : "bg-red-500"
+                              }`}
+                              style={{ width: `${Math.min(100, staff.efficiency)}%` }}
                             />
                           </div>
-                          <span className={`
-                            ${staff.efficiency >= 95 ? 'text-green-600' : 
-                              staff.efficiency >= 80 ? 'text-amber-600' : 'text-red-600'}
-                          `}>
-                            {staff.efficiency}%
-                          </span>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {staff.efficiency >= 95 ? (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            Excellent
-                          </Badge>
-                        ) : staff.efficiency >= 85 ? (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            Good
-                          </Badge>
-                        ) : staff.efficiency >= 75 ? (
-                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                            Average
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                            Needs Improvement
-                          </Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </>
+      ) : null}
     </div>
   );
 };
