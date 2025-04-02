@@ -71,7 +71,23 @@ function Router() {
 }
 
 function App() {
-  const [user, setUser] = useState<User | null>(null);
+  // Initialize with a demo user for easier testing
+  const demoUser = {
+    id: 1,
+    username: "admin",
+    email: "admin@example.com",
+    firstName: "Admin",
+    lastName: "User",
+    isAdmin: true,
+    role: "free",
+    isActive: true,
+    createdAt: new Date(),
+    phone: null,
+    profilePicture: null,
+    password: ""
+  };
+  
+  const [user, setUser] = useState<User | null>(demoUser);
 
   const login = (user: User) => {
     setUser(user);
