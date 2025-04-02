@@ -29,7 +29,7 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
-      setLocation("/dashboard");
+      setLocation("/time-analytics");
     }
   }, [isAuthenticated, setLocation]);
   
@@ -72,7 +72,7 @@ const Login = () => {
       
       // Wait a moment before redirect to ensure state updates
       setTimeout(() => {
-        setLocation("/dashboard");
+        setLocation("/time-analytics");
       }, 100);
     } catch (error) {
       toast({
