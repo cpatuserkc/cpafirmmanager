@@ -205,6 +205,23 @@ export class MemStorage implements IStorage {
   }
 
   private initSampleData() {
+    // Add admin user for testing
+    const adminUser = {
+      id: this.userIdCounter++,
+      username: "admin",
+      password: "6b97ed68d14eb3f1aa959ce5d49c7dc612e1eb1dafd73b1e705847483fd6a638fcfa128a011e7800d1b0af48326a26fd7f7f5abd6ef9e69e48a0c54c6ed2a051.4c8322c23bb8d3075c6fe5fdf8ee5197", // password123
+      email: "admin@example.com",
+      firstName: "Admin",
+      lastName: "User",
+      phone: null,
+      profilePicture: null,
+      role: "admin",
+      isAdmin: true,
+      isActive: true,
+      createdAt: new Date()
+    };
+    this.users.set(adminUser.id, adminUser);
+    
     // Add some initial resources
     const resources = [
       {
