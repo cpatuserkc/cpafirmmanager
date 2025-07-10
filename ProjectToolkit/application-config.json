@@ -1,0 +1,169 @@
+{
+  "application": {
+    "name": "CPA Resource Hub",
+    "version": "1.0.0",
+    "description": "Comprehensive management platform for CPA firms",
+    "domains": {
+      "primary": "cpafirmmanager.com",
+      "client": "cpafirmclients.com"
+    }
+  },
+  "theme": {
+    "primary": "#2563eb",
+    "secondary": "#64748b",
+    "accent": "#0ea5e9",
+    "background": "#f8fafc",
+    "surface": "#ffffff",
+    "text": {
+      "primary": "#1e293b",
+      "secondary": "#64748b",
+      "muted": "#94a3b8"
+    }
+  },
+  "features": {
+    "authentication": true,
+    "multiTenant": true,
+    "mlInsights": true,
+    "aiProposals": true,
+    "timeTracking": true,
+    "resourceLibrary": true,
+    "seasonalPlanning": true,
+    "clientPortal": true,
+    "reporting": true,
+    "analytics": true
+  },
+  "dashboardWidgets": {
+    "timeAnalytics": {
+      "firmOverview": {
+        "title": "Firm Overview",
+        "description": "Overall firm performance and utilization metrics",
+        "metrics": ["totalHours", "billableHours", "efficiency", "revenue"]
+      },
+      "staffPerformance": {
+        "title": "Staff Performance",
+        "description": "Individual staff member productivity and efficiency",
+        "metrics": ["utilization", "billableRate", "clientSatisfaction", "capacity"]
+      },
+      "clientOverview": {
+        "title": "Client Overview",
+        "description": "Client engagement metrics and relationship health",
+        "metrics": ["clientCount", "retention", "satisfaction", "growth"]
+      },
+      "budgetVsActual": {
+        "title": "Budget vs. Actual",
+        "description": "Project budget variance and time accuracy analysis",
+        "metrics": ["budgetVariance", "timeAccuracy", "profitability", "efficiency"]
+      }
+    }
+  },
+  "pagination": {
+    "defaultPageSize": 25,
+    "pageSizeOptions": [10, 25, 50, 100],
+    "maxPageSize": 100
+  },
+  "validation": {
+    "username": {
+      "minLength": 3,
+      "maxLength": 50,
+      "pattern": "^[a-zA-Z0-9_]+$"
+    },
+    "password": {
+      "minLength": 8,
+      "maxLength": 128,
+      "requireUppercase": true,
+      "requireLowercase": true,
+      "requireNumbers": true,
+      "requireSpecialChars": false
+    },
+    "email": {
+      "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    },
+    "phone": {
+      "pattern": "^\\+?[1-9]\\d{1,14}$"
+    },
+    "hourlyRate": {
+      "min": 25,
+      "max": 1000,
+      "step": 5
+    },
+    "timeEstimate": {
+      "min": 0.25,
+      "max": 1000,
+      "step": 0.25
+    }
+  },
+  "dateFormats": {
+    "display": "MM/DD/YYYY",
+    "input": "YYYY-MM-DD",
+    "api": "YYYY-MM-DDTHH:mm:ss.sssZ",
+    "shortDate": "MM/DD/YY",
+    "longDate": "MMMM D, YYYY",
+    "dateTime": "MM/DD/YYYY h:mm A"
+  },
+  "currencies": {
+    "default": "USD",
+    "supported": ["USD", "CAD", "EUR", "GBP"],
+    "format": {
+      "USD": {
+        "symbol": "$",
+        "precision": 2,
+        "position": "before"
+      }
+    }
+  },
+  "timeZones": {
+    "default": "America/New_York",
+    "supported": [
+      "America/New_York",
+      "America/Chicago",
+      "America/Denver",
+      "America/Los_Angeles",
+      "America/Toronto",
+      "Europe/London"
+    ]
+  },
+  "fileUpload": {
+    "maxFileSize": 10485760,
+    "allowedTypes": [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "image/jpeg",
+      "image/png",
+      "image/gif"
+    ],
+    "allowedExtensions": [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png", ".gif"]
+  },
+  "notifications": {
+    "email": {
+      "enabled": true,
+      "templates": {
+        "welcome": "Welcome to CPA Resource Hub",
+        "proposalCreated": "New Proposal Created",
+        "deadlineReminder": "Upcoming Deadline Reminder",
+        "projectCompleted": "Project Completed"
+      }
+    },
+    "inApp": {
+      "enabled": true,
+      "types": ["info", "warning", "error", "success"]
+    }
+  },
+  "integrations": {
+    "quickbooks": {
+      "enabled": false,
+      "apiVersion": "v3"
+    },
+    "xero": {
+      "enabled": false,
+      "apiVersion": "2.0"
+    },
+    "openai": {
+      "enabled": true,
+      "model": "gpt-4o",
+      "maxTokens": 4000
+    }
+  }
+}

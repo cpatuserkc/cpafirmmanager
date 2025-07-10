@@ -17,6 +17,9 @@ import { generateProposalRecommendations } from "./ml-adapter";
 import { generateAIProposalRecommendations, analyzeProposalDocument } from "./openai-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve ProjectToolkit JSON files
+  app.use('/ProjectToolkit', express.static('ProjectToolkit'));
+
   // Error handler middleware for zod validation errors
   const validateBody = (schema: z.ZodType<any>) => {
     return (req: Request, res: Response, next: Function) => {

@@ -1,0 +1,370 @@
+{
+  "clientForm": {
+    "title": "Client Information",
+    "sections": [
+      {
+        "id": "basicInfo",
+        "title": "Basic Information",
+        "fields": [
+          {
+            "name": "name",
+            "label": "Company Name",
+            "type": "text",
+            "required": true,
+            "placeholder": "Enter company name"
+          },
+          {
+            "name": "clientType",
+            "label": "Client Type",
+            "type": "select",
+            "required": true,
+            "options": "clientTypes",
+            "placeholder": "Select client type"
+          },
+          {
+            "name": "industry",
+            "label": "Industry",
+            "type": "select",
+            "required": true,
+            "options": "industries",
+            "placeholder": "Select industry"
+          }
+        ]
+      },
+      {
+        "id": "contactInfo",
+        "title": "Contact Information",
+        "fields": [
+          {
+            "name": "email",
+            "label": "Email Address",
+            "type": "email",
+            "required": true,
+            "placeholder": "company@example.com"
+          },
+          {
+            "name": "phone",
+            "label": "Phone Number",
+            "type": "tel",
+            "required": false,
+            "placeholder": "(555) 123-4567"
+          },
+          {
+            "name": "address",
+            "label": "Address",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "Street address, city, state, ZIP"
+          }
+        ]
+      }
+    ]
+  },
+  "proposalForm": {
+    "title": "Create Proposal",
+    "sections": [
+      {
+        "id": "clientSelection",
+        "title": "Client Selection",
+        "fields": [
+          {
+            "name": "clientId",
+            "label": "Client",
+            "type": "select",
+            "required": true,
+            "placeholder": "Select a client",
+            "searchable": true
+          }
+        ]
+      },
+      {
+        "id": "serviceDetails",
+        "title": "Service Details",
+        "fields": [
+          {
+            "name": "services",
+            "label": "Services",
+            "type": "multiselect",
+            "required": true,
+            "options": "serviceCategories",
+            "placeholder": "Select services"
+          },
+          {
+            "name": "description",
+            "label": "Project Description",
+            "type": "textarea",
+            "required": true,
+            "placeholder": "Describe the project scope and objectives"
+          }
+        ]
+      },
+      {
+        "id": "timeEstimate",
+        "title": "Time & Cost Estimation",
+        "fields": [
+          {
+            "name": "estimatedHours",
+            "label": "Estimated Hours",
+            "type": "number",
+            "required": true,
+            "min": 0.25,
+            "step": 0.25,
+            "placeholder": "0.00"
+          },
+          {
+            "name": "hourlyRate",
+            "label": "Hourly Rate",
+            "type": "currency",
+            "required": true,
+            "min": 25,
+            "step": 5,
+            "placeholder": "$0.00"
+          },
+          {
+            "name": "proposalType",
+            "label": "Proposal Type",
+            "type": "select",
+            "required": true,
+            "options": "proposalTypes",
+            "placeholder": "Select proposal type"
+          }
+        ]
+      }
+    ]
+  },
+  "timeEntryForm": {
+    "title": "Time Entry",
+    "sections": [
+      {
+        "id": "timeDetails",
+        "title": "Time Details",
+        "fields": [
+          {
+            "name": "date",
+            "label": "Date",
+            "type": "date",
+            "required": true,
+            "default": "today"
+          },
+          {
+            "name": "startTime",
+            "label": "Start Time",
+            "type": "time",
+            "required": true
+          },
+          {
+            "name": "endTime",
+            "label": "End Time",
+            "type": "time",
+            "required": true
+          },
+          {
+            "name": "duration",
+            "label": "Duration (hours)",
+            "type": "number",
+            "required": true,
+            "min": 0.25,
+            "step": 0.25,
+            "calculated": true
+          }
+        ]
+      },
+      {
+        "id": "projectDetails",
+        "title": "Project Details",
+        "fields": [
+          {
+            "name": "clientId",
+            "label": "Client",
+            "type": "select",
+            "required": true,
+            "searchable": true
+          },
+          {
+            "name": "projectId",
+            "label": "Project",
+            "type": "select",
+            "required": true,
+            "dependsOn": "clientId"
+          },
+          {
+            "name": "taskCategory",
+            "label": "Task Category",
+            "type": "select",
+            "required": true,
+            "options": "timeEstimateCategories"
+          },
+          {
+            "name": "description",
+            "label": "Description",
+            "type": "textarea",
+            "required": true,
+            "placeholder": "Describe the work performed"
+          }
+        ]
+      }
+    ]
+  },
+  "userRegistrationForm": {
+    "title": "Create Account",
+    "sections": [
+      {
+        "id": "personalInfo",
+        "title": "Personal Information",
+        "fields": [
+          {
+            "name": "firstName",
+            "label": "First Name",
+            "type": "text",
+            "required": true,
+            "placeholder": "John"
+          },
+          {
+            "name": "lastName",
+            "label": "Last Name",
+            "type": "text",
+            "required": true,
+            "placeholder": "Doe"
+          },
+          {
+            "name": "email",
+            "label": "Email Address",
+            "type": "email",
+            "required": true,
+            "placeholder": "john.doe@example.com"
+          },
+          {
+            "name": "phone",
+            "label": "Phone Number",
+            "type": "tel",
+            "required": false,
+            "placeholder": "(555) 123-4567"
+          }
+        ]
+      },
+      {
+        "id": "accountInfo",
+        "title": "Account Information",
+        "fields": [
+          {
+            "name": "username",
+            "label": "Username",
+            "type": "text",
+            "required": true,
+            "placeholder": "johndoe",
+            "validation": "username"
+          },
+          {
+            "name": "password",
+            "label": "Password",
+            "type": "password",
+            "required": true,
+            "validation": "password"
+          },
+          {
+            "name": "confirmPassword",
+            "label": "Confirm Password",
+            "type": "password",
+            "required": true,
+            "validation": "passwordMatch"
+          }
+        ]
+      }
+    ]
+  },
+  "firmSetupForm": {
+    "title": "Firm Setup",
+    "sections": [
+      {
+        "id": "firmInfo",
+        "title": "Firm Information",
+        "fields": [
+          {
+            "name": "name",
+            "label": "Firm Name",
+            "type": "text",
+            "required": true,
+            "placeholder": "ABC Accounting & Associates"
+          },
+          {
+            "name": "ein",
+            "label": "EIN (Tax ID)",
+            "type": "text",
+            "required": false,
+            "placeholder": "12-3456789",
+            "pattern": "^\\d{2}-\\d{7}$"
+          },
+          {
+            "name": "description",
+            "label": "Firm Description",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "Brief description of your firm's services and specialties"
+          }
+        ]
+      },
+      {
+        "id": "contactInfo",
+        "title": "Contact Information",
+        "fields": [
+          {
+            "name": "email",
+            "label": "Business Email",
+            "type": "email",
+            "required": true,
+            "placeholder": "info@abcaccounting.com"
+          },
+          {
+            "name": "phone",
+            "label": "Business Phone",
+            "type": "tel",
+            "required": true,
+            "placeholder": "(555) 123-4567"
+          },
+          {
+            "name": "website",
+            "label": "Website",
+            "type": "url",
+            "required": false,
+            "placeholder": "https://www.abcaccounting.com"
+          }
+        ]
+      },
+      {
+        "id": "addressInfo",
+        "title": "Business Address",
+        "fields": [
+          {
+            "name": "address",
+            "label": "Street Address",
+            "type": "text",
+            "required": true,
+            "placeholder": "123 Main Street"
+          },
+          {
+            "name": "city",
+            "label": "City",
+            "type": "text",
+            "required": true,
+            "placeholder": "Anytown"
+          },
+          {
+            "name": "state",
+            "label": "State",
+            "type": "select",
+            "required": true,
+            "options": "usStates"
+          },
+          {
+            "name": "zipCode",
+            "label": "ZIP Code",
+            "type": "text",
+            "required": true,
+            "placeholder": "12345",
+            "pattern": "^\\d{5}(-\\d{4})?$"
+          }
+        ]
+      }
+    ]
+  }
+}

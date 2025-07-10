@@ -1,0 +1,113 @@
+{
+  "authentication": {
+    "invalidCredentials": "Invalid username or password. Please try again.",
+    "userNotFound": "User account not found. Please check your username.",
+    "accountLocked": "Your account has been locked due to multiple failed login attempts.",
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "insufficientPermissions": "You don't have permission to access this resource.",
+    "passwordExpired": "Your password has expired. Please update your password.",
+    "emailNotVerified": "Please verify your email address before logging in."
+  },
+  "validation": {
+    "required": "This field is required.",
+    "emailInvalid": "Please enter a valid email address.",
+    "phoneInvalid": "Please enter a valid phone number.",
+    "passwordWeak": "Password must be at least 8 characters with uppercase, lowercase, and numbers.",
+    "passwordMismatch": "Passwords do not match.",
+    "usernameExists": "This username is already taken.",
+    "emailExists": "An account with this email already exists.",
+    "invalidDate": "Please enter a valid date.",
+    "invalidNumber": "Please enter a valid number.",
+    "minLength": "Must be at least {min} characters long.",
+    "maxLength": "Must not exceed {max} characters.",
+    "invalidFormat": "Please enter a valid format.",
+    "futureDate": "Date must be in the future.",
+    "pastDate": "Date must be in the past.",
+    "invalidRange": "Value must be between {min} and {max}."
+  },
+  "database": {
+    "connectionFailed": "Unable to connect to the database. Please try again later.",
+    "queryFailed": "Database query failed. Please contact support if the issue persists.",
+    "recordNotFound": "The requested record was not found.",
+    "duplicateEntry": "A record with this information already exists.",
+    "foreignKeyConstraint": "Cannot delete this record as it is referenced by other data.",
+    "dataIntegrityError": "Data integrity error. Please check your input and try again.",
+    "timeout": "Database operation timed out. Please try again.",
+    "deadlock": "Database deadlock detected. Please try your request again."
+  },
+  "api": {
+    "serverError": "An internal server error occurred. Please try again later.",
+    "notFound": "The requested resource was not found.",
+    "badRequest": "Invalid request. Please check your input and try again.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "forbidden": "Access to this resource is forbidden.",
+    "rateLimited": "Too many requests. Please wait before trying again.",
+    "serviceUnavailable": "Service is temporarily unavailable. Please try again later.",
+    "timeout": "Request timed out. Please try again.",
+    "networkError": "Network error. Please check your connection and try again.",
+    "invalidResponse": "Invalid response from server. Please try again."
+  },
+  "fileUpload": {
+    "fileTooLarge": "File size exceeds the maximum limit of {maxSize}MB.",
+    "invalidFileType": "File type not supported. Please upload a valid file.",
+    "uploadFailed": "File upload failed. Please try again.",
+    "noFileSelected": "Please select a file to upload.",
+    "corruptFile": "The uploaded file appears to be corrupted.",
+    "virusDetected": "Security scan detected potential threats in the file.",
+    "diskFull": "Storage space is full. Please contact support.",
+    "tooManyFiles": "Maximum number of files exceeded."
+  },
+  "proposal": {
+    "invalidClient": "Please select a valid client.",
+    "invalidService": "Please select at least one service.",
+    "invalidTimeEstimate": "Please enter a valid time estimate.",
+    "invalidRate": "Please enter a valid hourly rate.",
+    "proposalExists": "A proposal for this client and service already exists.",
+    "generationFailed": "Failed to generate proposal. Please try again.",
+    "aiServiceUnavailable": "AI service is temporarily unavailable.",
+    "insufficientData": "Insufficient data to generate accurate recommendations.",
+    "templateNotFound": "Proposal template not found."
+  },
+  "timeTracking": {
+    "invalidTimeEntry": "Please enter a valid time duration.",
+    "overlappingEntries": "Time entries cannot overlap.",
+    "futureTime": "Cannot log time for future dates.",
+    "exceedsMaxHours": "Time entry exceeds maximum allowed hours per day.",
+    "projectNotFound": "Selected project not found.",
+    "clientNotFound": "Selected client not found.",
+    "timesheetLocked": "Timesheet is locked and cannot be modified.",
+    "approvalRequired": "Time entry requires approval before submission."
+  },
+  "client": {
+    "invalidContactInfo": "Please provide valid contact information.",
+    "clientExists": "A client with this information already exists.",
+    "clientNotFound": "Client not found.",
+    "activeProjects": "Cannot delete client with active projects.",
+    "invalidIndustry": "Please select a valid industry.",
+    "invalidClientType": "Please select a valid client type.",
+    "missingRequiredInfo": "Please provide all required client information.",
+    "contactLimitExceeded": "Maximum number of contacts per client exceeded."
+  },
+  "project": {
+    "invalidProjectName": "Please enter a valid project name.",
+    "invalidDateRange": "End date must be after start date.",
+    "budgetExceeded": "Project budget has been exceeded.",
+    "projectNotFound": "Project not found.",
+    "invalidStatus": "Please select a valid project status.",
+    "dependentTasks": "Cannot delete project with dependent tasks.",
+    "insufficientBudget": "Insufficient budget for this project phase.",
+    "resourceConflict": "Resource scheduling conflict detected."
+  },
+  "general": {
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "maintenanceMode": "System is under maintenance. Please try again later.",
+    "featureDisabled": "This feature is temporarily disabled.",
+    "browserNotSupported": "Your browser is not supported. Please use a modern browser.",
+    "javascriptDisabled": "JavaScript must be enabled to use this application.",
+    "connectionLost": "Connection lost. Please check your internet connection.",
+    "pageNotFound": "The requested page was not found.",
+    "accessDenied": "Access denied. You don't have permission to view this page.",
+    "dataLoadFailed": "Failed to load data. Please refresh the page.",
+    "unsavedChanges": "You have unsaved changes. Please save before leaving."
+  }
+}
