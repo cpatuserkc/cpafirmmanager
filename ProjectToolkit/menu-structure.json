@@ -1,0 +1,197 @@
+{
+  "mainNavigation": [
+    {
+      "id": "home",
+      "label": "Home",
+      "path": "/",
+      "icon": "home",
+      "description": "Dashboard overview and quick actions"
+    },
+    {
+      "id": "timeAnalytics",
+      "label": "Time Analytics",
+      "path": "/time-analytics",
+      "icon": "clock",
+      "description": "Time tracking, budget analysis, and performance metrics",
+      "badge": "featured"
+    },
+    {
+      "id": "proposals",
+      "label": "Proposals",
+      "path": "/proposals",
+      "icon": "fileText",
+      "description": "Proposal management and generation",
+      "submenu": [
+        {
+          "id": "standardProposals",
+          "label": "Standard Proposals",
+          "path": "/proposals",
+          "icon": "file"
+        },
+        {
+          "id": "aiProposals",
+          "label": "AI Enhanced",
+          "path": "/enhanced-proposals",
+          "icon": "brain",
+          "badge": "new"
+        },
+        {
+          "id": "externalProposals",
+          "label": "External Requests",
+          "path": "/external-proposals",
+          "icon": "externalLink"
+        }
+      ]
+    },
+    {
+      "id": "clients",
+      "label": "Clients",
+      "path": "/clients",
+      "icon": "users",
+      "description": "Client management and relationship tracking"
+    },
+    {
+      "id": "resources",
+      "label": "Resources",
+      "path": "/resources",
+      "icon": "bookOpen",
+      "description": "Resource library and knowledge base"
+    },
+    {
+      "id": "classification",
+      "label": "Classification",
+      "path": "/classification",
+      "icon": "tags",
+      "description": "Tax and accounting classification systems"
+    },
+    {
+      "id": "analytics",
+      "label": "Analytics",
+      "path": "/analytics",
+      "icon": "barChart",
+      "description": "Business intelligence and reporting"
+    },
+    {
+      "id": "seasonPlanner",
+      "label": "Season Planner",
+      "path": "/season-planner",
+      "icon": "calendar",
+      "description": "Seasonal workload planning and resource allocation"
+    },
+    {
+      "id": "collaborations",
+      "label": "Collaborations",
+      "path": "/collaborations",
+      "icon": "users",
+      "description": "Team collaboration and communication tools"
+    }
+  ],
+  "userMenu": [
+    {
+      "id": "profile",
+      "label": "Profile",
+      "path": "/profile",
+      "icon": "user"
+    },
+    {
+      "id": "settings",
+      "label": "Settings",
+      "path": "/settings",
+      "icon": "settings"
+    },
+    {
+      "id": "help",
+      "label": "Help & Support",
+      "path": "/help",
+      "icon": "helpCircle"
+    },
+    {
+      "id": "logout",
+      "label": "Sign Out",
+      "action": "logout",
+      "icon": "logOut"
+    }
+  ],
+  "adminMenu": [
+    {
+      "id": "userManagement",
+      "label": "User Management",
+      "path": "/admin/users",
+      "icon": "userCheck",
+      "requiredRole": "admin"
+    },
+    {
+      "id": "firmManagement",
+      "label": "Firm Management",
+      "path": "/admin/firms",
+      "icon": "building",
+      "requiredRole": "admin"
+    },
+    {
+      "id": "systemSettings",
+      "label": "System Settings",
+      "path": "/admin/settings",
+      "icon": "cog",
+      "requiredRole": "admin"
+    },
+    {
+      "id": "analytics",
+      "label": "System Analytics",
+      "path": "/admin/analytics",
+      "icon": "trending-up",
+      "requiredRole": "admin"
+    }
+  ],
+  "footerLinks": [
+    {
+      "id": "about",
+      "label": "About",
+      "path": "/about"
+    },
+    {
+      "id": "privacy",
+      "label": "Privacy Policy",
+      "path": "/privacy"
+    },
+    {
+      "id": "terms",
+      "label": "Terms of Service",
+      "path": "/terms"
+    },
+    {
+      "id": "contact",
+      "label": "Contact Us",
+      "path": "/contact"
+    }
+  ],
+  "quickActions": [
+    {
+      "id": "createProposal",
+      "label": "Create Proposal",
+      "path": "/proposals/create",
+      "icon": "plus",
+      "color": "primary"
+    },
+    {
+      "id": "addClient",
+      "label": "Add Client",
+      "path": "/clients/create",
+      "icon": "userPlus",
+      "color": "secondary"
+    },
+    {
+      "id": "timeEntry",
+      "label": "Log Time",
+      "path": "/time-analytics/entry",
+      "icon": "clock",
+      "color": "accent"
+    },
+    {
+      "id": "viewAnalytics",
+      "label": "View Analytics",
+      "path": "/analytics",
+      "icon": "barChart",
+      "color": "info"
+    }
+  ]
+}

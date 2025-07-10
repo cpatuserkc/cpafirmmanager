@@ -1,0 +1,207 @@
+{
+  "usStates": {
+    "AL": "Alabama",
+    "AK": "Alaska",
+    "AZ": "Arizona",
+    "AR": "Arkansas",
+    "CA": "California",
+    "CO": "Colorado",
+    "CT": "Connecticut",
+    "DE": "Delaware",
+    "FL": "Florida",
+    "GA": "Georgia",
+    "HI": "Hawaii",
+    "ID": "Idaho",
+    "IL": "Illinois",
+    "IN": "Indiana",
+    "IA": "Iowa",
+    "KS": "Kansas",
+    "KY": "Kentucky",
+    "LA": "Louisiana",
+    "ME": "Maine",
+    "MD": "Maryland",
+    "MA": "Massachusetts",
+    "MI": "Michigan",
+    "MN": "Minnesota",
+    "MS": "Mississippi",
+    "MO": "Missouri",
+    "MT": "Montana",
+    "NE": "Nebraska",
+    "NV": "Nevada",
+    "NH": "New Hampshire",
+    "NJ": "New Jersey",
+    "NM": "New Mexico",
+    "NY": "New York",
+    "NC": "North Carolina",
+    "ND": "North Dakota",
+    "OH": "Ohio",
+    "OK": "Oklahoma",
+    "OR": "Oregon",
+    "PA": "Pennsylvania",
+    "RI": "Rhode Island",
+    "SC": "South Carolina",
+    "SD": "South Dakota",
+    "TN": "Tennessee",
+    "TX": "Texas",
+    "UT": "Utah",
+    "VT": "Vermont",
+    "VA": "Virginia",
+    "WA": "Washington",
+    "WV": "West Virginia",
+    "WI": "Wisconsin",
+    "WY": "Wyoming",
+    "DC": "District of Columbia"
+  },
+  "canadianProvinces": {
+    "AB": "Alberta",
+    "BC": "British Columbia",
+    "MB": "Manitoba",
+    "NB": "New Brunswick",
+    "NL": "Newfoundland and Labrador",
+    "NT": "Northwest Territories",
+    "NS": "Nova Scotia",
+    "NU": "Nunavut",
+    "ON": "Ontario",
+    "PE": "Prince Edward Island",
+    "QC": "Quebec",
+    "SK": "Saskatchewan",
+    "YT": "Yukon"
+  },
+  "countries": {
+    "US": "United States",
+    "CA": "Canada",
+    "MX": "Mexico",
+    "GB": "United Kingdom",
+    "AU": "Australia",
+    "DE": "Germany",
+    "FR": "France",
+    "IT": "Italy",
+    "ES": "Spain",
+    "JP": "Japan",
+    "CN": "China",
+    "IN": "India",
+    "BR": "Brazil"
+  },
+  "timeZones": {
+    "America/New_York": "Eastern Time (ET)",
+    "America/Chicago": "Central Time (CT)",
+    "America/Denver": "Mountain Time (MT)",
+    "America/Los_Angeles": "Pacific Time (PT)",
+    "America/Anchorage": "Alaska Time (AKT)",
+    "Pacific/Honolulu": "Hawaii Time (HT)",
+    "America/Toronto": "Eastern Time - Toronto",
+    "America/Vancouver": "Pacific Time - Vancouver",
+    "Europe/London": "Greenwich Mean Time (GMT)",
+    "Europe/Paris": "Central European Time (CET)",
+    "Asia/Tokyo": "Japan Standard Time (JST)",
+    "Australia/Sydney": "Australian Eastern Time (AET)"
+  },
+  "currencies": {
+    "USD": {
+      "name": "US Dollar",
+      "symbol": "$",
+      "code": "USD"
+    },
+    "CAD": {
+      "name": "Canadian Dollar",
+      "symbol": "C$",
+      "code": "CAD"
+    },
+    "EUR": {
+      "name": "Euro",
+      "symbol": "€",
+      "code": "EUR"
+    },
+    "GBP": {
+      "name": "British Pound",
+      "symbol": "£",
+      "code": "GBP"
+    },
+    "JPY": {
+      "name": "Japanese Yen",
+      "symbol": "¥",
+      "code": "JPY"
+    },
+    "AUD": {
+      "name": "Australian Dollar",
+      "symbol": "A$",
+      "code": "AUD"
+    }
+  },
+  "businessEntityTypes": {
+    "soleProprietorship": {
+      "name": "Sole Proprietorship",
+      "description": "Unincorporated business owned by one individual",
+      "taxForm": "Schedule C"
+    },
+    "partnership": {
+      "name": "Partnership",
+      "description": "Business owned by two or more individuals",
+      "taxForm": "Form 1065"
+    },
+    "llc": {
+      "name": "Limited Liability Company (LLC)",
+      "description": "Hybrid entity providing liability protection",
+      "taxForm": "Form 1065 or 8832"
+    },
+    "sCorp": {
+      "name": "S Corporation",
+      "description": "Corporation electing pass-through taxation",
+      "taxForm": "Form 1120S"
+    },
+    "cCorp": {
+      "name": "C Corporation",
+      "description": "Traditional corporation with double taxation",
+      "taxForm": "Form 1120"
+    },
+    "nonprofit": {
+      "name": "Nonprofit Organization",
+      "description": "Tax-exempt organization for charitable purposes",
+      "taxForm": "Form 990"
+    }
+  },
+  "fiscalYearEnds": {
+    "calendar": {
+      "name": "Calendar Year",
+      "endDate": "December 31",
+      "description": "Standard calendar year ending December 31"
+    },
+    "june30": {
+      "name": "June 30",
+      "endDate": "June 30",
+      "description": "Fiscal year ending June 30"
+    },
+    "september30": {
+      "name": "September 30",
+      "endDate": "September 30",
+      "description": "Fiscal year ending September 30"
+    },
+    "march31": {
+      "name": "March 31",
+      "endDate": "March 31",
+      "description": "Fiscal year ending March 31"
+    }
+  },
+  "payrollFrequencies": {
+    "weekly": "Weekly",
+    "biweekly": "Bi-weekly",
+    "semimonthly": "Semi-monthly",
+    "monthly": "Monthly",
+    "quarterly": "Quarterly",
+    "annually": "Annually"
+  },
+  "accountingMethods": {
+    "cash": {
+      "name": "Cash Method",
+      "description": "Income and expenses recorded when cash changes hands"
+    },
+    "accrual": {
+      "name": "Accrual Method",
+      "description": "Income and expenses recorded when earned or incurred"
+    },
+    "hybrid": {
+      "name": "Hybrid Method",
+      "description": "Combination of cash and accrual methods"
+    }
+  }
+}

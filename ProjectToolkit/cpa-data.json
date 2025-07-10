@@ -1,0 +1,171 @@
+{
+  "professionalRoles": {
+    "partner": {
+      "name": "Partner",
+      "description": "Senior partner with equity stake",
+      "topTierRate": "350",
+      "midTierRatePercent": "85",
+      "lowTierRatePercent": "70"
+    },
+    "seniorManager": {
+      "name": "Senior Manager",
+      "description": "Experienced manager overseeing multiple clients",
+      "topTierRate": "275",
+      "midTierRatePercent": "80",
+      "lowTierRatePercent": "65"
+    },
+    "manager": {
+      "name": "Manager",
+      "description": "Mid-level manager with client responsibility",
+      "topTierRate": "225",
+      "midTierRatePercent": "75",
+      "lowTierRatePercent": "60"
+    },
+    "seniorAssociate": {
+      "name": "Senior Associate",
+      "description": "Experienced associate with specialized skills",
+      "topTierRate": "175",
+      "midTierRatePercent": "70",
+      "lowTierRatePercent": "55"
+    },
+    "associate": {
+      "name": "Associate",
+      "description": "Entry-level CPA with 1-3 years experience",
+      "topTierRate": "125",
+      "midTierRatePercent": "65",
+      "lowTierRatePercent": "50"
+    },
+    "staff": {
+      "name": "Staff Accountant",
+      "description": "Entry-level position for new graduates",
+      "topTierRate": "95",
+      "midTierRatePercent": "60",
+      "lowTierRatePercent": "45"
+    }
+  },
+  "serviceCategories": {
+    "tax": {
+      "name": "Tax Services",
+      "description": "Tax preparation, planning, and compliance",
+      "services": {
+        "individualTax": "Individual Tax Preparation",
+        "businessTax": "Business Tax Preparation",
+        "taxPlanning": "Tax Planning & Strategy",
+        "taxCompliance": "Tax Compliance & Review",
+        "estateTax": "Estate & Gift Tax",
+        "salesTax": "Sales Tax Consulting"
+      }
+    },
+    "audit": {
+      "name": "Audit & Assurance",
+      "description": "Financial statement audits and reviews",
+      "services": {
+        "financialAudit": "Financial Statement Audit",
+        "reviewEngagement": "Review Engagement",
+        "compilation": "Compilation Services",
+        "internalAudit": "Internal Audit Support",
+        "complianceAudit": "Compliance Audit"
+      }
+    },
+    "accounting": {
+      "name": "Accounting Services",
+      "description": "Bookkeeping and financial management",
+      "services": {
+        "bookkeeping": "Monthly Bookkeeping",
+        "payroll": "Payroll Processing",
+        "quickbooks": "QuickBooks Setup & Training",
+        "financialReporting": "Financial Reporting",
+        "budgeting": "Budgeting & Forecasting"
+      }
+    },
+    "consulting": {
+      "name": "Business Consulting",
+      "description": "Strategic business advisory services",
+      "services": {
+        "businessValuation": "Business Valuation",
+        "businessPlanning": "Business Planning",
+        "financialConsulting": "Financial Consulting",
+        "mergerAcquisition": "M&A Advisory",
+        "businessFormation": "Business Formation"
+      }
+    }
+  },
+  "timeEstimateCategories": {
+    "planning": "Planning & Preparation",
+    "fieldwork": "Fieldwork & Data Collection",
+    "analysis": "Analysis & Review",
+    "reporting": "Report Preparation",
+    "review": "Partner/Manager Review",
+    "client": "Client Communication",
+    "admin": "Administrative Tasks"
+  },
+  "proposalTypes": {
+    "standard": {
+      "name": "Standard Proposal",
+      "description": "Regular service engagement proposal"
+    },
+    "retainer": {
+      "name": "Retainer Agreement",
+      "description": "Ongoing monthly retainer services"
+    },
+    "project": {
+      "name": "Project-Based",
+      "description": "Fixed-fee project engagement"
+    },
+    "hourly": {
+      "name": "Hourly Services",
+      "description": "Time-based billing arrangement"
+    }
+  },
+  "clientTypes": {
+    "individual": "Individual/Personal",
+    "smallBusiness": "Small Business (< 50 employees)",
+    "mediumBusiness": "Medium Business (50-200 employees)",
+    "largeBusiness": "Large Business (200+ employees)",
+    "nonprofit": "Nonprofit Organization",
+    "government": "Government Entity",
+    "partnership": "Partnership",
+    "corporation": "Corporation",
+    "llc": "Limited Liability Company"
+  },
+  "industries": {
+    "manufacturing": "Manufacturing",
+    "retail": "Retail & Wholesale",
+    "healthcare": "Healthcare & Medical",
+    "realestate": "Real Estate",
+    "construction": "Construction",
+    "technology": "Technology",
+    "professional": "Professional Services",
+    "hospitality": "Hospitality & Food Service",
+    "transportation": "Transportation & Logistics",
+    "finance": "Financial Services",
+    "education": "Education",
+    "nonprofit": "Nonprofit & Religious",
+    "agriculture": "Agriculture",
+    "energy": "Energy & Utilities",
+    "other": "Other"
+  },
+  "seasonalPeriods": {
+    "busySeason": {
+      "name": "Tax Season",
+      "description": "Peak busy season for tax preparation",
+      "months": ["January", "February", "March", "April"],
+      "workloadMultiplier": 1.5,
+      "notes": "Individual and business tax returns due"
+    },
+    "fallBusy": {
+      "name": "Fall Busy Season",
+      "description": "Business tax planning and year-end preparation",
+      "months": ["September", "October", "November"],
+      "workloadMultiplier": 1.2,
+      "notes": "Business tax planning and audit season"
+    },
+    "normalSeason": {
+      "name": "Normal Season",
+      "description": "Regular business operations",
+      "months": ["May", "June", "July", "August", "December"],
+      "workloadMultiplier": 1.0,
+      "notes": "Standard consulting and ongoing services"
+    }
+  }
+}
