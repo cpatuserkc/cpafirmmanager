@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
@@ -64,15 +64,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Login route is handled by auth.ts with passport authentication
 
-  // CLIENT ROUTES
+  // CLIENT ROUTES (using client companies)
   app.get("/api/clients", async (req, res) => {
     try {
-      const userId = Number(req.query.userId);
-      if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
+      const firmId = Number(req.query.firmId);
+      if (!firmId) {
+        return res.status(400).json({ message: "Firm ID is required" });
       }
       
-      const clients = await storage.getClientsByUserId(userId);
+      const clients = await storage.getClientCompaniesByFirmId(firmId);
       res.status(200).json(clients);
     } catch (error) {
       res.status(500).json({ message: "Error fetching clients" });
@@ -82,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clients/:id", async (req, res) => {
     try {
       const id = Number(req.params.id);
-      const client = await storage.getClient(id);
+      const client = await storage.getClientCompany(id);
       
       if (!client) {
         return res.status(404).json({ message: "Client not found" });
@@ -96,7 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clients", validateBody(insertClientCompanySchema), async (req, res) => {
     try {
-      const client = await storage.createClient(req.body);
+      const client = await storage.createClientCompany(req.body);
       res.status(201).json(client);
     } catch (error) {
       res.status(500).json({ message: "Error creating client" });
@@ -106,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/clients/:id", async (req, res) => {
     try {
       const id = Number(req.params.id);
-      const updatedClient = await storage.updateClient(id, req.body);
+      const updatedClient = await storage.updateClientCompany(id, req.body);
       
       if (!updatedClient) {
         return res.status(404).json({ message: "Client not found" });
@@ -121,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/clients/:id", async (req, res) => {
     try {
       const id = Number(req.params.id);
-      const success = await storage.deleteClient(id);
+      const success = await storage.deleteClientCompany(id);
       
       if (!success) {
         return res.status(404).json({ message: "Client not found" });
@@ -292,16 +292,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PROJECT ROUTES
   app.get("/api/projects", async (req, res) => {
     try {
-      const userId = Number(req.query.userId);
+      const firmId = Number(req.query.firmId);
       const clientId = req.query.clientId ? Number(req.query.clientId) : undefined;
       
       let projects;
       if (clientId) {
-        projects = await storage.getProjectsByClientId(clientId);
-      } else if (userId) {
-        projects = await storage.getProjectsByUserId(userId);
+        projects = await storage.getProjectsByClientCompanyId(clientId);
+      } else if (firmId) {
+        projects = await storage.getProjectsByFirmId(firmId);
       } else {
-        return res.status(400).json({ message: "User ID or Client ID is required" });
+        return res.status(400).json({ message: "Firm ID or Client ID is required" });
       }
       
       res.status(200).json(projects);
@@ -446,16 +446,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PROPOSAL ROUTES
   app.get("/api/proposals", async (req, res) => {
     try {
-      const userId = Number(req.query.userId);
+      const firmId = Number(req.query.firmId);
       const clientId = req.query.clientId ? Number(req.query.clientId) : undefined;
       
       let proposals;
       if (clientId) {
-        proposals = await storage.getProposalsByClientId(clientId);
-      } else if (userId) {
-        proposals = await storage.getProposalsByUserId(userId);
+        proposals = await storage.getProposalsByClientCompanyId(clientId);
+      } else if (firmId) {
+        proposals = await storage.getProposalsByFirmId(firmId);
       } else {
-        return res.status(400).json({ message: "User ID or Client ID is required" });
+        return res.status(400).json({ message: "Firm ID or Client ID is required" });
       }
       
       res.status(200).json(proposals);
@@ -549,6 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Create new client company
           const newCompany = await storage.createClientCompany({
             firmId: marketingFirmId,
+            contactId: 1, // Temporary contact ID, will be updated later
             name: requestData.clientName,
             website: requestData.website || null,
             industry: requestData.industry || null,
@@ -556,10 +557,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             city: requestData.city || null,
             state: requestData.state || null,
             zipCode: requestData.zipCode || null,
-            country: 'USA',
             notes: 'Auto-created from external proposal request',
-            isActive: true,
-            primaryContactId: null
+            isActive: true
           });
           clientCompanyId = newCompany.id;
           
@@ -567,21 +566,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (requestData.contactName && requestData.contactEmail) {
             const newContact = await storage.createContact({
               firmId: marketingFirmId,
+              createdById: 1, // Default admin user
               firstName: requestData.contactName.split(' ')[0] || requestData.contactName,
               lastName: requestData.contactName.split(' ').slice(1).join(' ') || '',
               email: requestData.contactEmail,
               phone: requestData.contactPhone || null,
-              title: requestData.contactTitle || null,
-              clientCompanyId: clientCompanyId,
               notes: 'Auto-created from external proposal request',
               isActive: true
             });
             contactId = newContact.id;
-            
-            // Update company with primary contact
-            await storage.updateClientCompany(clientCompanyId, {
-              primaryContactId: contactId
-            });
           }
         }
       }
@@ -1357,19 +1350,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DEADLINE ROUTES
   app.get("/api/deadlines", async (req, res) => {
     try {
-      const userId = Number(req.query.userId);
+      const firmId = Number(req.query.firmId);
       const upcoming = req.query.upcoming === 'true';
       const limit = req.query.limit ? Number(req.query.limit) : undefined;
       
-      if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
+      if (!firmId) {
+        return res.status(400).json({ message: "Firm ID is required" });
       }
       
       let deadlines;
       if (upcoming) {
-        deadlines = await storage.getUpcomingDeadlinesByUserId(userId, limit);
+        deadlines = await storage.getUpcomingDeadlinesByFirmId(firmId, limit);
       } else {
-        deadlines = await storage.getDeadlinesByUserId(userId);
+        deadlines = await storage.getDeadlinesByFirmId(firmId);
       }
       
       res.status(200).json(deadlines);
