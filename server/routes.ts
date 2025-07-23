@@ -993,6 +993,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to get inquiries' });
     }
   });
+
+  // WEBHOOK RECEIVERS - For external platforms to send data back to this main system
+  app.post("/api/webhooks/client-inquiry", async (req, res) => {
+    try {
+      const inquiryData = req.body;
+      console.log('Received client inquiry from external platform:', inquiryData);
+      
+      // Store the inquiry in our system
+      const inquiry = await serviceSyncManager.receiveClientInquiry(inquiryData);
+      
+      res.json({
+        success: true,
+        inquiryId: inquiry.id,
+        message: 'Client inquiry received and stored',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error processing client inquiry:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to process client inquiry',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // EXTERNAL PLATFORM SETUP GUIDE
+  app.get("/api/platform-setup/guide", (req, res) => {
+    res.json({
+      title: "CPA Resource Hub - External Platform Integration Guide",
+      mainSystemUrl: "Your main CPA system",
+      platformStatus: {
+        clientPortal: "https://14b71d64-e9ea-4b1f-beb0-14e95f144af5-00-iz6bsxxlx3nd.picard.replit.dev",
+        dataEngine: "https://ss-cpa-firm-manager-v-100-accounts95.replit.app",
+        status: "Both platforms awake and responding"
+      },
+      webhookEndpoints: {
+        clientInquiries: "/api/webhooks/client-inquiry",
+        description: "External platforms POST client inquiries here"
+      },
+      requiredExternalEndpoints: {
+        "/api/services/sync": "Receive CPA service packages from main system",
+        "/api/sync": "General sync endpoint for data updates", 
+        "/api/cpa-packages": "Receive service package data"
+      },
+      sampleSyncData: {
+        firmId: 2,
+        lastUpdated: new Date().toISOString(),
+        platformType: "client_site",
+        packages: [
+          {
+            id: 8,
+            name: "Startup Essential Package",
+            marketingTitle: "Launch Your Business with Confidence",
+            basePrice: 3250,
+            priceRange: "$2,500 - $4,000",
+            category: "startup",
+            features: ["Business entity formation", "EIN registration", "Bookkeeping setup"],
+            isActive: true
+          }
+        ]
+      },
+      integrationSteps: [
+        "1. Add sync endpoints (/api/services/sync, /api/sync, /api/cpa-packages) to your external platforms",
+        "2. Configure webhook URLs pointing back to this main system (/api/webhooks/client-inquiry)",
+        "3. Test connectivity using the provided sample data",
+        "4. Set up API keys for secure communication",
+        "5. Enable real-time synchronization"
+      ],
+      testCommands: [
+        "curl -X POST your-platform/api/services/sync -H 'Content-Type: application/json' -d '...'",
+        "curl -X POST main-system/api/webhooks/client-inquiry -H 'Content-Type: application/json' -d '...'"
+      ]
+    });
+  });
   app.get("/api/service-sync/data/:firmId/:platformType", async (req, res) => {
     try {
       const firmId = parseInt(req.params.firmId);
