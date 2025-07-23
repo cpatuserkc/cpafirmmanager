@@ -1,6 +1,4 @@
 // Test connectivity to external CPA sites
-const https = require('https');
-
 async function testSiteConnectivity() {
   const sites = [
     {
