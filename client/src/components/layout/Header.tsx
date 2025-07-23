@@ -47,6 +47,7 @@ const Header = () => {
         { href: "/resources", label: "Resources" },
         { href: "/classification", label: "Classifications" },
         { href: "/analytics", label: "Analytics" },
+        { href: "/service-packages", label: "Service Packages" },
       ]
     },
     {
