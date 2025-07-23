@@ -1019,6 +1019,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // QUICKBOOKS INTEGRATION ROUTES
+  app.get("/api/quickbooks/auth-url", (req, res) => {
+    try {
+      const { QuickBooksIntegration } = require('./quickbooks-integration');
+      const qb = new QuickBooksIntegration();
+      
+      const redirectUri = `${req.protocol}://${req.get('host')}/api/quickbooks/callback`;
+      const authUrl = qb.generateAuthUrl(redirectUri);
+      
+      res.json({
+        authUrl,
+        message: 'Visit this URL to authorize QuickBooks access',
+        redirectUri
+      });
+      
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to generate auth URL' });
+    }
+  });
+
+  app.get("/api/quickbooks/callback", async (req, res) => {
+    try {
+      const { code, realmId } = req.query;
+      if (!code) {
+        return res.status(400).json({ error: 'Authorization code required' });
+      }
+
+      const { QuickBooksIntegration } = require('./quickbooks-integration');
+      const qb = new QuickBooksIntegration();
+      
+      const redirectUri = `${req.protocol}://${req.get('host')}/api/quickbooks/callback`;
+      const token = await qb.exchangeCodeForToken(code as string, redirectUri);
+      
+      // Store token securely (in production, use encrypted storage)
+      // For now, we'll keep it in memory for testing
+      
+      res.json({
+        success: true,
+        message: 'QuickBooks authorization successful',
+        companyId: realmId || token.company_id,
+        expiresIn: token.expires_in
+      });
+      
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Authorization failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get("/api/quickbooks/test-connection", async (req, res) => {
+    try {
+      const { QuickBooksIntegration } = require('./quickbooks-integration');
+      const qb = new QuickBooksIntegration();
+      
+      // For testing, create a mock token (in production, retrieve stored token)
+      qb.setTestToken({
+        access_token: 'test_token',
+        refresh_token: 'test_refresh',
+        expires_in: 3600,
+        company_id: process.env.QUICKBOOKS_SANDBOX_BASE_URL?.includes('sandbox') ? 'sandbox_company' : '1'
+      });
+      
+      const result = await qb.testConnection();
+      res.json(result);
+      
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Connection test failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get("/api/quickbooks/sync-clients", async (req, res) => {
+    try {
+      const { QuickBooksIntegration } = require('./quickbooks-integration');
+      const qb = new QuickBooksIntegration();
+      
+      const clients = await qb.syncClients();
+      
+      res.json({
+        success: true,
+        message: `Synced ${clients.length} clients from QuickBooks`,
+        clients: clients.slice(0, 10), // Return first 10 for preview
+        totalCount: clients.length
+      });
+      
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Client sync failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get("/api/quickbooks/financial-data", async (req, res) => {
+    try {
+      const { QuickBooksIntegration } = require('./quickbooks-integration');
+      const qb = new QuickBooksIntegration();
+      
+      const financialData = await qb.aggregateFinancialData();
+      
+      res.json({
+        success: true,
+        message: 'Financial data aggregated from QuickBooks',
+        data: financialData,
+        source: 'QuickBooks Online Sandbox',
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Financial data aggregation failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // EXTERNAL PLATFORM SETUP GUIDE
   app.get("/api/platform-setup/guide", (req, res) => {
     res.json({
