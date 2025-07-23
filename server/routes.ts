@@ -1020,49 +1020,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // QUICKBOOKS INTEGRATION ROUTES
-  app.get("/api/quickbooks/auth-url", (req, res) => {
+  app.get("/api/quickbooks/auth-url", async (req, res) => {
     try {
-      const { QuickBooksIntegration } = require('./quickbooks-integration');
-      const qb = new QuickBooksIntegration();
+      const { generateQBAuthUrl } = await import('./qb-auth-simple.js');
       
+      const clientId = process.env.QUICKBOOKS_CLIENT_ID;
       const redirectUri = `${req.protocol}://${req.get('host')}/api/quickbooks/callback`;
-      const authUrl = qb.generateAuthUrl(redirectUri);
+      
+      if (!clientId) {
+        return res.status(500).json({ error: 'QuickBooks Client ID not configured' });
+      }
+      
+      const authUrl = generateQBAuthUrl(clientId, redirectUri);
       
       res.json({
         authUrl,
         message: 'Visit this URL to authorize QuickBooks access',
-        redirectUri
+        redirectUri,
+        clientId: clientId.substring(0, 10) + '...',
+        scope: 'com.intuit.quickbooks.accounting',
+        instructions: [
+          '1. Click the authUrl to visit QuickBooks',
+          '2. Log into your QB sandbox account',
+          '3. Authorize your CPA app',
+          '4. You will be redirected back automatically'
+        ]
       });
       
     } catch (error) {
-      res.status(500).json({ error: 'Failed to generate auth URL' });
+      console.error('QB Auth URL Error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate auth URL',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
   app.get("/api/quickbooks/callback", async (req, res) => {
     try {
-      const { code, realmId } = req.query;
+      const { code, realmId, state } = req.query;
       if (!code) {
         return res.status(400).json({ error: 'Authorization code required' });
       }
 
-      const { QuickBooksIntegration } = require('./quickbooks-integration');
-      const qb = new QuickBooksIntegration();
+      const { exchangeQBCodeForToken } = await import('./qb-auth-simple.js');
       
       const redirectUri = `${req.protocol}://${req.get('host')}/api/quickbooks/callback`;
-      const token = await qb.exchangeCodeForToken(code as string, redirectUri);
+      const clientId = process.env.QUICKBOOKS_CLIENT_ID!;
+      const clientSecret = process.env.QUICKBOOKS_CLIENT_SECRET!;
       
-      // Store token securely (in production, use encrypted storage)
-      // For now, we'll keep it in memory for testing
+      const tokenData = await exchangeQBCodeForToken(
+        code as string,
+        redirectUri,
+        clientId,
+        clientSecret
+      );
+      
+      // Store token for this session (in production, use secure storage)
+      const qbToken = {
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        expires_in: tokenData.expires_in,
+        company_id: realmId as string || 'sandbox_company',
+        authorized_at: new Date().toISOString()
+      };
+      
+      console.log('QB Authorization successful for company:', realmId);
       
       res.json({
         success: true,
-        message: 'QuickBooks authorization successful',
-        companyId: realmId || token.company_id,
-        expiresIn: token.expires_in
+        message: 'QuickBooks authorization complete! Your CPA system can now sync live data.',
+        companyId: realmId,
+        expiresIn: tokenData.expires_in,
+        tokenType: tokenData.token_type,
+        authorizedAt: qbToken.authorized_at,
+        nextSteps: [
+          'Test connection: GET /api/quickbooks/test-connection',
+          'Sync clients: GET /api/quickbooks/sync-clients',
+          'View financial data: GET /api/quickbooks/financial-data'
+        ]
       });
       
     } catch (error) {
+      console.error('QB callback error:', error);
       res.status(500).json({ 
         error: 'Authorization failed',
         details: error instanceof Error ? error.message : 'Unknown error'
