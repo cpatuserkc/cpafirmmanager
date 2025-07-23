@@ -24,8 +24,7 @@ class ContentLoader:
         # Ensure toolkit directory exists
         self.toolkit_path.mkdir(exist_ok=True)
         
-        # Initialize with default structure if empty
-        asyncio.create_task(self._ensure_default_structure())
+        # Initialize with default structure if empty - will be called manually when needed
     
     async def _ensure_default_structure(self):
         """Ensure default ProjectToolkit structure exists"""

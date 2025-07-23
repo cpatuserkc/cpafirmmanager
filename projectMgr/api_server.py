@@ -53,6 +53,7 @@ class APIServer:
             description="Internal development API for CPA firm resources ecosystem",
             version="1.0.0"
         )
+        # Initialize components (async initialization will be handled when needed)
         self.data_manager = DataManager()
         self.content_loader = ContentLoader()
         self.network_sync = NetworkSync()
