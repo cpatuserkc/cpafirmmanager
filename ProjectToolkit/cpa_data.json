@@ -1,0 +1,92 @@
+{
+  "professional_roles": [
+    {
+      "id": 1,
+      "name": "Senior Partner",
+      "tier": "senior",
+      "rate_multiplier": 1.5
+    },
+    {
+      "id": 2,
+      "name": "Partner",
+      "tier": "senior",
+      "rate_multiplier": 1.3
+    },
+    {
+      "id": 3,
+      "name": "Senior Manager",
+      "tier": "senior",
+      "rate_multiplier": 1.2
+    },
+    {
+      "id": 4,
+      "name": "Manager",
+      "tier": "mid",
+      "rate_multiplier": 1.0
+    },
+    {
+      "id": 5,
+      "name": "Senior Associate",
+      "tier": "mid",
+      "rate_multiplier": 0.9
+    },
+    {
+      "id": 6,
+      "name": "Associate",
+      "tier": "junior",
+      "rate_multiplier": 0.7
+    },
+    {
+      "id": 7,
+      "name": "Staff Accountant",
+      "tier": "junior",
+      "rate_multiplier": 0.6
+    }
+  ],
+  "service_categories": [
+    {
+      "id": 1,
+      "name": "Tax Preparation",
+      "base_rate": 150
+    },
+    {
+      "id": 2,
+      "name": "Audit & Assurance",
+      "base_rate": 200
+    },
+    {
+      "id": 3,
+      "name": "Bookkeeping",
+      "base_rate": 75
+    },
+    {
+      "id": 4,
+      "name": "Consulting",
+      "base_rate": 250
+    },
+    {
+      "id": 5,
+      "name": "Payroll Services",
+      "base_rate": 100
+    }
+  ],
+  "client_industries": [
+    "Technology",
+    "Healthcare",
+    "Manufacturing",
+    "Retail",
+    "Real Estate",
+    "Professional Services",
+    "Non-Profit",
+    "Construction",
+    "Restaurant & Hospitality",
+    "Agriculture"
+  ],
+  "time_categories": [
+    "Billable - Client Work",
+    "Non-Billable - Admin",
+    "Non-Billable - Marketing",
+    "Non-Billable - Training",
+    "Non-Billable - Business Development"
+  ]
+}

@@ -69,6 +69,16 @@ The application uses a comprehensive PostgreSQL schema with the following main e
 - **Loading System**: Client-side data loader utility with caching and React context provider
 - **Benefits**: Eliminates hardcoded values, improves maintainability, enables easy customization
 
+### Python Development Tools (ProjectMgr)
+- **Complete Development Toolkit**: Comprehensive Python package for managing the CPA firm resources ecosystem
+- **API Server**: FastAPI-based development server with health checks, data publishing, and synchronization endpoints
+- **Data Management**: Async data loading, publishing, and synchronization between local files and remote endpoints
+- **Content Management**: ProjectToolkit content loading, validation, caching, and backup functionality
+- **Desktop Client**: Cross-platform GUI application using ttkbootstrap with optional webview support
+- **Network Synchronization**: Multi-node network sync with priority-based ordering and error handling
+- **CLI Interface**: Comprehensive command-line interface for all development operations
+- **Installation**: Full package with requirements.txt, setup.py, and console script entry points
+
 ## Data Flow
 
 1. **Authentication Flow**: Users log in through the frontend, credentials are validated by the backend using Passport.js, and sessions are maintained

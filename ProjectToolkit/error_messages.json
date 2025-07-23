@@ -1,0 +1,16 @@
+{
+  "validation": {
+    "required_field": "This field is required",
+    "invalid_email": "Please enter a valid email address",
+    "invalid_phone": "Please enter a valid phone number",
+    "invalid_ein": "Please enter a valid EIN (XX-XXXXXXX format)",
+    "min_length": "Minimum {min} characters required",
+    "max_length": "Maximum {max} characters allowed"
+  },
+  "api": {
+    "network_error": "Network connection error. Please try again.",
+    "server_error": "Server error. Please contact support if this persists.",
+    "unauthorized": "You don't have permission to perform this action.",
+    "not_found": "The requested resource was not found."
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "ein_format": "^\\d{2}-\\d{7}$",
+  "phone_format": "^\\(?([0-9]{3})\\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$",
+  "email_format": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+  "required_fields": {
+    "client": [
+      "company_name",
+      "contact_name",
+      "email"
+    ],
+    "project": [
+      "project_name",
+      "service_category",
+      "deadline"
+    ],
+    "proposal": [
+      "title",
+      "client_id",
+      "total_amount"
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "main_navigation": [
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "icon": "LayoutDashboard",
+      "path": "/"
+    },
+    {
+      "id": "clients",
+      "label": "Clients",
+      "icon": "Users",
+      "path": "/clients"
+    },
+    {
+      "id": "projects",
+      "label": "Projects",
+      "icon": "FolderOpen",
+      "path": "/projects"
+    },
+    {
+      "id": "time-tracking",
+      "label": "Time Tracking",
+      "icon": "Clock",
+      "path": "/time-tracking"
+    },
+    {
+      "id": "proposals",
+      "label": "Proposals",
+      "icon": "FileText",
+      "path": "/proposals"
+    },
+    {
+      "id": "resources",
+      "label": "Resources",
+      "icon": "BookOpen",
+      "path": "/resources"
+    },
+    {
+      "id": "analytics",
+      "label": "Analytics",
+      "icon": "BarChart3",
+      "path": "/analytics"
+    }
+  ],
+  "admin_navigation": [
+    {
+      "id": "settings",
+      "label": "Settings",
+      "icon": "Settings",
+      "path": "/settings"
+    },
+    {
+      "id": "users",
+      "label": "User Management",
+      "icon": "UserCog",
+      "path": "/admin/users"
+    },
+    {
+      "id": "billing",
+      "label": "Billing",
+      "icon": "CreditCard",
+      "path": "/admin/billing"
+    }
+  ]
+}
