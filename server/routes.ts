@@ -15,7 +15,7 @@ import { fromZodError } from "zod-validation-error";
 import { initializeMLProviders, generateMLInsights } from "./ml-service";
 import { generateProposalRecommendations } from "./ml-adapter";
 import { generateAIProposalRecommendations, analyzeProposalDocument } from "./openai-service";
-import { serviceRoutes } from "./service-sync";
+import { ServiceSyncManager } from "./service-sync";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve ProjectToolkit JSON files
@@ -942,12 +942,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // SERVICE SYNC ROUTES
-  app.get("/api/service-sync/packages/:firmId", serviceRoutes.getPackagesForSync);
-  app.post("/api/service-sync/sync/:firmId", serviceRoutes.syncToAllPlatforms);
-  app.get("/api/service-sync/status/:firmId", serviceRoutes.getSyncStatus);
-  app.post("/api/service-sync/inquiry", serviceRoutes.receiveClientInquiry);
-  app.get("/api/service-sync/inquiries/:firmId", serviceRoutes.getClientInquiries);
-  app.get("/api/service-sync/data/:firmId/:platformType", serviceRoutes.getServiceDataForPlatform);
+  // Service sync routes
+  const serviceSyncManager = new ServiceSyncManager();
+  
+  app.get("/api/service-sync/packages/:firmId", async (req, res) => {
+    try {
+      const firmId = parseInt(req.params.firmId);
+      const packages = await serviceSyncManager.getClientFacingPackages(firmId);
+      res.json(packages);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get packages' });
+    }
+  });
+
+  app.post("/api/service-sync/sync/:firmId", async (req, res) => {
+    try {
+      const firmId = parseInt(req.params.firmId);
+      const result = await serviceSyncManager.syncToAllPlatforms(firmId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: 'Sync failed' });
+    }
+  });
+
+  app.get("/api/service-sync/status/:firmId", async (req, res) => {
+    try {
+      const firmId = parseInt(req.params.firmId);
+      const status = await serviceSyncManager.getSyncStatus(firmId);
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get sync status' });
+    }
+  });
+
+  app.post("/api/service-sync/inquiry", async (req, res) => {
+    try {
+      const inquiry = await serviceSyncManager.receiveClientInquiry(req.body);
+      res.json(inquiry);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to save inquiry' });
+    }
+  });
+
+  app.get("/api/service-sync/inquiries/:firmId", async (req, res) => {
+    try {
+      const firmId = parseInt(req.params.firmId);
+      const inquiries = await serviceSyncManager.getClientInquiries(firmId);
+      res.json(inquiries);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get inquiries' });
+    }
+  });
+  app.get("/api/service-sync/data/:firmId/:platformType", async (req, res) => {
+    try {
+      const firmId = parseInt(req.params.firmId);
+      const platformType = req.params.platformType;
+      const data = await serviceSyncManager.prepareServiceDataForSync(firmId, platformType);
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get service data' });
+    }
+  });
   
   // SEASON PLANNER ROUTES
   app.get("/api/season-planner", async (req, res) => {
