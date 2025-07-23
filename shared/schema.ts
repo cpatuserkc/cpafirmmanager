@@ -249,6 +249,113 @@ export const insertServiceSchema = createInsertSchema(services).omit({
   createdAt: true,
 });
 
+// Service Packages - Bundled service offerings for clients
+export const servicePackages = pgTable("service_packages", {
+  id: serial("id").primaryKey(),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category"), // "startup", "small-business", "enterprise", "individual"
+  isClientFacing: boolean("is_client_facing").default(true).notNull(),
+  displayOrder: integer("display_order").default(0),
+  marketingTitle: text("marketing_title"), // Client-facing title
+  marketingDescription: text("marketing_description"), // Client-facing description
+  features: jsonb("features"), // Array of feature descriptions
+  basePrice: numeric("base_price"), // Starting price for client display
+  priceRange: text("price_range"), // e.g., "$500 - $2,000"
+  estimatedTimeframe: text("estimated_timeframe"), // e.g., "2-4 weeks"
+  isPopular: boolean("is_popular").default(false),
+  requirements: jsonb("requirements"), // Prerequisites/requirements from client
+  deliverables: jsonb("deliverables"), // What client receives
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+});
+
+export const insertServicePackageSchema = createInsertSchema(servicePackages).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Package Services - Services included in packages
+export const packageServices = pgTable("package_services", {
+  id: serial("id").primaryKey(),
+  packageId: integer("package_id")
+    .notNull()
+    .references(() => servicePackages.id),
+  serviceId: integer("service_id")
+    .notNull()
+    .references(() => services.id),
+  isRequired: boolean("is_required").default(true),
+  estimatedHours: numeric("estimated_hours"),
+  sortOrder: integer("sort_order").default(0),
+});
+
+export const insertPackageServiceSchema = createInsertSchema(packageServices).omit({
+  id: true,
+});
+
+// Client Service Inquiries - Inquiries from client sites
+export const clientServiceInquiries = pgTable("client_service_inquiries", {
+  id: serial("id").primaryKey(),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
+  packageId: integer("package_id").references(() => servicePackages.id),
+  serviceIds: jsonb("service_ids"), // Array of specific service IDs
+  clientName: text("client_name").notNull(),
+  clientEmail: text("client_email").notNull(),
+  clientPhone: text("client_phone"),
+  companyName: text("company_name"),
+  industry: text("industry"),
+  businessType: text("business_type"), // LLC, Corporation, etc.
+  annualRevenue: text("annual_revenue"), // Range like "$100k-$500k"
+  numberOfEmployees: text("number_of_employees"),
+  urgency: text("urgency").default("normal"), // "urgent", "normal", "flexible"
+  preferredStartDate: timestamp("preferred_start_date"),
+  budget: text("budget"), // Budget range
+  additionalDetails: text("additional_details"),
+  requirements: jsonb("requirements"), // Specific requirements
+  source: text("source").default("website"), // "website", "referral", "marketing"
+  status: text("status").default("new"), // "new", "contacted", "qualified", "proposal_sent", "converted", "closed"
+  assignedTo: integer("assigned_to").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  followUpDate: timestamp("follow_up_date"),
+  notes: text("notes"),
+});
+
+export const insertClientServiceInquirySchema = createInsertSchema(clientServiceInquiries).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Service Network Sync - Track sync status with client sites
+export const serviceNetworkSync = pgTable("service_network_sync", {
+  id: serial("id").primaryKey(),
+  firmId: integer("firm_id")
+    .notNull()
+    .references(() => firms.id),
+  targetSite: text("target_site").notNull(), // URL of client site
+  lastSyncAt: timestamp("last_sync_at"),
+  syncStatus: text("sync_status").default("pending"), // "pending", "syncing", "completed", "failed"
+  syncedPackages: jsonb("synced_packages"), // Array of package IDs synced
+  syncedServices: jsonb("synced_services"), // Array of service IDs synced
+  syncError: text("sync_error"),
+  autoSync: boolean("auto_sync").default(true),
+  syncFrequency: text("sync_frequency").default("daily"), // "hourly", "daily", "weekly", "manual"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+});
+
+export const insertServiceNetworkSyncSchema = createInsertSchema(serviceNetworkSync).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Proposals schema - Service proposals for client companies
 export const proposals = pgTable("proposals", {
   id: serial("id").primaryKey(),
@@ -419,3 +526,15 @@ export type InsertClassification = z.infer<typeof insertClassificationSchema>;
 
 export type Deadline = typeof deadlines.$inferSelect;
 export type InsertDeadline = z.infer<typeof insertDeadlineSchema>;
+
+export type ServicePackage = typeof servicePackages.$inferSelect;
+export type InsertServicePackage = z.infer<typeof insertServicePackageSchema>;
+
+export type PackageService = typeof packageServices.$inferSelect;
+export type InsertPackageService = z.infer<typeof insertPackageServiceSchema>;
+
+export type ClientServiceInquiry = typeof clientServiceInquiries.$inferSelect;
+export type InsertClientServiceInquiry = z.infer<typeof insertClientServiceInquirySchema>;
+
+export type ServiceNetworkSync = typeof serviceNetworkSync.$inferSelect;
+export type InsertServiceNetworkSync = z.infer<typeof insertServiceNetworkSyncSchema>;

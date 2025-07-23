@@ -15,6 +15,7 @@ import { fromZodError } from "zod-validation-error";
 import { initializeMLProviders, generateMLInsights } from "./ml-service";
 import { generateProposalRecommendations } from "./ml-adapter";
 import { generateAIProposalRecommendations, analyzeProposalDocument } from "./openai-service";
+import { serviceRoutes } from "./service-sync";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve ProjectToolkit JSON files
@@ -939,6 +940,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching service" });
     }
   });
+  
+  // SERVICE SYNC ROUTES
+  app.get("/api/service-sync/packages/:firmId", serviceRoutes.getPackagesForSync);
+  app.post("/api/service-sync/sync/:firmId", serviceRoutes.syncToAllPlatforms);
+  app.get("/api/service-sync/status/:firmId", serviceRoutes.getSyncStatus);
+  app.post("/api/service-sync/inquiry", serviceRoutes.receiveClientInquiry);
+  app.get("/api/service-sync/inquiries/:firmId", serviceRoutes.getClientInquiries);
+  app.get("/api/service-sync/data/:firmId/:platformType", serviceRoutes.getServiceDataForPlatform);
   
   // SEASON PLANNER ROUTES
   app.get("/api/season-planner", async (req, res) => {

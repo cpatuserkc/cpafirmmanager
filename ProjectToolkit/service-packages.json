@@ -1,0 +1,301 @@
+{
+  "packages": {
+    "startup_essential": {
+      "id": "startup_essential",
+      "name": "Startup Essential Package",
+      "category": "startup",
+      "marketingTitle": "Launch Your Business with Confidence",
+      "marketingDescription": "Everything you need to get your startup off the ground with proper financial foundations",
+      "description": "Comprehensive startup package including business formation, initial bookkeeping setup, and tax planning",
+      "basePrice": "2500",
+      "priceRange": "$2,500 - $4,000",
+      "estimatedTimeframe": "2-3 weeks",
+      "isPopular": true,
+      "isClientFacing": true,
+      "displayOrder": 1,
+      "features": [
+        "Business entity formation (LLC, Corporation)",
+        "EIN registration",
+        "Initial bookkeeping system setup",
+        "Chart of accounts creation",
+        "Tax structure consultation",
+        "First-year tax planning",
+        "Quarterly check-in sessions"
+      ],
+      "requirements": [
+        "Business name and structure decision",
+        "Operating agreement or bylaws",
+        "Initial funding documentation"
+      ],
+      "deliverables": [
+        "Registered business entity",
+        "Federal EIN number",
+        "Bookkeeping system ready for operations",
+        "Tax planning strategy document",
+        "Compliance calendar"
+      ],
+      "services": [
+        "business_formation",
+        "bookkeeping_setup",
+        "tax_planning",
+        "compliance_consulting"
+      ]
+    },
+    "small_business_complete": {
+      "id": "small_business_complete",
+      "name": "Small Business Complete",
+      "category": "small-business", 
+      "marketingTitle": "Complete Financial Management for Growing Businesses",
+      "marketingDescription": "Full-service accounting and tax support for established small businesses",
+      "description": "Comprehensive package for established small businesses needing ongoing accounting and tax services",
+      "basePrice": "1500",
+      "priceRange": "$1,500 - $3,500",
+      "estimatedTimeframe": "Ongoing monthly",
+      "isPopular": true,
+      "isClientFacing": true,
+      "displayOrder": 2,
+      "features": [
+        "Monthly bookkeeping and reconciliation",
+        "Quarterly financial statements",
+        "Annual tax preparation",
+        "Payroll processing",
+        "Sales tax filing",
+        "Business advisory sessions",
+        "Year-end tax planning"
+      ],
+      "requirements": [
+        "Established business operations",
+        "Access to bank accounts and financial records",
+        "Employee information (if applicable)"
+      ],
+      "deliverables": [
+        "Monthly financial reports",
+        "Quarterly P&L and balance sheets",
+        "Annual tax returns",
+        "Payroll reports and filings",
+        "Tax compliance documentation"
+      ],
+      "services": [
+        "monthly_bookkeeping",
+        "payroll_processing",
+        "business_tax_prep",
+        "sales_tax_filing",
+        "financial_statements"
+      ]
+    },
+    "individual_tax_premium": {
+      "id": "individual_tax_premium",
+      "name": "Individual Tax Premium",
+      "category": "individual",
+      "marketingTitle": "Premium Tax Preparation for Complex Returns",
+      "marketingDescription": "Expert tax preparation for high-income individuals with complex financial situations",
+      "description": "Premium individual tax preparation with advanced planning and optimization",
+      "basePrice": "800",
+      "priceRange": "$800 - $2,000",
+      "estimatedTimeframe": "1-2 weeks",
+      "isPopular": false,
+      "isClientFacing": true,
+      "displayOrder": 3,
+      "features": [
+        "Comprehensive tax return preparation",
+        "Tax optimization strategies",
+        "Investment income planning",
+        "Retirement planning coordination",
+        "Estate tax considerations",
+        "Multi-state tax filing",
+        "IRS audit protection"
+      ],
+      "requirements": [
+        "All tax documents (W-2s, 1099s, etc.)",
+        "Investment statements",
+        "Property records",
+        "Previous year tax returns"
+      ],
+      "deliverables": [
+        "Complete federal and state tax returns",
+        "Tax planning recommendations",
+        "Next year tax strategy",
+        "Audit protection coverage"
+      ],
+      "services": [
+        "individual_tax_prep",
+        "tax_planning",
+        "investment_tax_consulting",
+        "multi_state_filing"
+      ]
+    },
+    "enterprise_audit": {
+      "id": "enterprise_audit",
+      "name": "Enterprise Audit & Assurance",
+      "category": "enterprise",
+      "marketingTitle": "Professional Audit Services for Growing Companies",
+      "marketingDescription": "Comprehensive audit and assurance services for companies requiring financial statement audits",
+      "description": "Full audit services for companies needing audited financial statements for lenders, investors, or compliance",
+      "basePrice": "15000",
+      "priceRange": "$15,000 - $50,000",
+      "estimatedTimeframe": "6-10 weeks",
+      "isPopular": false,
+      "isClientFacing": true,
+      "displayOrder": 4,
+      "features": [
+        "Financial statement audit",
+        "Internal controls assessment",
+        "Compliance testing",
+        "Management letter recommendations",
+        "Industry-specific audit procedures",
+        "Ongoing audit support",
+        "Board presentation"
+      ],
+      "requirements": [
+        "Audited or reviewed prior year statements",
+        "Complete accounting records",
+        "Management cooperation",
+        "Access to all financial systems"
+      ],
+      "deliverables": [
+        "Audited financial statements",
+        "Independent auditor's report",
+        "Management letter",
+        "Internal control recommendations",
+        "Compliance documentation"
+      ],
+      "services": [
+        "financial_statement_audit",
+        "internal_controls_assessment",
+        "compliance_audit",
+        "management_advisory"
+      ]
+    },
+    "tax_resolution": {
+      "id": "tax_resolution", 
+      "name": "Tax Problem Resolution",
+      "category": "individual",
+      "marketingTitle": "Resolve Your Tax Problems with Expert Help",
+      "marketingDescription": "Professional representation for IRS issues, back taxes, and tax debt resolution",
+      "description": "Specialized service for resolving tax problems and IRS disputes",
+      "basePrice": "2000",
+      "priceRange": "$2,000 - $8,000",
+      "estimatedTimeframe": "3-6 months",
+      "isPopular": false,
+      "isClientFacing": true,
+      "displayOrder": 5,
+      "features": [
+        "IRS representation",
+        "Payment plan negotiation",
+        "Offer in compromise preparation",
+        "Penalty abatement requests",
+        "Back tax return preparation",
+        "Audit defense",
+        "Collection action defense"
+      ],
+      "requirements": [
+        "Complete tax history",
+        "Financial statements",
+        "IRS correspondence",
+        "Asset documentation"
+      ],
+      "deliverables": [
+        "Professional IRS representation",
+        "Negotiated settlement or payment plan",
+        "Updated tax returns",
+        "Resolution documentation",
+        "Ongoing compliance support"
+      ],
+      "services": [
+        "irs_representation",
+        "tax_debt_resolution",
+        "penalty_abatement",
+        "back_tax_filing"
+      ]
+    }
+  },
+  "categories": {
+    "startup": {
+      "name": "Startup Services",
+      "description": "Comprehensive packages for new businesses getting started",
+      "targetAudience": "Entrepreneurs and new business owners",
+      "keyBenefits": [
+        "Business formation assistance",
+        "Initial compliance setup",
+        "Tax structure optimization",
+        "Foundational bookkeeping"
+      ]
+    },
+    "small-business": {
+      "name": "Small Business Solutions", 
+      "description": "Ongoing accounting and tax services for established small businesses",
+      "targetAudience": "Small business owners with 1-50 employees",
+      "keyBenefits": [
+        "Monthly financial management",
+        "Tax compliance",
+        "Payroll processing", 
+        "Business advisory"
+      ]
+    },
+    "individual": {
+      "name": "Individual Tax Services",
+      "description": "Personal tax preparation and planning services",
+      "targetAudience": "Individuals and families",
+      "keyBenefits": [
+        "Expert tax preparation",
+        "Tax optimization strategies",
+        "Year-round support",
+        "Audit protection"
+      ]
+    },
+    "enterprise": {
+      "name": "Enterprise Services",
+      "description": "Advanced accounting, audit, and consulting for larger organizations",
+      "targetAudience": "Medium to large businesses and organizations",
+      "keyBenefits": [
+        "Professional audit services",
+        "Advanced financial reporting",
+        "Compliance assurance",
+        "Strategic advisory"
+      ]
+    }
+  },
+  "pricingTiers": {
+    "basic": {
+      "name": "Basic",
+      "description": "Essential services for simple needs",
+      "features": ["Standard preparation", "Basic support", "Email correspondence"]
+    },
+    "standard": {
+      "name": "Standard", 
+      "description": "Enhanced services with additional support",
+      "features": ["Priority processing", "Phone support", "Quarterly check-ins"]
+    },
+    "premium": {
+      "name": "Premium",
+      "description": "Comprehensive services with full support",
+      "features": ["White-glove service", "Dedicated advisor", "Unlimited consultations"]
+    }
+  },
+  "addOnServices": {
+    "rush_processing": {
+      "name": "Rush Processing",
+      "description": "Expedited service delivery",
+      "price": "500",
+      "timeReduction": "50%"
+    },
+    "audit_protection": {
+      "name": "Audit Protection",
+      "description": "IRS audit representation coverage",
+      "price": "200",
+      "coverage": "12 months"
+    },
+    "monthly_advisory": {
+      "name": "Monthly Advisory Call",
+      "description": "Regular business advisory sessions",
+      "price": "300",
+      "frequency": "monthly"
+    },
+    "financial_analysis": {
+      "name": "Financial Analysis Report",
+      "description": "Detailed business financial analysis",
+      "price": "750",
+      "deliverable": "Comprehensive report with recommendations"
+    }
+  }
+}
