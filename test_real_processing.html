@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Return Upload & Processing Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            background: #f9f9f9;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .analysis-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧾 Tax Return Document Extraction</h1>
+    <p>Upload a prior year tax return PDF to automatically generate a customized document organizer for the new tax year.</p>
+
+    <form id="uploadForm">
+        <div class="form-group">
+            <label for="clientName">Client Name:</label>
+            <input type="text" id="clientName" name="clientName" value="Test Client" required>
+        </div>
+
+        <div class="form-group">
+            <label for="clientId">Client ID:</label>
+            <input type="number" id="clientId" name="clientId" value="1" required>
+        </div>
+
+        <div class="form-group">
+            <label for="firmId">Firm ID:</label>
+            <input type="number" id="firmId" name="firmId" value="2" required>
+        </div>
+
+        <div class="form-group">
+            <label for="taxYear">New Tax Year:</label>
+            <input type="number" id="taxYear" name="taxYear" value="2024" required>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <p>📁 <strong>Drag and drop your tax return PDF here</strong></p>
+            <p>or</p>
+            <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+            <button type="button" onclick="document.getElementById('fileInput').click()">Choose PDF File</button>
+            <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                Supported format: PDF files only
+            </p>
+        </div>
+
+        <div id="fileInfo" style="display: none;">
+            <h3>📋 Selected File</h3>
+            <div id="fileDetails"></div>
+        </div>
+
+        <button type="submit" id="submitBtn" disabled>🚀 Process Tax Return</button>
+    </form>
+
+    <div id="results" style="display: none;">
+        <h2>📊 Processing Results</h2>
+        <div id="resultContent"></div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileDetails = document.getElementById('fileDetails');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Drag and drop handlers
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (file.type !== 'application/pdf') {
+                alert('Please select a PDF file only.');
+                return;
+            }
+
+            selectedFile = file;
+            
+            fileDetails.innerHTML = `
+                <div class="analysis-item">
+                    <strong>Filename:</strong> ${file.name}<br>
+                    <strong>Size:</strong> ${formatFileSize(file.size)}<br>
+                    <strong>Type:</strong> ${file.type}
+                </div>
+            `;
+            
+            fileInfo.style.display = 'block';
+            submitBtn.disabled = false;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Form submission
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!selectedFile) {
+                alert('Please select a PDF file first.');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ Processing...';
+            
+            showLoading();
+
+            try {
+                // Convert file to base64
+                const base64Data = await fileToBase64(selectedFile);
+                
+                const formData = {
+                    fileData: base64Data,
+                    filename: selectedFile.name,
+                    clientId: parseInt(document.getElementById('clientId').value),
+                    firmId: parseInt(document.getElementById('firmId').value),
+                    clientName: document.getElementById('clientName').value,
+                    taxYear: parseInt(document.getElementById('taxYear').value)
+                };
+
+                const response = await fetch('/api/tax-return/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResults(result);
+                } else {
+                    showError(result.error || 'Processing failed');
+                }
+
+            } catch (error) {
+                showError('Upload failed: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '🚀 Process Tax Return';
+            }
+        });
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function showLoading() {
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('resultContent').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing tax return and generating document organizer...</p>
+                </div>
+            `;
+        }
+
+        function showResults(result) {
+            const { analysis, organizer, uploadInfo } = result;
+            
+            document.getElementById('resultContent').innerHTML = `
+                <div class="analysis-item success">
+                    <h3>✅ Tax Return Successfully Processed</h3>
+                    <p>${result.message}</p>
+                </div>
+
+                <div class="analysis-item">
+                    <h3>📁 Upload Information</h3>
+                    <strong>File:</strong> ${uploadInfo.filename}<br>
+                    <strong>Size:</strong> ${formatFileSize(uploadInfo.size)}<br>
+                    <strong>Saved to:</strong> ${uploadInfo.path}
+                </div>
+
+                <div class="analysis-item">
+                    <h3>🔍 Analysis Results</h3>
+                    <strong>Tax Year:</strong> ${analysis.taxYear}<br>
+                    <strong>Filing Status:</strong> ${analysis.filingStatus}<br>
+                    <strong>Complexity:</strong> ${analysis.complexity.toUpperCase()}<br>
+                    <strong>Forms Detected:</strong> ${analysis.formsDetected.join(', ')}<br>
+                    <strong>Estimated Documents:</strong> ${analysis.estimatedDocuments}
+                </div>
+
+                <div class="analysis-item">
+                    <h3>📋 Generated Organizer</h3>
+                    <strong>Organizer ID:</strong> ${organizer.id}<br>
+                    <strong>Total Documents:</strong> ${organizer.documentCount}<br>
+                    <strong>Required Documents:</strong> ${organizer.requiredCount}<br>
+                    <br>
+                    <button onclick="downloadOrganizer('${organizer.id}')" style="margin: 5px;">
+                        📄 Download Tax Organizer
+                    </button>
+                    <button onclick="viewOrganizerDetails('${organizer.id}')" style="margin: 5px;">
+                        👁️ View Details
+                    </button>
+                </div>
+
+                <div class="analysis-item">
+                    <h3>🎯 Next Steps</h3>
+                    <ol>
+                        <li>Download the customized tax organizer</li>
+                        <li>Send to client with specific vendor information</li>
+                        <li>Track document collection progress</li>
+                        <li>Begin tax preparation when 90% complete</li>
+                    </ol>
+                </div>
+            `;
+        }
+
+        function showError(errorMessage) {
+            document.getElementById('resultContent').innerHTML = `
+                <div class="analysis-item error">
+                    <h3>❌ Processing Error</h3>
+                    <p>${errorMessage}</p>
+                    <p>Please check the file format and try again.</p>
+                </div>
+            `;
+        }
+
+        async function downloadOrganizer(organizerId) {
+            try {
+                const response = await fetch(`/api/tax-return/organizer/${organizerId}/enhanced`);
+                const blob = await response.blob();
+                
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Tax_Organizer_${organizerId}.md`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                alert('Tax organizer downloaded successfully!');
+            } catch (error) {
+                alert('Download failed: ' + error.message);
+            }
+        }
+
+        async function viewOrganizerDetails(organizerId) {
+            try {
+                const response = await fetch(`/api/tax-organizer/${organizerId}`);
+                const data = await response.json();
+                
+                const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+                popup.document.write(`
+                    <html>
+                        <head><title>Tax Organizer Details</title></head>
+                        <body style="font-family: Arial, sans-serif; padding: 20px;">
+                            <h2>Tax Organizer Details</h2>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </body>
+                    </html>
+                `);
+            } catch (error) {
+                alert('Failed to load organizer details: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
