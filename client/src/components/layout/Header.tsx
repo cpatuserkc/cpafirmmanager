@@ -13,7 +13,9 @@ import {
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
-  const { isAuthenticated, logout } = useContext(AuthContext);
+  const { user, isAuthenticated, logout } = useContext(AuthContext);
+  
+  console.log('Header - Auth state:', { isAuthenticated, user: user?.firstName });
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);

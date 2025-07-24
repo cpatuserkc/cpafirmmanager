@@ -50,6 +50,7 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: 'include', // Ensure cookies are included
         body: JSON.stringify(values),
       });
       
@@ -61,22 +62,22 @@ const Login = () => {
       // Get the response JSON
       const userData = await response.json();
       
-      // Clear form after successful login
-      form.reset();
+      // Update auth context with user data first
+      await login(userData);
       
       // Show success message
       toast({
-        title: "Login Successful",
-        description: "Welcome back!",
+        title: "Login Successful", 
+        description: `Welcome back, ${userData.firstName}!`,
       });
       
-      // Update auth context with user data
-      login(userData);
+      // Clear form
+      form.reset();
       
-      // Small delay to ensure auth context updates, then redirect
+      // Small delay to ensure auth context updates properly
       setTimeout(() => {
         setLocation("/dashboard");
-      }, 100);
+      }, 500);
     } catch (error) {
       toast({
         title: "Login Failed",

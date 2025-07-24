@@ -82,14 +82,19 @@ function App() {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const response = await fetch('/api/auth/user');
+        const response = await fetch('/api/auth/user', {
+          credentials: 'include' // Ensure cookies are sent
+        });
         if (response.ok) {
           const userData = await response.json();
+          console.log('Found authenticated user:', userData);
           setUser(userData);
+        } else {
+          console.log('No authenticated user found');
         }
       } catch (error) {
         // User not authenticated, which is fine
-        console.log('User not authenticated');
+        console.log('User not authenticated:', error);
       } finally {
         setIsLoading(false);
       }
@@ -98,9 +103,23 @@ function App() {
     checkAuthStatus();
   }, []);
 
-  const login = (user: User) => {
+  const login = async (user: User) => {
     console.log('Setting user in auth context:', user);
     setUser(user);
+    
+    // Also re-fetch to confirm session persistence
+    try {
+      const response = await fetch('/api/auth/user', {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const confirmedUser = await response.json();
+        console.log('Confirmed user session:', confirmedUser);
+        setUser(confirmedUser);
+      }
+    } catch (error) {
+      console.log('Failed to confirm session:', error);
+    }
   };
 
   const logout = async () => {
