@@ -99,6 +99,7 @@ function App() {
   }, []);
 
   const login = (user: User) => {
+    console.log('Setting user in auth context:', user);
     setUser(user);
   };
 

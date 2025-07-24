@@ -61,9 +61,6 @@ const Login = () => {
       // Get the response JSON
       const userData = await response.json();
       
-      // Update auth context with user data
-      login(userData);
-      
       // Clear form after successful login
       form.reset();
       
@@ -73,8 +70,13 @@ const Login = () => {
         description: "Welcome back!",
       });
       
-      // Redirect to dashboard
-      setLocation("/dashboard");
+      // Update auth context with user data
+      login(userData);
+      
+      // Small delay to ensure auth context updates, then redirect
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 100);
     } catch (error) {
       toast({
         title: "Login Failed",
