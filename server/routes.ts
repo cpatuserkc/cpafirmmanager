@@ -1182,6 +1182,191 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DATA ENGINES SYSTEM
+  app.get("/api/data-engines", async (req, res) => {
+    try {
+      const { DataEngineManager } = await import('./data-engines.js');
+      const manager = new DataEngineManager();
+      
+      const engines = manager.getEngines();
+      
+      res.json({
+        engines,
+        totalEngines: engines.length,
+        capabilities: [...new Set(engines.flatMap(e => e.capabilities))],
+        message: 'Available data processing engines'
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to load data engines' });
+    }
+  });
+
+  app.post("/api/data-engines/process-document", async (req, res) => {
+    try {
+      const { DataEngineManager } = await import('./data-engines.js');
+      const manager = new DataEngineManager();
+      
+      const { filePath, documentType, analysisType, clientId, firmId, engineId } = req.body;
+      
+      if (!filePath || !documentType || !analysisType || !firmId) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const job = await manager.processDocument(filePath, {
+        documentType,
+        analysisType,
+        clientId,
+        firmId
+      }, engineId);
+
+      res.json({
+        success: true,
+        jobId: job.id,
+        status: job.status,
+        engineId: job.engineId,
+        message: 'Document processing job submitted'
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Document processing failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post("/api/data-engines/bulk-calculate", async (req, res) => {
+    try {
+      const { DataEngineManager } = await import('./data-engines.js');
+      const manager = new DataEngineManager();
+      
+      const { calculationType, dataSet, parameters, engineId } = req.body;
+      
+      if (!calculationType || !dataSet || !Array.isArray(dataSet)) {
+        return res.status(400).json({ error: 'Invalid calculation request' });
+      }
+
+      const job = await manager.processBulkCalculation({
+        calculationType,
+        dataSet,
+        parameters: parameters || {}
+      }, engineId);
+
+      res.json({
+        success: true,
+        jobId: job.id,
+        status: job.status,
+        engineId: job.engineId,
+        dataSetSize: dataSet.length,
+        message: 'Bulk calculation job submitted'
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Bulk calculation failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post("/api/data-engines/financial-analysis", async (req, res) => {
+    try {
+      const { DataEngineManager } = await import('./data-engines.js');
+      const manager = new DataEngineManager();
+      
+      const { qbData, analysisType, engineId } = req.body;
+      
+      if (!qbData || !analysisType) {
+        return res.status(400).json({ error: 'QB data and analysis type required' });
+      }
+
+      const job = await manager.processFinancialAnalysis(qbData, analysisType, engineId);
+
+      res.json({
+        success: true,
+        jobId: job.id,
+        status: job.status,
+        engineId: job.engineId,
+        analysisType,
+        message: 'Financial analysis job submitted with historical data enhancement'
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Financial analysis failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get("/api/data-engines/job/:jobId", async (req, res) => {
+    try {
+      const { DataEngineManager } = await import('./data-engines.js');
+      const manager = new DataEngineManager();
+      
+      const job = manager.getJob(req.params.jobId);
+      
+      if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
+
+      res.json({
+        job,
+        runtime: job.completedAt ? 
+          (job.completedAt.getTime() - job.createdAt.getTime()) / 1000 : 
+          (Date.now() - job.createdAt.getTime()) / 1000
+      });
+
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get job status' });
+    }
+  });
+
+  app.get("/api/data-engines/jobs/:firmId", async (req, res) => {
+    try {
+      const { DataEngineManager } = await import('./data-engines.js');
+      const manager = new DataEngineManager();
+      
+      const firmId = parseInt(req.params.firmId);
+      const jobs = manager.getJobsByFirm(firmId);
+
+      res.json({
+        jobs,
+        totalJobs: jobs.length,
+        statusBreakdown: {
+          queued: jobs.filter(j => j.status === 'queued').length,
+          processing: jobs.filter(j => j.status === 'processing').length,
+          completed: jobs.filter(j => j.status === 'completed').length,
+          failed: jobs.filter(j => j.status === 'failed').length
+        }
+      });
+
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get firm jobs' });
+    }
+  });
+
+  app.get("/api/data-engines/test/:engineId", async (req, res) => {
+    try {
+      const { DataEngineManager } = await import('./data-engines.js');
+      const manager = new DataEngineManager();
+      
+      const result = await manager.testEngine(req.params.engineId);
+      
+      res.json(result);
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Engine test failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // EXTERNAL PLATFORM SETUP GUIDE
   app.get("/api/platform-setup/guide", (req, res) => {
     res.json({
