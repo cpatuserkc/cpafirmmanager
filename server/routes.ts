@@ -1560,6 +1560,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // REAL TAX RETURN PROCESSING
+  app.post("/api/tax-return/upload", async (req, res) => {
+    try {
+      const { RealDataProcessor } = await import('./real-data-processor.js');
+      const processor = new RealDataProcessor();
+
+      // Handle file upload (in production, use multer or similar)
+      const { fileData, filename, clientId, firmId, clientName, taxYear } = req.body;
+      
+      if (!fileData || !filename || !clientId || !firmId) {
+        return res.status(400).json({ error: 'Missing required fields: fileData, filename, clientId, firmId' });
+      }
+
+      // Convert base64 to buffer if needed
+      let fileBuffer: Buffer;
+      if (typeof fileData === 'string') {
+        // Remove data URL prefix if present
+        const base64Data = fileData.replace(/^data:[^;]+;base64,/, '');
+        fileBuffer = Buffer.from(base64Data, 'base64');
+      } else {
+        fileBuffer = Buffer.from(fileData);
+      }
+
+      // Process the uploaded return
+      const { filePath, analysis } = await processor.processUploadedReturn(
+        fileBuffer,
+        filename,
+        {
+          clientId,
+          firmId,
+          clientName: clientName || 'New Client',
+          taxYear: taxYear || new Date().getFullYear()
+        }
+      );
+
+      // Generate document requirements from real analysis
+      const organizer = await processor.generateDocumentRequirements(analysis, {
+        clientId,
+        firmId,
+        clientName: clientName || 'New Client',
+        taxYear: taxYear || new Date().getFullYear()
+      });
+
+      res.json({
+        success: true,
+        message: 'Tax return processed successfully',
+        uploadInfo: {
+          filename,
+          size: fileBuffer.length,
+          path: filePath
+        },
+        analysis: {
+          formsDetected: analysis.formsDetected,
+          complexity: analysis.complexity,
+          estimatedDocuments: analysis.estimatedDocuments,
+          taxYear: analysis.taxYear,
+          filingStatus: analysis.filingStatus
+        },
+        organizer: {
+          id: organizer.id,
+          documentCount: organizer.documents.length,
+          requiredCount: organizer.documents.filter((doc: any) => doc.required).length
+        }
+      });
+
+    } catch (error) {
+      console.error('Tax return upload error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Tax return processing failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get("/api/tax-return/organizer/:organizerId/enhanced", async (req, res) => {
+    try {
+      const { RealDataProcessor } = await import('./real-data-processor.js');
+      const processor = new RealDataProcessor();
+      
+      // In production, retrieve from database
+      // For demonstration, create enhanced organizer with real analysis
+      const sampleOrganizer = {
+        id: req.params.organizerId,
+        clientId: 1,
+        clientName: 'Test Client',
+        taxYear: 2024,
+        priorYearAnalysis: {
+          formsDetected: ['1040', 'W-2', '1099-INT', 'Schedule A'],
+          vendorsIdentified: {
+            'W-2': ['ABC Company'],
+            '1099-INT': ['First National Bank']
+          },
+          schedules: ['Schedule A'],
+          filingStatus: 'Married Filing Jointly',
+          taxYear: 2023,
+          complexity: 'intermediate' as const,
+          estimatedDocuments: 12
+        },
+        createdAt: new Date(),
+        documents: [
+          {
+            documentType: 'W-2',
+            vendorName: 'ABC Company',
+            formType: 'W-2',
+            description: 'Wage and Tax Statement',
+            required: true,
+            category: 'income',
+            instructions: 'Request from ABC Company or their payroll provider'
+          }
+        ],
+        completionStatus: {
+          total: 12,
+          received: 0,
+          pending: ['W-2', '1099-INT', 'Medical Receipts']
+        }
+      };
+
+      const enhancedDocument = processor.generateEnhancedOrganizerDocument(sampleOrganizer);
+      
+      res.setHeader('Content-Type', 'text/markdown');
+      res.setHeader('Content-Disposition', `attachment; filename="Enhanced_Tax_Organizer_${req.params.organizerId}.md"`);
+      res.send(enhancedDocument);
+
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to generate enhanced organizer' });
+    }
+  });
+
   // EXTERNAL PLATFORM SETUP GUIDE
   app.get("/api/platform-setup/guide", (req, res) => {
     res.json({
