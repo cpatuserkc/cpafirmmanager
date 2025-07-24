@@ -64,14 +64,17 @@ const Login = () => {
       // Update auth context with user data
       login(userData);
       
+      // Clear form after successful login
+      form.reset();
+      
       // Show success message
       toast({
         title: "Login Successful",
         description: "Welcome back!",
       });
       
-      // Force a page refresh to ensure authentication state is properly synced
-      window.location.href = "/dashboard";
+      // Redirect to dashboard
+      setLocation("/dashboard");
     } catch (error) {
       toast({
         title: "Login Failed",
