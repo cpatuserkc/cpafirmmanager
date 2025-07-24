@@ -205,11 +205,11 @@ export class MemStorage implements IStorage {
   }
 
   private initSampleData() {
-    // Add admin user for testing - admin123 password
+    // Add admin user for testing - admin123 password (pre-hashed)
     const adminUser = {
       id: this.userIdCounter++,
       username: "admin@test.com",
-      password: "174e7d16965e7dba6f27f83a939abb0f:d542f5e32e094aafc287fff5e10a0b366289ce9ff899d6c2ec22a686ce052e467d6b573858b6c3c19f9e1c88b2be0dc8aeb61ab6a8234c9fa772b908f56f4dcc", // admin123
+      password: "c20b9e4cd0b0543dcdb00473629f57bf3f33b5aaa27b8f20edd1191d74e884be9f7e61aa8784e78b44f2f58d59741a2b7542cd8b1157b31a7856665d8a5fe649.e2ce5e272497f157d58761e68acd3fc1", // admin123
       email: "admin@test.com",
       firstName: "Test",
       lastName: "Administrator",
