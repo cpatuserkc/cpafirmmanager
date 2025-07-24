@@ -61,7 +61,12 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
+        // Try to find user by username first, then by email
+        let user = await storage.getUserByUsername(username);
+        if (!user) {
+          user = await storage.getUserByEmail(username);
+        }
+        
         if (!user) {
           console.log(`Login failed: User '${username}' not found`);
           return done(null, false, { message: "Invalid credentials" });
