@@ -41,13 +41,24 @@ const TaxUpload = () => {
     if (!file) return;
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
+    
+    // Create the request data in the format expected by the API
+    const requestData = {
+      clientId: 1, // Default for demo, would come from context in production
+      firmId: 1,   // Default for demo, would come from context in production
+      priorYearReturn: file.name, // File name for tracking
+      taxYear: new Date().getFullYear(), // Current year
+      clientName: "Tax Client", // Default name
+      filingStatus: "Unknown" // Default status
+    };
 
     try {
       const response = await fetch('/api/tax-organizer/extract', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
       });
 
       if (!response.ok) {
