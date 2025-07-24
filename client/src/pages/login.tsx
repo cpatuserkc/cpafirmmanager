@@ -70,10 +70,8 @@ const Login = () => {
         description: "Welcome back!",
       });
       
-      // Wait a moment before redirect to ensure state updates
-      setTimeout(() => {
-        setLocation("/time-analytics");
-      }, 100);
+      // Force a page refresh to ensure authentication state is properly synced
+      window.location.href = "/dashboard";
     } catch (error) {
       toast({
         title: "Login Failed",
