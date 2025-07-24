@@ -1367,6 +1367,199 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // TAX DOCUMENT EXTRACTION SYSTEM
+  app.post("/api/tax-organizer/extract", async (req, res) => {
+    try {
+      const { TaxDocumentExtractor } = await import('./tax-document-extractor.js');
+      const extractor = new TaxDocumentExtractor();
+      
+      const { clientId, firmId, priorYearReturn, taxYear, clientName, filingStatus } = req.body;
+      
+      if (!clientId || !firmId || !priorYearReturn || !taxYear) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const organizer = await extractor.extractDocumentRequirements(priorYearReturn, {
+        clientId,
+        firmId,
+        priorYearReturn,
+        taxYear,
+        clientName: clientName || 'New Client',
+        filingStatus: filingStatus || 'Unknown'
+      });
+
+      res.json({
+        success: true,
+        organizerId: organizer.id,
+        organizer,
+        documentCount: organizer.documents.length,
+        requiredCount: organizer.documents.filter(doc => doc.required).length,
+        message: 'Tax organizer created from prior year return analysis'
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Tax organizer creation failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get("/api/tax-organizer/:organizerId", async (req, res) => {
+    try {
+      // In production, retrieve from database
+      // For now, return a sample organizer for demonstration
+      const sampleOrganizer = {
+        id: req.params.organizerId,
+        clientId: 1,
+        taxYear: 2024,
+        createdAt: new Date(),
+        documents: [
+          {
+            documentType: 'W-2',
+            vendorName: 'Previous employer name',
+            formType: 'W-2',
+            description: 'Wage and Tax Statement',
+            required: true,
+            category: 'income'
+          }
+        ],
+        completionStatus: {
+          total: 15,
+          received: 3,
+          pending: ['W-2', '1099-INT', 'Schedule A items']
+        }
+      };
+
+      res.json({
+        organizer: sampleOrganizer,
+        completionPercentage: Math.round((sampleOrganizer.completionStatus.received / sampleOrganizer.completionStatus.total) * 100)
+      });
+
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to retrieve tax organizer' });
+    }
+  });
+
+  app.get("/api/tax-organizer/:organizerId/document", async (req, res) => {
+    try {
+      const { TaxDocumentExtractor } = await import('./tax-document-extractor.js');
+      const extractor = new TaxDocumentExtractor();
+      
+      // In production, retrieve organizer from database
+      const sampleOrganizer = {
+        id: req.params.organizerId,
+        clientId: 1,
+        taxYear: 2024,
+        createdAt: new Date(),
+        documents: [
+          {
+            documentType: 'W-2',
+            vendorName: 'ABC Company',
+            formType: 'W-2',
+            description: 'Wage and Tax Statement',
+            required: true,
+            category: 'income' as const,
+            instructions: 'Request from employer or payroll provider'
+          },
+          {
+            documentType: '1099-INT',
+            vendorName: 'First National Bank',
+            formType: '1099-INT',
+            description: 'Interest Income',
+            required: true,
+            category: 'income' as const,
+            instructions: 'Request from bank or financial institution'
+          },
+          {
+            documentType: 'Medical Receipts',
+            formType: 'Schedule A',
+            description: 'Medical and dental expenses',
+            required: false,
+            category: 'deduction' as const,
+            instructions: 'Collect receipts from healthcare providers'
+          }
+        ],
+        completionStatus: {
+          total: 3,
+          received: 0,
+          pending: ['W-2', '1099-INT', 'Medical Receipts']
+        }
+      };
+
+      const documentText = extractor.generateOrganizerDocument(sampleOrganizer);
+      
+      res.setHeader('Content-Type', 'text/markdown');
+      res.setHeader('Content-Disposition', `attachment; filename="Tax_Organizer_${req.params.organizerId}.md"`);
+      res.send(documentText);
+
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to generate organizer document' });
+    }
+  });
+
+  app.post("/api/tax-organizer/:organizerId/mark-received", async (req, res) => {
+    try {
+      const { TaxDocumentExtractor } = await import('./tax-document-extractor.js');
+      const extractor = new TaxDocumentExtractor();
+      
+      const { documentType } = req.body;
+      
+      if (!documentType) {
+        return res.status(400).json({ error: 'Document type required' });
+      }
+
+      const success = extractor.markDocumentReceived(req.params.organizerId, documentType);
+      
+      res.json({
+        success,
+        message: success ? 'Document marked as received' : 'Failed to update document status',
+        documentType
+      });
+
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update document status' });
+    }
+  });
+
+  app.get("/api/tax-organizer/:organizerId/status", async (req, res) => {
+    try {
+      const { TaxDocumentExtractor } = await import('./tax-document-extractor.js');
+      const extractor = new TaxDocumentExtractor();
+      
+      // In production, retrieve actual organizer
+      const sampleOrganizer = {
+        id: req.params.organizerId,
+        clientId: 1,
+        taxYear: 2024,
+        createdAt: new Date(),
+        documents: [
+          { documentType: 'W-2', required: true },
+          { documentType: '1099-INT', required: true },
+          { documentType: 'Medical Receipts', required: false }
+        ],
+        completionStatus: {
+          total: 3,
+          received: 1,
+          pending: ['1099-INT', 'Medical Receipts']
+        }
+      };
+
+      const status = extractor.getCompletionStatus(sampleOrganizer);
+      
+      res.json({
+        organizerId: req.params.organizerId,
+        status,
+        lastUpdated: new Date().toISOString(),
+        readyForPreparation: status.percentage >= 90
+      });
+
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get completion status' });
+    }
+  });
+
   // EXTERNAL PLATFORM SETUP GUIDE
   app.get("/api/platform-setup/guide", (req, res) => {
     res.json({

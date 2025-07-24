@@ -129,3 +129,21 @@ The application uses a comprehensive PostgreSQL schema with the following main e
 - Optional external ML provider API keys
 
 The application follows modern full-stack development practices with TypeScript throughout, comprehensive error handling, and a modular architecture that supports scalability and maintainability.
+
+## Recent Changes
+
+### Tax Document Extraction System (January 2025)
+- **Purpose**: Analyze prior year tax returns to generate customized document collection lists
+- **Key Features**: 
+  - Automatic form detection and vendor name extraction
+  - Customized tax organizer generation with client-specific requirements
+  - Progress tracking and completion monitoring
+  - Integration with data engines for document processing
+- **Benefits**: Eliminates manual organizer creation, improves client onboarding experience
+- **Endpoints**: `/api/tax-organizer/extract`, `/api/tax-organizer/:id/document`, status tracking
+
+### Data Engines System Enhancement
+- **Multi-Engine Support**: Document processing, bulk calculations, financial analysis engines
+- **Asynchronous Processing**: Job management system for large-scale operations
+- **QuickBooks Integration**: Enhanced analysis combining live QB data with 787 historical engagements
+- **Competitive Advantage**: Only CPA platform with historical + live data + specialized processing engines
