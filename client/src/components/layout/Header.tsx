@@ -48,6 +48,7 @@ const Header = () => {
         { href: "/classification", label: "Classifications" },
         { href: "/analytics", label: "Analytics" },
         { href: "/service-packages", label: "Service Packages" },
+        { href: "/tax-upload", label: "Tax Upload" },
       ]
     },
     {

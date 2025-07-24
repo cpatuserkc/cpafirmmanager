@@ -19,6 +19,7 @@ import Login from "@/pages/login";
 import SignUp from "@/pages/signup";
 import Collaborations from "@/pages/collaborations";
 import ServicePackages from "@/pages/service-packages";
+import TaxUpload from "@/pages/tax-upload";
 import { useState, useEffect, createContext, useContext } from "react";
 import { User } from "@shared/schema";
 
@@ -65,6 +66,7 @@ function Router() {
       <Route path="/season-planner" component={SeasonPlanner} />
       <Route path="/collaborations" component={Collaborations} />
       <Route path="/service-packages" component={ServicePackages} />
+      <Route path="/tax-upload" component={TaxUpload} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={SignUp} />
       <Route component={NotFound} />
@@ -73,30 +75,41 @@ function Router() {
 }
 
 function App() {
-  // Initialize with a demo user for easier testing
-  const demoUser = {
-    id: 1,
-    username: "admin",
-    email: "admin@example.com",
-    firstName: "Admin",
-    lastName: "User",
-    isAdmin: true,
-    role: "free",
-    isActive: true,
-    createdAt: new Date(),
-    phone: null,
-    profilePicture: null,
-    password: ""
-  };
-  
-  const [user, setUser] = useState<User | null>(demoUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check if user is already authenticated on app load
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/user');
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        }
+      } catch (error) {
+        // User not authenticated, which is fine
+        console.log('User not authenticated');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
 
   const login = (user: User) => {
     setUser(user);
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+      setUser(null); // Clear user state anyway
+    }
   };
 
   return (
