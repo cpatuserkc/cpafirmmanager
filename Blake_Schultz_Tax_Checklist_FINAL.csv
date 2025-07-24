@@ -1,0 +1,21 @@
+Document Type,Required,Category,Description,Instructions,Status,Date Received,Notes
+"Form W-2 - Blake",Required,Income,"Wage and Tax Statement","Obtain from medical practice employer",Pending,,",253,532 wages in 2023"
+"Form W-2 - Madeleine",Required,Income,"Wage and Tax Statement","Obtain from medical practice employer",Pending,,"High-income medical professional"
+"Form 1099-DIV",Required,Income,"Dividend Income Statements","Collect from all investment accounts",Pending,,"Had ,176 in dividends in 2023"
+"Form 1099-INT",Required,Income,"Interest Income","From all banks and financial institutions",Pending,,
+"Form 1099-B",Required,Income,"Broker Transaction Statements","From all brokerage accounts",Pending,,"5,051 capital gains in 2023"
+"Form 1098",Required,Deduction,"Mortgage Interest Statement","From mortgage lender",Pending,,"Used itemized deductions (6,725) in 2023"
+"Property Tax Records",Required,Deduction,"Property Tax Payments","Travis County Tax Assessor or servicer",Pending,,"Austin, TX property"
+"Medical Expense Records",If Applicable,Deduction,"Unreimbursed Medical Expenses","Must exceed ~7,000 to deduct (7.5% of AGI)",Pending,,"High income threshold"
+"Professional Development",If Applicable,Deduction,"Continuing Education Expenses","Medical conferences and licensing fees",Pending,,"Medical professionals"
+"Charitable Donation Records",If Applicable,Deduction,"Charitable Contributions","Written acknowledgments required >50",Pending,,
+"Social Security Card - Blake",Required,Information,"SSN Verification","Copy of Social Security card",Pending,,
+"Social Security Card - Madeleine",Required,Information,"SSN Verification","Copy of Social Security card",Pending,,
+"Social Security Card - Olvia",Required,Information,"Dependent SSN Verification","Copy of Social Security card",Pending,,"Daughter - dependent"
+"Social Security Card - Camille",Required,Information,"Dependent SSN Verification","Copy of Social Security card",Pending,,"Daughter - dependent"
+"Bank Account Information",Required,Information,"Direct Deposit Info","Routing and account numbers",Pending,,
+"Driver's License - Blake",Required,Information,"Identification for e-filing","Valid government ID",Pending,,"Orthopedic Surgeon"
+"Driver's License - Madeleine",Required,Information,"Identification for e-filing","Valid government ID",Pending,,"Dermatologist"
+"Professional Insurance",If Applicable,Deduction,"Malpractice Insurance Premiums","Medical practice insurance",Pending,,"Medical professionals"
+"Retirement Plan Contributions",If Applicable,Information,"401k/Profit Sharing","Contribution records and limits",Pending,,"High-income planning"
+"Estimated Tax Payments",If Applicable,Payment,"2024 Quarterly Payments","Records of payments made",Pending,,"High earners should consider"

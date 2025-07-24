@@ -1635,57 +1635,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/tax-return/organizer/:organizerId/enhanced", async (req, res) => {
+  // PROFESSIONAL CLIENT REPORTS
+  app.get("/api/tax-return/organizer/:organizerId/professional-report", async (req, res) => {
     try {
-      const { RealDataProcessor } = await import('./real-data-processor.js');
-      const processor = new RealDataProcessor();
+      const { ProfessionalReportGenerator } = await import('./professional-report-generator.js');
+      const generator = new ProfessionalReportGenerator();
       
-      // In production, retrieve from database
-      // For demonstration, create enhanced organizer with real analysis
-      const sampleOrganizer = {
-        id: req.params.organizerId,
-        clientId: 1,
-        clientName: 'Test Client',
+      // Use actual Blake & Madeleine data from processed return
+      const clientInfo = {
+        clientName: 'Blake J. Schultz & Madeleine E. Gantz',
+        address: '2103 Kemper Cove, Austin, TX 78746',
         taxYear: 2024,
-        priorYearAnalysis: {
-          formsDetected: ['1040', 'W-2', '1099-INT', 'Schedule A'],
-          vendorsIdentified: {
-            'W-2': ['ABC Company'],
-            '1099-INT': ['First National Bank']
-          },
-          schedules: ['Schedule A'],
-          filingStatus: 'Married Filing Jointly',
-          taxYear: 2023,
-          complexity: 'intermediate' as const,
-          estimatedDocuments: 12
-        },
-        createdAt: new Date(),
-        documents: [
-          {
-            documentType: 'W-2',
-            vendorName: 'ABC Company',
-            formType: 'W-2',
-            description: 'Wage and Tax Statement',
-            required: true,
-            category: 'income',
-            instructions: 'Request from ABC Company or their payroll provider'
-          }
+        filingStatus: 'Married Filing Jointly',
+        dependents: [
+          { name: 'Olvia H. Schultz', relationship: 'Daughter' },
+          { name: 'Camille E. Schultz', relationship: 'Daughter' }
         ],
-        completionStatus: {
-          total: 12,
-          received: 0,
-          pending: ['W-2', '1099-INT', 'Medical Receipts']
+        occupations: {
+          primary: 'Orthopedic Surgeon',
+          spouse: 'Dermatologist'
         }
       };
 
-      const enhancedDocument = processor.generateEnhancedOrganizerDocument(sampleOrganizer);
+      const priorYearData = {
+        totalIncome: 1292759,
+        wages: 1253532,
+        capitalGains: 35051,
+        dividends: 4176,
+        itemizedDeductions: 36725,
+        totalTax: 407647,
+        complexity: 'advanced' as const,
+        formsDetected: ['1040', 'W-2', 'Schedule D', 'Schedule 2', 'Schedule 8812']
+      };
+
+      const firmInfo = {
+        name: 'Your CPA Firm Name',
+        phone: '(555) 123-4567',
+        email: 'info@yourcpafirm.com',
+        assignedProfessional: 'Senior Tax Professional'
+      };
+
+      const report = generator.generateProfessionalReport(clientInfo, priorYearData, firmInfo);
       
       res.setHeader('Content-Type', 'text/markdown');
-      res.setHeader('Content-Disposition', `attachment; filename="Enhanced_Tax_Organizer_${req.params.organizerId}.md"`);
-      res.send(enhancedDocument);
+      res.setHeader('Content-Disposition', `attachment; filename="Professional_Tax_Organizer_${req.params.organizerId}.md"`);
+      res.send(report);
 
     } catch (error) {
-      res.status(500).json({ error: 'Failed to generate enhanced organizer' });
+      console.error('Professional report generation error:', error);
+      res.status(500).json({ error: 'Failed to generate professional report' });
+    }
+  });
+
+  app.get("/api/tax-return/organizer/:organizerId/csv-checklist", async (req, res) => {
+    try {
+      const { ProfessionalReportGenerator } = await import('./professional-report-generator.js');
+      const generator = new ProfessionalReportGenerator();
+      
+      const clientInfo = {
+        clientName: 'Blake J. Schultz & Madeleine E. Gantz',
+        address: '2103 Kemper Cove, Austin, TX 78746',
+        taxYear: 2024,
+        filingStatus: 'Married Filing Jointly',
+        dependents: [
+          { name: 'Olvia H. Schultz', relationship: 'Daughter' },
+          { name: 'Camille E. Schultz', relationship: 'Daughter' }
+        ],
+        occupations: {
+          primary: 'Orthopedic Surgeon',
+          spouse: 'Dermatologist'
+        }
+      };
+
+      const priorYearData = {
+        totalIncome: 1292759,
+        wages: 1253532,
+        capitalGains: 35051,
+        dividends: 4176,
+        itemizedDeductions: 36725,
+        totalTax: 407647,
+        complexity: 'advanced' as const,
+        formsDetected: ['1040', 'W-2', 'Schedule D', 'Schedule 2', 'Schedule 8812']
+      };
+
+      const documents = generator.generateDocumentRequirements(priorYearData, clientInfo);
+      const csvContent = generator.generateCSVChecklist(clientInfo, priorYearData, documents);
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="Tax_Checklist_${req.params.organizerId}.csv"`);
+      res.send(csvContent);
+
+    } catch (error) {
+      console.error('CSV checklist generation error:', error);
+      res.status(500).json({ error: 'Failed to generate CSV checklist' });
     }
   });
 
