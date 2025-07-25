@@ -202,6 +202,25 @@ export class MemStorage implements IStorage {
     this.deadlineIdCounter = 1;
     
     this.initSampleData();
+    this.createDefaultAdmin();
+  }
+  
+  private createDefaultAdmin() {
+    // Create default admin user to prevent login issues
+    import('crypto').then(crypto => {
+      const defaultAdmin: User = {
+        id: this.userIdCounter++,
+        username: "cpaladmin",
+        email: "cpaadmin@test.com", 
+        firstName: "CPA",
+        lastName: "Admin",
+        isAdmin: true,
+        passwordHash: crypto.scryptSync("admin123", 'salt', 64).toString('hex'),
+        createdAt: new Date()
+      };
+      this.users.set(defaultAdmin.id, defaultAdmin);
+      console.log("✅ Default admin user created:", defaultAdmin.email);
+    });
   }
 
   private initSampleData() {
