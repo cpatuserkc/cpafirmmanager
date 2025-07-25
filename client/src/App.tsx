@@ -107,28 +107,19 @@ function App() {
     console.log('Setting user in auth context:', user);
     setUser(user);
     
-    // Also re-fetch to confirm session persistence
-    try {
-      const response = await fetch('/api/auth/user', {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const confirmedUser = await response.json();
-        console.log('Confirmed user session:', confirmedUser);
-        setUser(confirmedUser);
-      }
-    } catch (error) {
-      console.log('Failed to confirm session:', error);
-    }
+    // Force re-render by triggering a state change
+    localStorage.setItem('user_logged_in', 'true');
   };
 
   const logout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setUser(null);
+      localStorage.removeItem('user_logged_in');
     } catch (error) {
       console.error('Logout error:', error);
       setUser(null); // Clear user state anyway
+      localStorage.removeItem('user_logged_in');
     }
   };
 

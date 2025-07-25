@@ -15,7 +15,10 @@ const Header = () => {
   const [location] = useLocation();
   const { user, isAuthenticated, logout } = useContext(AuthContext);
   
-  console.log('Header - Auth state:', { isAuthenticated, user: user?.firstName });
+  // Check localStorage as backup for auth state
+  const isLoggedIn = isAuthenticated || localStorage.getItem('user_logged_in') === 'true';
+  
+  console.log('Header - Auth state:', { isAuthenticated, isLoggedIn, user: user?.firstName });
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -123,7 +126,7 @@ const Header = () => {
           {renderMainNav()}
           
           <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
+            {isLoggedIn ? (
               <Button
                 variant="ghost"
                 className="text-primary hover:text-primary-dark transition"
