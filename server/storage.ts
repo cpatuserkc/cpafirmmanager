@@ -28,6 +28,7 @@ import {
   type Deadline,
   type InsertDeadline
 } from "@shared/schema";
+import crypto from 'crypto';
 // Temporarily use memory storage to avoid database issues
 // import { DatabaseStorage } from './database-storage';
 
@@ -206,21 +207,22 @@ export class MemStorage implements IStorage {
   }
   
   private createDefaultAdmin() {
-    // Create default admin user to prevent login issues
-    import('crypto').then(crypto => {
-      const defaultAdmin: User = {
-        id: this.userIdCounter++,
-        username: "cpaladmin",
-        email: "cpaadmin@test.com", 
-        firstName: "CPA",
-        lastName: "Admin",
-        isAdmin: true,
-        passwordHash: crypto.scryptSync("admin123", 'salt', 64).toString('hex'),
-        createdAt: new Date()
-      };
-      this.users.set(defaultAdmin.id, defaultAdmin);
-      console.log("✅ Default admin user created:", defaultAdmin.email);
-    });
+    // Create default admin user to prevent login issues using proper password hashing
+    const salt = crypto.randomBytes(16).toString('hex');
+    const passwordHash = `${crypto.scryptSync("admin123", salt, 64).toString('hex')}.${salt}`;
+    
+    const defaultAdmin: User = {
+      id: this.userIdCounter++,
+      username: "cpaadmin",
+      email: "cpaadmin@test.com", 
+      firstName: "CPA",
+      lastName: "Admin",
+      isAdmin: true,
+      passwordHash: passwordHash,
+      createdAt: new Date()
+    };
+    this.users.set(defaultAdmin.id, defaultAdmin);
+    console.log("✅ Default admin user created:", defaultAdmin.email, "password hash:", passwordHash.substring(0, 20) + "...");
   }
 
   private initSampleData() {
