@@ -62,22 +62,20 @@ const Login = () => {
       // Get the response JSON
       const userData = await response.json();
       
-      // Update auth context with user data first
-      await login(userData);
-      
       // Show success message
       toast({
         title: "Login Successful", 
         description: `Welcome back, ${userData.firstName}!`,
       });
       
+      // Update auth context with user data
+      await login(userData);
+      
       // Clear form
       form.reset();
       
-      // Small delay to ensure auth context updates properly
-      setTimeout(() => {
-        setLocation("/dashboard");
-      }, 500);
+      // Force a full page reload to ensure auth context is properly initialized
+      window.location.href = "/dashboard";
     } catch (error) {
       toast({
         title: "Login Failed",
