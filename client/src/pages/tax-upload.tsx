@@ -129,23 +129,19 @@ const TaxUpload = () => {
     // Start progress simulation
     const progressPromise = simulateUploadProgress();
     
-    // Create the request data in the format expected by the API
-    const requestData = {
-      clientId: 1, // Default for demo, would come from context in production
-      firmId: 1,   // Default for demo, would come from context in production
-      priorYearReturn: file.name, // File name for tracking
-      taxYear: new Date().getFullYear(), // Current year
-      clientName: "Tax Client", // Default name
-      filingStatus: "Unknown" // Default status
-    };
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('taxReturn', file);
+    formData.append('clientId', '1'); // Default for demo
+    formData.append('firmId', '1');   // Default for demo
+    formData.append('taxYear', new Date().getFullYear().toString());
+    formData.append('clientName', "Tax Client");
+    formData.append('filingStatus', "Unknown");
 
     try {
       const response = await fetch('/api/tax-organizer/extract', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
+        body: formData, // Send as FormData, not JSON
       });
 
       if (!response.ok) {

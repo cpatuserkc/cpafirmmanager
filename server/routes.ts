@@ -16,6 +16,38 @@ import { initializeMLProviders, generateMLInsights } from "./ml-service";
 import { generateProposalRecommendations } from "./ml-adapter";
 import { generateAIProposalRecommendations, analyzeProposalDocument } from "./openai-service";
 import { ServiceSyncManager } from "./service-sync";
+import { extractTaxOrganizer } from "./tax-document-extractor";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+// Configure multer for file uploads
+const storage_multer = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = 'uploads/';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  }
+});
+
+const upload = multer({ 
+  storage: storage_multer,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'));
+    }
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve ProjectToolkit JSON files
@@ -1380,26 +1412,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TAX DOCUMENT EXTRACTION SYSTEM
-  app.post("/api/tax-organizer/extract", async (req, res) => {
+  // TAX DOCUMENT EXTRACTION SYSTEM WITH FILE UPLOAD
+  app.post("/api/tax-organizer/extract", upload.single('taxReturn'), async (req, res) => {
     try {
       const { TaxDocumentExtractor } = await import('./tax-document-extractor.js');
       const extractor = new TaxDocumentExtractor();
       
-      const { clientId, firmId, priorYearReturn, taxYear, clientName, filingStatus } = req.body;
+      const { clientId, firmId, taxYear, clientName, filingStatus } = req.body;
+      const file = req.file;
       
-      if (!clientId || !firmId || !priorYearReturn || !taxYear) {
+      console.log("Tax organizer extraction request:", { 
+        clientId, firmId, taxYear, clientName, filingStatus,
+        file: file ? { filename: file.filename, path: file.path } : 'No file uploaded'
+      });
+      
+      if (!file) {
+        return res.status(400).json({
+          success: false,
+          message: "No PDF file uploaded"
+        });
+      }
+      
+      if (!clientId || !firmId || !taxYear) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      const organizer = await extractor.extractDocumentRequirements(priorYearReturn, {
+      const organizer = await extractor.extractDocumentRequirements(file.path, {
         clientId,
         firmId,
-        priorYearReturn,
+        priorYearReturn: file.filename,
         taxYear,
         clientName: clientName || 'New Client',
         filingStatus: filingStatus || 'Unknown'
       });
+
+      // Clean up uploaded file after processing
+      try {
+        fs.unlinkSync(file.path);
+      } catch (unlinkError) {
+        console.warn("Could not delete temporary file:", unlinkError);
+      }
 
       res.json({
         success: true,
@@ -1411,6 +1463,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
+      console.error("Error extracting tax organizer:", error);
       res.status(500).json({
         success: false,
         error: 'Tax organizer creation failed',
