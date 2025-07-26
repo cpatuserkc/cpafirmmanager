@@ -38,6 +38,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
   };
 
+  // DEBUG ROUTE - Remove in production
+  app.get("/api/debug/users", async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      res.json({ 
+        count: allUsers.length, 
+        users: allUsers.map(u => ({ id: u.id, username: u.username, email: u.email, hasPassword: !!u.passwordHash }))
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching users", error: error.message });
+    }
+  });
+
   // AUTH ROUTES
   app.post("/api/auth/register", validateBody(insertUserSchema), async (req, res) => {
     try {
