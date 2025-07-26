@@ -328,52 +328,114 @@ const TaxUpload = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {uploadResult.status === 'completed' && (
-                <div className="space-y-4">
-                  <p className="text-sm text-neutral-600 mb-4">
-                    Choose from the following professional output formats:
-                  </p>
+              {uploadResult.status === 'completed' && uploadResult.organizer && (
+                <div className="space-y-6">
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-blue-50 rounded-lg p-4 text-center border">
+                      <div className="text-3xl font-bold text-blue-600">{uploadResult.documentCount}</div>
+                      <div className="text-sm text-gray-600">Total Documents</div>
+                    </div>
+                    <div className="bg-red-50 rounded-lg p-4 text-center border">
+                      <div className="text-3xl font-bold text-red-600">{uploadResult.requiredCount}</div>
+                      <div className="text-sm text-gray-600">Required</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-center border">
+                      <div className="text-3xl font-bold text-gray-600">{uploadResult.documentCount - uploadResult.requiredCount}</div>
+                      <div className="text-sm text-gray-600">Optional</div>
+                    </div>
+                  </div>
+
+                  {/* Document List */}
+                  <div className="bg-white rounded-lg border">
+                    <div className="p-4 border-b bg-gray-50">
+                      <h4 className="text-lg font-semibold text-gray-800">Document Collection Checklist</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Based on analysis of the uploaded tax return
+                      </p>
+                    </div>
+                    <div className="p-4">
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {uploadResult.organizer.documents.map((doc: any, index: number) => (
+                          <div key={index} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border-l-4 border-l-blue-500">
+                            <div className="flex-shrink-0 mt-1">
+                              {doc.required ? (
+                                <span className="text-red-500 font-bold text-xl">★</span>
+                              ) : (
+                                <span className="text-gray-400 font-bold text-xl">○</span>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h5 className="font-bold text-gray-800 text-lg">{doc.documentType}</h5>
+                                {doc.vendorName && (
+                                  <span className="text-xs px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">
+                                    {doc.vendorName}
+                                  </span>
+                                )}
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                  doc.required ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {doc.required ? 'Required' : 'Optional'}
+                                </span>
+                              </div>
+                              <p className="text-gray-700 mb-2 font-medium">{doc.description}</p>
+                              {doc.instructions && (
+                                <p className="text-blue-700 text-sm italic bg-blue-50 p-2 rounded border-l-2 border-blue-200 mb-2">
+                                  💡 {doc.instructions}
+                                </p>
+                              )}
+                              <div className="flex gap-4 text-xs text-gray-500">
+                                <span className="bg-white px-2 py-1 rounded border">Form: {doc.formType}</span>
+                                <span className="bg-white px-2 py-1 rounded border capitalize">Category: {doc.category}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Button
-                      variant="outline"
-                      className="h-auto p-4 flex flex-col items-center gap-2"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={() => handleDownload('professional-report')}
                     >
-                      <Download className="h-5 w-5" />
-                      <div className="text-center">
-                        <div className="font-medium">Professional Report</div>
-                        <div className="text-xs text-neutral-500">Complete markdown format</div>
-                      </div>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download PDF Organizer
                     </Button>
                     <Button
-                      variant="outline"
-                      className="h-auto p-4 flex flex-col items-center gap-2"
+                      className="bg-green-600 hover:bg-green-700 text-white"
                       onClick={() => handleDownload('csv-checklist')}
                     >
-                      <Download className="h-5 w-5" />
-                      <div className="text-center">
-                        <div className="font-medium">CSV Checklist</div>
-                        <div className="text-xs text-neutral-500">Spreadsheet format</div>
-                      </div>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export CSV Checklist
                     </Button>
                     <Button
                       variant="outline"
-                      className="h-auto p-4 flex flex-col items-center gap-2"
-                      onClick={() => handleDownload('enhanced')}
+                      onClick={resetUpload}
                     >
-                      <Download className="h-5 w-5" />
-                      <div className="text-center">
-                        <div className="font-medium">Enhanced Report</div>
-                        <div className="text-xs text-neutral-500">Detailed analysis</div>
-                      </div>
+                      Start New Analysis
                     </Button>
+                  </div>
+
+                  {/* Technical Details */}
+                  <div className="text-xs text-gray-500 space-y-1 pt-4 border-t">
+                    <div className="flex justify-between">
+                      <span><strong>Organizer ID:</strong> {uploadResult.organizerId}</span>
+                      <span><strong>Generated:</strong> {new Date().toLocaleString()}</span>
+                    </div>
+                    <div className="text-center pt-2">
+                      <span className="text-blue-600 font-medium">Analysis Engine: CPA Document Processor v2.0</span>
+                    </div>
                   </div>
                 </div>
               )}
               
               {uploadResult.message && (
-                <div className="mt-4 p-3 bg-neutral-100 rounded-lg">
-                  <p className="text-sm text-neutral-700">{uploadResult.message}</p>
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">{uploadResult.message}</p>
                 </div>
               )}
             </CardContent>
