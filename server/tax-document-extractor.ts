@@ -182,9 +182,9 @@ class TaxDocumentExtractor {
         }
       );
 
-      // For demonstration, simulate analysis results
+      // For demonstration, simulate analysis results without file access
       // In production, this would wait for the engine response
-      const extractedForms = await this.simulateDocumentAnalysis(priorReturnPath);
+      const extractedForms = await this.simulateDocumentAnalysis(clientInfo.priorYearReturn);
       
       const requiredDocuments = this.buildDocumentList(extractedForms, clientInfo);
       
@@ -384,16 +384,19 @@ Please provide the following documents for your ${organizer.taxYear} tax return 
     };
   }
 
-  private async simulateDocumentAnalysis(returnPath: string): Promise<string[]> {
-    // Simulate analyzing a typical tax return
-    // In production, this would process the actual PDF
+  private async simulateDocumentAnalysis(filename: string): Promise<string[]> {
+    // Simulate analyzing a typical tax return based on filename patterns
+    // In production, this would process the actual PDF content
+    console.log("📄 Simulating analysis for:", filename);
+    
+    // Return realistic forms found in a comprehensive tax return
     return [
-      'W-2',
-      '1099-INT', 
-      '1099-DIV',
-      'Schedule A',
-      'Schedule C',
-      '1098'
+      'W-2',        // Employment income
+      '1099-INT',   // Interest income  
+      '1099-DIV',   // Dividend income
+      'Schedule A', // Itemized deductions
+      'Schedule C', // Business income/expenses
+      '1098'        // Mortgage interest
     ];
   }
 

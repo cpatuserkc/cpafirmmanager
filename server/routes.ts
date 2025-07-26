@@ -1437,20 +1437,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      const organizer = await extractor.extractDocumentRequirements(file.path, {
-        clientId,
-        firmId,
-        priorYearReturn: file.filename,
-        taxYear,
-        clientName: clientName || 'New Client',
-        filingStatus: filingStatus || 'Unknown'
-      });
-
-      // Clean up uploaded file after processing
+      // Process the tax document BEFORE any cleanup
+      let organizer;
       try {
-        fs.unlinkSync(file.path);
-      } catch (unlinkError) {
-        console.warn("Could not delete temporary file:", unlinkError);
+        organizer = await extractor.extractDocumentRequirements(file.path, {
+          clientId,
+          firmId,
+          priorYearReturn: file.filename,
+          taxYear,
+          clientName: clientName || 'New Client',
+          filingStatus: filingStatus || 'Unknown'
+        });
+      } finally {
+        // Clean up uploaded file after processing (or on error)
+        try {
+          if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+            console.log("✅ Cleaned up temporary file:", file.filename);
+          }
+        } catch (unlinkError) {
+          console.warn("⚠️ Could not delete temporary file:", unlinkError);
+        }
       }
 
       res.json({
