@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, FileText, Download, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import ProgressTracker, { ProgressStep } from "@/components/ui/progress-tracker";
 
 interface UploadResponse {
   id: string;
@@ -18,8 +19,85 @@ const TaxUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResponse | null>(null);
+  const [progressSteps, setProgressSteps] = useState<ProgressStep[]>([]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [overallProgress, setOverallProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const initializeProgressSteps = () => {
+    return [
+      {
+        id: 'upload',
+        title: 'File Upload',
+        description: 'Uploading tax return document...',
+        status: 'pending' as const,
+        progress: 0
+      },
+      {
+        id: 'processing',
+        title: 'Document Processing',
+        description: 'Extracting tax form information...',
+        status: 'pending' as const,
+        progress: 0
+      },
+      {
+        id: 'analysis',
+        title: 'Tax Analysis',
+        description: 'Analyzing tax data and generating organizer...',
+        status: 'pending' as const,
+        progress: 0
+      },
+      {
+        id: 'complete',
+        title: 'Complete',
+        description: 'Tax organizer ready for download',
+        status: 'pending' as const,
+        progress: 0
+      }
+    ];
+  };
+
+  const updateProgress = (stepIndex: number, progress: number, status: 'pending' | 'active' | 'completed' | 'error' = 'active') => {
+    setProgressSteps(prev => prev.map((step, index) => 
+      index === stepIndex 
+        ? { ...step, progress, status }
+        : index < stepIndex 
+        ? { ...step, status: 'completed' }
+        : step
+    ));
+    setCurrentStep(stepIndex);
+    setOverallProgress((stepIndex * 25) + (progress * 0.25));
+  };
+
+  const simulateUploadProgress = async () => {
+    // Simulate file upload progress
+    for (let i = 0; i <= 100; i += 10) {
+      updateProgress(0, i);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    updateProgress(0, 100, 'completed');
+    
+    // Simulate document processing
+    updateProgress(1, 0);
+    for (let i = 0; i <= 100; i += 20) {
+      updateProgress(1, i);
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    updateProgress(1, 100, 'completed');
+    
+    // Simulate tax analysis
+    updateProgress(2, 0);
+    for (let i = 0; i <= 100; i += 15) {
+      updateProgress(2, i);
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    updateProgress(2, 100, 'completed');
+    
+    // Complete
+    updateProgress(3, 100, 'completed');
+    setOverallProgress(100);
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -34,6 +112,8 @@ const TaxUpload = () => {
       }
       setFile(selectedFile);
       setUploadResult(null);
+      setProgressSteps([]);
+      setOverallProgress(0);
     }
   };
 
@@ -41,6 +121,13 @@ const TaxUpload = () => {
     if (!file) return;
 
     setUploading(true);
+    const steps = initializeProgressSteps();
+    setProgressSteps(steps);
+    setCurrentStep(0);
+    setOverallProgress(0);
+    
+    // Start progress simulation
+    const progressPromise = simulateUploadProgress();
     
     // Create the request data in the format expected by the API
     const requestData = {
@@ -66,6 +153,10 @@ const TaxUpload = () => {
       }
 
       const result = await response.json();
+      
+      // Wait for progress animation to complete
+      await progressPromise;
+      
       setUploadResult(result);
       
       toast({
@@ -73,7 +164,11 @@ const TaxUpload = () => {
         description: "Your tax return has been processed successfully!",
       });
     } catch (error) {
-      console.error('Upload error:', error);
+      // Mark current step as error
+      setProgressSteps(prev => prev.map((step, index) => 
+        index === currentStep ? { ...step, status: 'error' } : step
+      ));
+      
       toast({
         title: "Upload Failed",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
@@ -204,6 +299,17 @@ const TaxUpload = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Progress Tracker */}
+        {progressSteps.length > 0 && (
+          <div className="mb-6">
+            <ProgressTracker 
+              steps={progressSteps}
+              currentStep={currentStep}
+              overallProgress={overallProgress}
+            />
+          </div>
+        )}
 
         {/* Results Section */}
         {uploadResult && (
