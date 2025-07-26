@@ -168,22 +168,11 @@ class TaxDocumentExtractor {
     clientInfo: TaxOrganizerRequest
   ): Promise<TaxOrganizer> {
     try {
-      // Submit to document processing engine for analysis
-      const { DataEngineManager } = await import('./data-engines.js');
-      const engineManager = new DataEngineManager();
-
-      const analysisJob = await engineManager.processDocument(
-        priorReturnPath,
-        {
-          documentType: 'tax_return',
-          analysisType: 'extract_data',
-          clientId: clientInfo.clientId,
-          firmId: clientInfo.firmId
-        }
-      );
-
-      // For demonstration, simulate analysis results without file access
-      // In production, this would wait for the engine response
+      // Skip data engine processing for now to prevent file access issues
+      // In production, this would submit to the processing engine ONLY if file persists
+      
+      // For demonstration, simulate analysis results without any file access
+      console.log("🎯 Processing tax organizer for:", clientInfo.clientName, "Tax Year:", clientInfo.taxYear);
       const extractedForms = await this.simulateDocumentAnalysis(clientInfo.priorYearReturn);
       
       const requiredDocuments = this.buildDocumentList(extractedForms, clientInfo);
