@@ -203,8 +203,34 @@ export class MemStorage implements IStorage {
     this.classificationIdCounter = 1;
     this.deadlineIdCounter = 1;
     
+    // Create admin BEFORE sample data
+    this.forceCreateAdmin();
     this.initSampleData();
-    this.createDefaultAdmin();
+  }
+  
+  private forceCreateAdmin() {
+    // Force create admin user with guaranteed working credentials
+    const salt = crypto.randomBytes(16).toString('hex');
+    const passwordHash = `${crypto.scryptSync("admin123", salt, 64).toString('hex')}.${salt}`;
+    
+    const adminUser: User = {
+      id: 1,
+      username: "cpaladmin",
+      email: "cpaladmin@test.com",
+      firstName: "CPA", 
+      lastName: "Admin",
+      isAdmin: true,
+      passwordHash,
+      createdAt: new Date()
+    };
+    
+    // Force set the admin user
+    this.users.set(1, adminUser);
+    this.userIdCounter = 2;
+    
+    console.log("🚀 FORCED admin creation:", adminUser.email);
+    console.log("🔑 Hash length:", passwordHash.length);
+    console.log("👥 Users map size:", this.users.size);
   }
   
   private createDefaultAdmin() {
@@ -331,10 +357,6 @@ export class MemStorage implements IStorage {
     const updatedUser = { ...user, ...data };
     this.users.set(id, updatedUser);
     return updatedUser;
-  }
-
-  async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
   }
 
   async getAllUsers(): Promise<User[]> {
